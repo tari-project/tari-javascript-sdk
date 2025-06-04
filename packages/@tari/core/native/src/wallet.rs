@@ -87,81 +87,77 @@ pub fn wallet_get_address(mut cx: FunctionContext) -> JsResult<JsObject> {
 
 /// Send a transaction
 pub fn wallet_send_transaction(mut cx: FunctionContext) -> JsResult<JsString> {
-    safe_execute(&mut cx, || {
-        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-        let params_obj = cx.argument::<JsObject>(1)?;
-        
-        let handles = WALLET_HANDLES.lock().unwrap();
-        if !handles.is_valid(handle) {
-            return Err(TariError::InvalidHandle(handle));
-        }
-        drop(handles);
-        
-        let params = parse_send_params(&mut cx, params_obj)?;
-        
-        log::info!("Sending {} to {} from wallet {}", 
-                  params.amount, params.destination, handle);
-        
-        // TODO: Send actual transaction through Tari wallet
-        let tx_id = format!("tx_{}", rand::random::<u64>());
-        
-        log::debug!("Generated transaction ID: {}", tx_id);
-        Ok(cx.string(tx_id))
-    })
+    let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+    let params_obj = cx.argument::<JsObject>(1)?;
+    
+    let handles = WALLET_HANDLES.lock().unwrap();
+    if !handles.is_valid(handle) {
+        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
+    }
+    drop(handles);
+    
+    let params = try_js!(&mut cx, parse_send_params(&mut cx, params_obj));
+    
+    log::info!("Sending {} to {} from wallet {}", 
+              params.amount, params.destination, handle);
+    
+    // TODO: Send actual transaction through Tari wallet
+    let tx_id = format!("tx_{}", rand::random::<u64>());
+    
+    log::debug!("Generated transaction ID: {}", tx_id);
+    Ok(cx.string(tx_id))
 }
 
 /// Get wallet UTXOs
 pub fn wallet_get_utxos(mut cx: FunctionContext) -> JsResult<JsArray> {
-    safe_execute(&mut cx, || {
-        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-        let page = cx.argument_opt(1)
-            .map(|arg: Handle<JsNumber>| arg.value(&mut cx) as u32)
-            .unwrap_or(0);
-        let page_size = cx.argument_opt(2)
-            .map(|arg: Handle<JsNumber>| arg.value(&mut cx) as u32)
-            .unwrap_or(100);
-        
-        let handles = WALLET_HANDLES.lock().unwrap();
-        if !handles.is_valid(handle) {
-            return Err(TariError::InvalidHandle(handle));
-        }
-        drop(handles);
-        
-        log::debug!("Getting UTXOs for wallet {} (page: {}, size: {})", 
-                   handle, page, page_size);
-        
-        // TODO: Get actual UTXOs from Tari wallet
-        let mock_utxos = vec![
-            (500000, "commitment_1".to_string(), 100, 0),
-            (500000, "commitment_2".to_string(), 101, 0),
-        ];
-        
-        let result = cx.empty_array();
-        for (i, (value, commitment, height, status)) in mock_utxos.iter().enumerate() {
-            let utxo_obj = create_utxo_object(&mut cx, *value, commitment.clone(), *height, *status)?;
-            result.set(&mut cx, i as u32, utxo_obj)?;
-        }
-        
-        Ok(result)
-    })
+    let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+    let page = cx.argument_opt(1)
+        .and_then(|arg| arg.downcast::<JsNumber, _>(&mut cx).ok())
+        .map(|arg| arg.value(&mut cx) as u32)
+        .unwrap_or(0);
+    let page_size = cx.argument_opt(2)
+        .and_then(|arg| arg.downcast::<JsNumber, _>(&mut cx).ok())
+        .map(|arg| arg.value(&mut cx) as u32)
+        .unwrap_or(100);
+    
+    let handles = WALLET_HANDLES.lock().unwrap();
+    if !handles.is_valid(handle) {
+        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
+    }
+    drop(handles);
+    
+    log::debug!("Getting UTXOs for wallet {} (page: {}, size: {})", 
+               handle, page, page_size);
+    
+    // TODO: Get actual UTXOs from Tari wallet
+    let mock_utxos = vec![
+        (500000, "commitment_1".to_string(), 100, 0),
+        (500000, "commitment_2".to_string(), 101, 0),
+    ];
+    
+    let result = cx.empty_array();
+    for (i, (value, commitment, height, status)) in mock_utxos.iter().enumerate() {
+        let utxo_obj = create_utxo_object(&mut cx, *value, commitment.clone(), *height, *status)?;
+        result.set(&mut cx, i as u32, utxo_obj)?;
+    }
+    
+    Ok(result)
 }
 
 /// Import a UTXO into the wallet
 pub fn wallet_import_utxo(mut cx: FunctionContext) -> JsResult<JsBoolean> {
-    safe_execute(&mut cx, || {
-        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-        let _params_obj = cx.argument::<JsObject>(1)?;
-        
-        let handles = WALLET_HANDLES.lock().unwrap();
-        if !handles.is_valid(handle) {
-            return Err(TariError::InvalidHandle(handle));
-        }
-        drop(handles);
-        
-        // TODO: Parse import parameters and import UTXO
-        log::debug!("Importing UTXO for wallet: {}", handle);
-        
-        // For now, always return success
-        Ok(cx.boolean(true))
-    })
+    let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+    let _params_obj = cx.argument::<JsObject>(1)?;
+    
+    let handles = WALLET_HANDLES.lock().unwrap();
+    if !handles.is_valid(handle) {
+        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
+    }
+    drop(handles);
+    
+    // TODO: Parse import parameters and import UTXO
+    log::debug!("Importing UTXO for wallet: {}", handle);
+    
+    // For now, always return success
+    Ok(cx.boolean(true))
 }

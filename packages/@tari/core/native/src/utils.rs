@@ -7,7 +7,7 @@ pub fn js_string_to_rust(cx: &mut FunctionContext, js_str: Handle<JsString>) -> 
 }
 
 /// Convert Rust string to JavaScript string
-pub fn rust_string_to_js(cx: &mut FunctionContext, rust_str: String) -> JsResult<JsString> {
+pub fn rust_string_to_js<'a>(cx: &'a mut FunctionContext<'a>, rust_str: String) -> JsResult<'a, JsString> {
     Ok(cx.string(rust_str))
 }
 
@@ -73,12 +73,12 @@ pub enum Network {
 }
 
 /// Create a balance object for JavaScript
-pub fn create_balance_object(
-    cx: &mut FunctionContext,
+pub fn create_balance_object<'a>(
+    cx: &'a mut FunctionContext<'a>,
     available: u64,
     pending: u64,
     locked: u64,
-) -> JsResult<JsObject> {
+) -> JsResult<'a, JsObject> {
     let obj = cx.empty_object();
     
     let available_str = cx.string(available.to_string());
@@ -95,11 +95,11 @@ pub fn create_balance_object(
 }
 
 /// Create an address object for JavaScript
-pub fn create_address_object(
-    cx: &mut FunctionContext,
+pub fn create_address_object<'a>(
+    cx: &'a mut FunctionContext<'a>,
     handle: u64,
     emoji_id: String,
-) -> JsResult<JsObject> {
+) -> JsResult<'a, JsObject> {
     let obj = cx.empty_object();
     
     let handle_num = cx.number(handle as f64);
@@ -112,13 +112,13 @@ pub fn create_address_object(
 }
 
 /// Create a UTXO object for JavaScript
-pub fn create_utxo_object(
-    cx: &mut FunctionContext,
+pub fn create_utxo_object<'a>(
+    cx: &'a mut FunctionContext<'a>,
     value: u64,
     commitment: String,
     mined_height: u64,
     status: u32,
-) -> JsResult<JsObject> {
+) -> JsResult<'a, JsObject> {
     let obj = cx.empty_object();
     
     let value_str = cx.string(value.to_string());

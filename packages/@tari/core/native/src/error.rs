@@ -1,4 +1,5 @@
 use neon::prelude::*;
+use neon::result::Throw;
 use thiserror::Error;
 
 /// Main error type for FFI operations
@@ -34,7 +35,7 @@ pub enum TariError {
 
 impl TariError {
     /// Convert to a JavaScript exception
-    pub fn to_js_error<'a, T>(&self, cx: &mut FunctionContext<'a>) -> JsResult<'a, T> {
+    pub fn to_js_error<'a, T: neon::handle::Managed>(&self, cx: &mut FunctionContext<'a>) -> JsResult<'a, T> {
         let error_msg = format!("TariError: {}", self);
         cx.throw_error(error_msg)
     }
