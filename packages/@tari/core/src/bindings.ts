@@ -5,12 +5,15 @@ import {
   WalletCreateConfig 
 } from './ffi-types';
 
+// Re-export handle types so they can be imported from bindings
+export { WalletHandle, AddressHandle, Network, WalletCreateConfig } from './ffi-types';
+
 export interface NativeBinding {
   // Core
   initialize(): void;
   
   // Wallet operations
-  walletCreate(config: WalletCreateConfig): WalletHandle;
+  walletCreate(config: WalletCreateConfig): WalletHandle | null;
   walletDestroy(handle: WalletHandle): void;
   walletGetSeedWords(handle: WalletHandle): string;
   walletGetBalance(handle: WalletHandle): RawBalance;
@@ -22,24 +25,25 @@ export interface NativeBinding {
   privateKeyFromHex(hex: string): number;
   privateKeyDestroy(handle: number): void;
   publicKeyFromPrivateKey(privateKey: number): number;
+  publicKeyFromHex(hex: string): number;
   publicKeyDestroy(handle: number): void;
   
   // UTXO management
-  walletGetUtxos(wallet: number, page?: number, pageSize?: number): RawUtxo[];
-  walletImportUtxo(wallet: number, params: ImportUtxoParams): boolean;
+  walletGetUtxos(wallet: WalletHandle, page?: number, pageSize?: number): RawUtxo[];
+  walletImportUtxo(wallet: WalletHandle, params: ImportUtxoParams): boolean;
   
   // Mining
-  walletCoinSplit(wallet: number, params: CoinSplitParams): string;
-  walletCoinJoin(wallet: number, params: CoinJoinParams): string;
+  walletCoinSplit(wallet: WalletHandle, params: CoinSplitParams): string;
+  walletCoinJoin(wallet: WalletHandle, params: CoinJoinParams): string;
   
   // Recovery
-  walletStartRecovery(wallet: number, baseNodeKey: string, callback: (current: number, total: number) => void): boolean;
-  walletIsRecoveryInProgress(wallet: number): boolean;
+  walletStartRecovery(wallet: WalletHandle, baseNodeKey: string, callback: (current: number, total: number) => void): boolean;
+  walletIsRecoveryInProgress(wallet: WalletHandle): boolean;
   
   // P2P operations
-  walletGetPeers(wallet: number): RawPeer[];
-  walletAddPeer(wallet: number, publicKey: string, address: string): boolean;
-  walletBanPeer(wallet: number, publicKey: string, duration?: number): boolean;
+  walletGetPeers(wallet: WalletHandle): RawPeer[];
+  walletAddPeer(wallet: WalletHandle, publicKey: string, address: string): boolean;
+  walletBanPeer(wallet: WalletHandle, publicKey: string, duration?: number): boolean;
   
   // Advanced features
   createCovenant(data: Uint8Array): number;

@@ -124,7 +124,7 @@ export class WithdrawalProcessor {
         txId: '',
         fee: 0n,
         status: 'failed',
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }

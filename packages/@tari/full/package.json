@@ -24,8 +24,8 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
-    "@tari-project/core": "^0.1.0",
-    "@tari-project/wallet": "^0.1.0",
+    "@tari-project/core": "workspace:*",
+    "@tari-project/wallet": "workspace:*",
     "eventemitter3": "^5.0.1"
   },
   "devDependencies": {

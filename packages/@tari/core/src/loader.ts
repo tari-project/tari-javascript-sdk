@@ -33,7 +33,7 @@ export function loadNativeBinding(): NativeBinding {
         break;
       } catch (error) {
         lastError = error as Error;
-        console.warn(`Failed to load from ${path}:`, error.message);
+        console.warn(`Failed to load from ${path}:`, (error as Error).message);
       }
     }
   }

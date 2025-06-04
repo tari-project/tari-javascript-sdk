@@ -25,7 +25,7 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
-    "@tari-project/core": "^0.1.0",
+    "@tari-project/core": "workspace:*",
     "eventemitter3": "^5.0.1",
     "p-retry": "^5.1.2",
     "p-limit": "^4.0.0"
