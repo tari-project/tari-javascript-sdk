@@ -103,13 +103,39 @@ impl RealWalletInstance {
     async fn initialize_database(&self) -> TariResult<()> {
         log::debug!("Initializing wallet database at: {:?}", self.wallet_db_path);
         
-        // TODO: Use actual Tari wallet database initialization
-        // For now, create a placeholder file
-        if !self.wallet_db_path.exists() {
-            std::fs::File::create(&self.wallet_db_path)
-                .map_err(|e| TariError::DatabaseError(format!("Failed to create database file: {}", e)))?;
-        }
+        // Wallet database
+        let wallet_db = WalletSqliteDatabase::new(
+            self.wallet_db_path.clone(), 
+            self.config.passphrase.clone()
+        ).await
+        .map_err(|e| TariError::DatabaseError(format!("Failed to initialize wallet database: {}", e)))?;
         
+        // Transaction service database  
+        let tx_db_path = self.data_path.join("transaction_service.db");
+        let tx_db = TransactionServiceSqliteDatabase::new(tx_db_path, None).await
+            .map_err(|e| TariError::DatabaseError(format!("Failed to initialize transaction database: {}", e)))?;
+        
+        // Output manager database
+        let output_db_path = self.data_path.join("output_manager.db"); 
+        let output_db = OutputManagerSqliteDatabase::new(output_db_path, None).await
+            .map_err(|e| TariError::DatabaseError(format!("Failed to initialize output manager database: {}", e)))?;
+        
+        // Contacts database
+        let contacts_db_path = self.data_path.join("contacts.db");
+        let contacts_db = ContactsServiceSqliteDatabase::new(contacts_db_path, None).await
+            .map_err(|e| TariError::DatabaseError(format!("Failed to initialize contacts database: {}", e)))?;
+        
+        // Run migrations
+        wallet_db.migrate().await
+            .map_err(|e| TariError::DatabaseError(format!("Failed to migrate wallet database: {}", e)))?;
+        tx_db.migrate().await
+            .map_err(|e| TariError::DatabaseError(format!("Failed to migrate transaction database: {}", e)))?;
+        output_db.migrate().await
+            .map_err(|e| TariError::DatabaseError(format!("Failed to migrate output manager database: {}", e)))?;
+        contacts_db.migrate().await
+            .map_err(|e| TariError::DatabaseError(format!("Failed to migrate contacts database: {}", e)))?;
+        
+        log::info!("Successfully initialized all wallet databases");
         Ok(())
     }
     
@@ -117,12 +143,27 @@ impl RealWalletInstance {
     async fn initialize_key_manager(&self) -> TariResult<()> {
         log::debug!("Initializing key manager");
         
-        // TODO: Initialize actual Tari key manager
-        // This would involve:
-        // - Setting up the key manager database
-        // - Initializing cryptographic components
-        // - Setting up master key derivation
+        let seed = if !self.config.seed_words.is_empty() {
+            // Parse existing seed words
+            CipherSeed::from_mnemonic(&self.config.seed_words, self.config.passphrase.as_deref())
+                .map_err(|e| TariError::WalletError(format!("Failed to parse seed words: {}", e)))?
+        } else {
+            // Generate new seed
+            CipherSeed::new()
+        };
         
+        // Key manager database path
+        let key_manager_db_path = self.data_path.join("key_manager.db");
+        
+        // Initialize key manager service with proper seed derivation
+        let key_manager = tari_key_manager::key_manager_service::KeyManagerService::new(
+            key_manager_db_path,
+            seed,
+            self.config.passphrase.clone().unwrap_or_default()
+        ).await
+        .map_err(|e| TariError::WalletError(format!("Failed to initialize key manager: {}", e)))?;
+        
+        log::info!("Successfully initialized key manager");
         Ok(())
     }
     
