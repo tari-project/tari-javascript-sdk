@@ -1,1 +1,0 @@
-Result<neon::handle::Handle<'a, neon::prelude::JsNumber>, Throw>

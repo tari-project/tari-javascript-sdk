@@ -5,7 +5,9 @@ edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
-name = "index"
+
+[profile.release]
+lto = false
 
 [dependencies]
 neon = { version = "0.10", default-features = false, features = ["napi-6"] }

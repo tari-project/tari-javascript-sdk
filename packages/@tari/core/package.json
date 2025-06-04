@@ -7,7 +7,7 @@
   "files": ["dist", "native/index.node", "prebuilds"],
   "scripts": {
     "build": "npm run build:native && npm run build:ts",
-    "build:native": "cd native && cargo build --release && cp target/release/libindex.dylib index.node",
+    "build:native": "cd native && cargo build --release",
     "build:ts": "tsc",
     "clean": "rm -rf dist native/target",
     "test": "jest"
