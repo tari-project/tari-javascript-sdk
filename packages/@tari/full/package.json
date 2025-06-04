@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@tari/core": "workspace:*",
-    "@tari/wallet": "workspace:*"
+    "@tari/wallet": "workspace:*",
+    "eventemitter3": "^5.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
