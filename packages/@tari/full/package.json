@@ -1,0 +1,21 @@
+{
+  "name": "@tari/full",
+  "version": "0.0.1",
+  "description": "Full-featured Tari SDK with all protocol features",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@tari/core": "workspace:*",
+    "@tari/wallet": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}
