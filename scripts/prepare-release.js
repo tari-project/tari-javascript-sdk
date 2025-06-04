@@ -12,7 +12,7 @@ if (!version) {
 console.log(`Preparing release ${version}...`);
 
 // Update all package versions
-const packages = ['@tari/core', '@tari/wallet', '@tari/full'];
+const packages = ['@tari-project/core', '@tari-project/wallet', '@tari-project/full'];
 for (const pkg of packages) {
   const packagePath = path.join(__dirname, '..', 'packages', pkg, 'package.json');
   const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));

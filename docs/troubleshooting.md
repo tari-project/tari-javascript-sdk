@@ -75,7 +75,7 @@ npm run build:native
 Use the musl build or upgrade your system:
 ```bash
 # Use Alpine-based Docker image
-docker run -it node:18-alpine npm install @tari/wallet
+docker run -it node:18-alpine npm install @tari-project/wallet
 ```
 
 ### Windows: Missing DLL

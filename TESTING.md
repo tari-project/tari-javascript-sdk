@@ -25,18 +25,18 @@ pnpm test:coverage
 pnpm test:watch
 
 # Test specific package
-pnpm --filter @tari/wallet test
+pnpm --filter @tari-project/wallet test
 ```
 
 ## Test Categories
 
 ### 1. Unit Tests (`packages/*/src/__tests__/`)
 
-**@tari/core Package:**
+**@tari-project/core Package:**
 - `wrapper.test.ts` - FFI wrapper functionality
 - `utils.test.ts` - Utility functions (formatTari, parseTari, validation)
 
-**@tari/wallet Package:**
+**@tari-project/wallet Package:**
 - `wallet.test.ts` - Main wallet class functionality
 - `exchange/deposit-manager.test.ts` - Deposit address management
 - `exchange/withdrawal-processor.test.ts` - Withdrawal queue processing
@@ -220,7 +220,7 @@ Tests run against:
 
 3. **Mock External Dependencies**: Don't test external services
    ```typescript
-   jest.mock('@tari/core', () => ({
+   jest.mock('@tari-project/core', () => ({
      ffi: mockImplementation
    }));
    ```

@@ -1,5 +1,5 @@
-import { TariWallet, WalletConfig } from '@tari/wallet';
-import { Network, initialize } from '@tari/core';
+import { TariWallet, WalletConfig } from '@tari-project/wallet';
+import { Network, initialize } from '@tari-project/core';
 import { MiningManager } from './mining';
 import { P2PManager } from './p2p';
 import { AdvancedFeatures } from './advanced';

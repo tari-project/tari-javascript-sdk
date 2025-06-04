@@ -1,10 +1,10 @@
 import { TariWallet, WalletBuilder } from '../wallet';
-import { Network } from '@tari/core';
+import { Network } from '@tari-project/core';
 import { WalletEvent } from '../types';
 
-// Mock @tari/core
-jest.mock('@tari/core', () => ({
-  ...jest.requireActual('@tari/core'),
+// Mock @tari-project/core
+jest.mock('@tari-project/core', () => ({
+...jest.requireActual('@tari-project/core'),
   initialize: jest.fn(),
   ffi: {
     createWallet: jest.fn(() => 1),
@@ -104,7 +104,7 @@ describe('TariWallet', () => {
     });
 
     it('should handle connection timeout', async () => {
-      const { ffi } = require('@tari/core');
+      const { ffi } = require('@tari-project/core');
       ffi.createWallet.mockImplementationOnce(() => {
         return new Promise((resolve) => setTimeout(() => resolve(1), 10000));
       });
@@ -194,7 +194,7 @@ describe('TariWallet', () => {
     });
 
     it('should handle transaction not found in watch', () => {
-      const { ffi } = require('@tari/core');
+      const { ffi } = require('@tari-project/core');
       ffi.getTransaction = jest.fn(() => null);
 
       const callback = jest.fn();
@@ -267,7 +267,7 @@ describe('TariWallet', () => {
     });
 
     it('should handle FFI errors gracefully', async () => {
-      const { ffi } = require('@tari/core');
+      const { ffi } = require('@tari-project/core');
       ffi.createWallet.mockImplementationOnce(() => {
         throw new Error('FFI error');
       });
@@ -294,7 +294,7 @@ describe('TariWallet', () => {
 
       await wallet.close();
 
-      const { ffi } = require('@tari/core');
+      const { ffi } = require('@tari-project/core');
       expect(ffi.destroyWallet).toHaveBeenCalled();
       expect(ffi.destroyAddress).toHaveBeenCalled();
     });
@@ -326,7 +326,7 @@ describe('TariWallet', () => {
       await wallet.close();
       await wallet.close(); // Should not throw
 
-      const { ffi } = require('@tari/core');
+      const { ffi } = require('@tari-project/core');
       expect(ffi.destroyWallet).toHaveBeenCalledTimes(1);
     });
   });

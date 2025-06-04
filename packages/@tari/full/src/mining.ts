@@ -1,6 +1,6 @@
-import { TariWallet } from '@tari/wallet';
+import { TariWallet } from '@tari-project/wallet';
 import { EventEmitter } from 'eventemitter3';
-import { binding } from '@tari/core';
+import { binding } from '@tari-project/core';
 
 export interface MiningConfig {
   threads?: number;

@@ -5,7 +5,7 @@ export { AdvancedFeatures } from './advanced';
 export { RecoveryManager } from './recovery';
 
 // Re-export everything from wallet
-export * from '@tari/wallet';
+export * from '@tari-project/wallet';
 
 // Re-export core types
 export {
@@ -16,7 +16,7 @@ export {
   AddressHandle,
   PublicKeyHandle,
   PrivateKeyHandle,
-} from '@tari/core';
+} from '@tari-project/core';
 
 // Convenience function for full client
 export async function createFullClient(config: {

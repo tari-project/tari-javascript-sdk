@@ -3,27 +3,27 @@ module.exports = {
   testEnvironment: 'node',
   projects: [
     {
-      displayName: '@tari/core',
+      displayName: '@tari-project/core',
       testMatch: ['<rootDir>/packages/@tari/core/**/*.test.ts'],
       moduleNameMapper: {
-        '^@tari/core$': '<rootDir>/packages/@tari/core/src',
+        '^@tari-project/core$': '<rootDir>/packages/@tari/core/src',
       },
     },
     {
-      displayName: '@tari/wallet',
+      displayName: '@tari-project/wallet',
       testMatch: ['<rootDir>/packages/@tari/wallet/**/*.test.ts'],
       moduleNameMapper: {
-        '^@tari/core$': '<rootDir>/packages/@tari/core/src',
-        '^@tari/wallet$': '<rootDir>/packages/@tari/wallet/src',
+        '^@tari-project/core$': '<rootDir>/packages/@tari/core/src',
+        '^@tari-project/wallet$': '<rootDir>/packages/@tari/wallet/src',
       },
     },
     {
-      displayName: '@tari/full',
+      displayName: '@tari-project/full',
       testMatch: ['<rootDir>/packages/@tari/full/**/*.test.ts'],
       moduleNameMapper: {
-        '^@tari/core$': '<rootDir>/packages/@tari/core/src',
-        '^@tari/wallet$': '<rootDir>/packages/@tari/wallet/src',
-        '^@tari/full$': '<rootDir>/packages/@tari/full/src',
+        '^@tari-project/core$': '<rootDir>/packages/@tari/core/src',
+        '^@tari-project/wallet$': '<rootDir>/packages/@tari/wallet/src',
+        '^@tari-project/full$': '<rootDir>/packages/@tari/full/src',
       },
     },
   ],

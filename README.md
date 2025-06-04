@@ -1,6 +1,6 @@
 # Tari JavaScript SDK
 
-[![npm version](https://img.shields.io/npm/v/@tari/wallet)](https://www.npmjs.com/package/@tari/wallet)
+[![npm version](https://img.shields.io/npm/v/@tari-project/wallet)](https://www.npmjs.com/package/@tari-project/wallet)
 [![Platform Support](https://img.shields.io/badge/platform-Node.js%2016%2B-brightgreen)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
 
@@ -18,26 +18,26 @@ The Tari JavaScript SDK provides Node.js bindings for the Tari wallet FFI, enabl
 
 ## Packages
 
-- **[@tari/wallet](packages/@tari/wallet)** - Exchange-focused wallet SDK
-- **[@tari/full](packages/@tari/full)** - Full protocol access including mining and P2P
-- **[@tari/core](packages/@tari/core)** - Low-level FFI bindings (advanced users)
+- **[@tari-project/wallet](packages/@tari/wallet)** - Exchange-focused wallet SDK
+- **[@tari-project/full](packages/@tari/full)** - Full protocol access including mining and P2P
+- **[@tari-project/core](packages/@tari/core)** - Low-level FFI bindings (advanced users)
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-npm install @tari/wallet
+npm install @tari-project/wallet
 # or
-yarn add @tari/wallet
+yarn add @tari-project/wallet
 # or
-pnpm add @tari/wallet
+pnpm add @tari-project/wallet
 ```
 
 ### Basic Usage
 
 ```typescript
-import { TariWallet, Network } from '@tari/wallet';
+import { TariWallet, Network } from '@tari-project/wallet';
 
 // Create and connect wallet
 const wallet = TariWallet.builder()
@@ -78,7 +78,7 @@ For detailed exchange integration guides, see our [Exchange Integration Document
 ### Quick Example
 
 ```typescript
-import { DepositManager, WithdrawalProcessor } from '@tari/wallet';
+import { DepositManager, WithdrawalProcessor } from '@tari-project/wallet';
 
 // Deposit management
 const deposits = new DepositManager(wallet);

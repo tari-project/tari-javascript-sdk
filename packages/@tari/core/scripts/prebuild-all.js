@@ -59,7 +59,7 @@ async function main() {
 
   // Create prebuild manifest
   const manifest = {
-    name: '@tari/core',
+    name: '@tari-project/core',
     version: require('../package.json').version,
     prebuilds: platforms.map(({ platform, arch }) => ({
       platform,

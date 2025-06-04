@@ -8,7 +8,7 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
-    "@tari/wallet": "workspace:*",
+    "@tari-project/wallet": "workspace:*",
     "dotenv": "^16.0.0"
   },
   "devDependencies": {

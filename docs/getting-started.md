@@ -5,17 +5,17 @@
 Install the Tari JavaScript SDK using your preferred package manager:
 
 ```bash
-npm install @tari/wallet
+npm install @tari-project/wallet
 # or
-yarn add @tari/wallet
+yarn add @tari-project/wallet
 # or  
-pnpm add @tari/wallet
+pnpm add @tari-project/wallet
 ```
 
 For full node functionality with mining and P2P features:
 
 ```bash
-npm install @tari/full
+npm install @tari-project/full
 ```
 
 ## Prerequisites
@@ -29,7 +29,7 @@ npm install @tari/full
 ### 1. Create Your First Wallet
 
 ```typescript
-import { TariWallet, Network } from '@tari/wallet';
+import { TariWallet, Network } from '@tari-project/wallet';
 
 async function main() {
   // Create wallet with builder pattern
@@ -68,7 +68,7 @@ main();
 If you don't have seed words, the SDK can generate them:
 
 ```typescript
-import { generateSeedWords } from '@tari/wallet';
+import { generateSeedWords } from '@tari-project/wallet';
 
 // Generate new 24-word seed phrase
 const seedWords = generateSeedWords();
@@ -114,7 +114,7 @@ try {
 ### 4. Listening for Incoming Transactions
 
 ```typescript
-import { WalletEvent } from '@tari/wallet';
+import { WalletEvent } from '@tari-project/wallet';
 
 // Listen for incoming transactions
 wallet.on(WalletEvent.TransactionReceived, (transaction) => {
@@ -145,7 +145,7 @@ wallet.on(WalletEvent.Disconnected, (info) => {
 For exchanges and services that need to handle user deposits:
 
 ```typescript
-import { DepositManager } from '@tari/wallet';
+import { DepositManager } from '@tari-project/wallet';
 
 const deposits = new DepositManager(wallet);
 
@@ -192,7 +192,7 @@ deposits.on('confirmed', async (event) => {
 Handle user withdrawal requests with automatic batching:
 
 ```typescript
-import { WithdrawalProcessor } from '@tari/wallet';
+import { WithdrawalProcessor } from '@tari-project/wallet';
 
 const processor = new WithdrawalProcessor(wallet, {
   batchSize: 10,        // Process 10 withdrawals at once
@@ -287,7 +287,7 @@ console.log(`💰 Recovered balance: ${formatTari(balance.total)} XTR`);
 ### Mining Integration (Full SDK)
 
 ```typescript
-import { TariClient, Network } from '@tari/full';
+import { TariClient, Network } from '@tari-project/full';
 
 const client = TariClient.builder()
   .network(Network.Testnet)
@@ -326,7 +326,7 @@ setInterval(() => {
 ### Comprehensive Error Handling
 
 ```typescript
-import { TariError } from '@tari/wallet';
+import { TariError } from '@tari-project/wallet';
 
 async function robustTransaction(destination: string, amount: bigint) {
   let retries = 3;
@@ -462,7 +462,7 @@ sudo yum install python3
 If the pre-built binaries don't work for your platform:
 
 ```bash
-npm install @tari/wallet --build-from-source
+npm install @tari-project/wallet --build-from-source
 ```
 
 ## Environment Configuration
@@ -543,9 +543,9 @@ Error: Cannot find module './bindings/tari_wallet_ffi.node'
 ```
 Solution: Rebuild native modules:
 ```bash
-npm rebuild @tari/wallet
+npm rebuild @tari-project/wallet
 # or
-npm install @tari/wallet --build-from-source
+npm install @tari-project/wallet --build-from-source
 ```
 
 **3. Insufficient Balance**
@@ -567,7 +567,7 @@ TariError: Invalid destination address format
 ```
 Solution: Validate address before sending:
 ```typescript
-import { validateAddress } from '@tari/wallet';
+import { validateAddress } from '@tari-project/wallet';
 
 if (!validateAddress(destinationAddress)) {
   throw new Error('Invalid Tari address format');

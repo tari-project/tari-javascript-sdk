@@ -1,5 +1,5 @@
 {
-  "name": "@tari/examples",
+  "name": "@tari-project/examples",
   "version": "1.0.0",
   "description": "Example applications for Tari JavaScript SDK",
   "private": true,

@@ -5,7 +5,7 @@ import {
   Network, 
   initialize as initCore,
   ffi 
-} from '@tari/core';
+} from '@tari-project/core';
 import pRetry from 'p-retry';
 import {
   WalletConfig,

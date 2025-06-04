@@ -1,5 +1,5 @@
 {
-  "name": "@tari/full",
+  "name": "@tari-project/full",
   "version": "0.1.0",
   "description": "Full-featured Tari SDK with all protocol features",
   "keywords": ["tari", "cryptocurrency", "mining", "p2p", "blockchain"],
@@ -24,8 +24,8 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
-    "@tari/core": "^0.1.0",
-    "@tari/wallet": "^0.1.0",
+    "@tari-project/core": "^0.1.0",
+    "@tari-project/wallet": "^0.1.0",
     "eventemitter3": "^5.0.1"
   },
   "devDependencies": {

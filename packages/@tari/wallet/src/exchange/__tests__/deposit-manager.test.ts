@@ -1,6 +1,6 @@
 import { TariWallet } from '../../wallet';
 import { DepositManager } from '../deposit-manager';
-import { Network } from '@tari/core';
+import { Network } from '@tari-project/core';
 
 // Mock wallet
 const mockWallet = {

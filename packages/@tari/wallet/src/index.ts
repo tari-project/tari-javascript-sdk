@@ -3,7 +3,7 @@ export { DepositManager } from './exchange/deposit-manager';
 export { WithdrawalProcessor } from './exchange/withdrawal-processor';
 export * from './types';
 
-import { Network } from '@tari/core';
+import { Network } from '@tari-project/core';
 import { TariWallet, WalletConfig } from './wallet';
 
 /**

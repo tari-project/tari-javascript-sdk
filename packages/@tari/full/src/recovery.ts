@@ -1,5 +1,5 @@
-import { TariWallet } from '@tari/wallet';
-import { binding } from '@tari/core';
+import { TariWallet } from '@tari-project/wallet';
+import { binding } from '@tari-project/core';
 import { EventEmitter } from 'eventemitter3';
 
 export interface RecoveryProgress {

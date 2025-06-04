@@ -1,6 +1,6 @@
 # API Reference
 
-## @tari/wallet
+## @tari-project/wallet
 
 The main package for exchange integration and wallet management.
 
@@ -430,7 +430,7 @@ processor.on('withdrawal-failed', (event: WithdrawalFailedEvent) => {
 });
 ```
 
-## @tari/full
+## @tari-project/full
 
 Extended SDK with mining and advanced features.
 
@@ -566,7 +566,7 @@ await client.p2p.banPeer(publicKey: string, durationSeconds: number): Promise<vo
 Formats microTari amounts for display.
 
 ```typescript
-import { formatTari } from '@tari/wallet';
+import { formatTari } from '@tari-project/wallet';
 
 formatTari(1000000n);        // "1.000000 XTR"
 formatTari(1500000n, 2);     // "1.50 XTR"
@@ -576,7 +576,7 @@ formatTari(1500000n, 2);     // "1.50 XTR"
 Parses Tari string to microTari.
 
 ```typescript
-import { parseTari } from '@tari/wallet';
+import { parseTari } from '@tari-project/wallet';
 
 parseTari("1.5");            // 1500000n
 parseTari("0.001");          // 1000n
@@ -586,7 +586,7 @@ parseTari("0.001");          // 1000n
 Validates Tari addresses.
 
 ```typescript
-import { validateAddress } from '@tari/wallet';
+import { validateAddress } from '@tari-project/wallet';
 
 validateAddress('🎉🎨🎭🎪🎯🎲🎸🎺');  // true
 validateAddress('invalid');             // false

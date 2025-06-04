@@ -1,8 +1,8 @@
-import { Network } from '@tari/core';
-import { createExchangeWallet, DepositManager, WithdrawalProcessor } from '@tari/wallet';
+import { Network } from '@tari-project/core';
+import { createExchangeWallet, DepositManager, WithdrawalProcessor } from '@tari-project/wallet';
 
 // Mock the entire core module for integration tests
-jest.mock('@tari/core', () => ({
+jest.mock('@tari-project/core', () => ({
   Network: {
     Testnet: 'testnet',
     Mainnet: 'mainnet',
@@ -30,8 +30,8 @@ jest.mock('@tari/core', () => ({
 }));
 
 // Mock the wallet creation function
-jest.mock('@tari/wallet', () => ({
-  ...jest.requireActual('@tari/wallet'),
+jest.mock('@tari-project/wallet', () => ({
+...jest.requireActual('@tari-project/wallet'),
   createExchangeWallet: jest.fn(),
 }));
 
@@ -42,7 +42,7 @@ describe('Exchange Integration Simulation', () => {
 
   beforeAll(async () => {
     // Create exchange wallet
-    const { createExchangeWallet } = require('@tari/wallet');
+    const { createExchangeWallet } = require('@tari-project/wallet');
     
     wallet = {
       connect: jest.fn(),
