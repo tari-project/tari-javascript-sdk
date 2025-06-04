@@ -25,6 +25,7 @@ export interface NativeBinding {
   privateKeyFromHex(hex: string): number;
   privateKeyDestroy(handle: number): void;
   publicKeyFromPrivateKey(privateKey: number): number;
+  publicKeyFromHex(hex: string): number;
   publicKeyDestroy(handle: number): void;
   
   // UTXO management

@@ -87,6 +87,7 @@ export const mockBinding: MockedNativeBinding = {
   
   // Additional missing methods
   publicKeyFromPrivateKey: jest.fn().mockReturnValue(nextHandle++),
+  publicKeyFromHex: jest.fn().mockReturnValue(nextHandle++),
   publicKeyDestroy: jest.fn(),
   walletImportUtxo: jest.fn().mockReturnValue(true),
   walletCoinSplit: jest.fn().mockReturnValue(`split_tx_${Date.now()}`),

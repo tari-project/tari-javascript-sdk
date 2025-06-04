@@ -18,6 +18,10 @@ export {
   PrivateKeyHandle,
 } from '@tari-project/core';
 
+// Import for convenience function
+import { Network } from '@tari-project/core';
+import { TariClient } from './client';
+
 // Convenience function for full client
 export async function createFullClient(config: {
   network: Network;
