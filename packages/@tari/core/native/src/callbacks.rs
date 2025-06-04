@@ -33,29 +33,24 @@ pub fn unregister_callback(id: CallbackId) -> bool {
 }
 
 /// Call a registered callback with the provided arguments
-pub fn call_callback(channel: &Channel, id: CallbackId, args: Vec<Handle<JsValue>>) -> Result<(), neon::result::Throw> {
+pub fn call_callback<'a>(cx: &mut FunctionContext<'a>, id: CallbackId, args: Vec<Handle<'a, JsValue>>) -> Result<(), neon::result::Throw> {
     let registry = CALLBACK_REGISTRY.lock().unwrap();
     if let Some(callback) = registry.callbacks.get(&id) {
-        let callback = callback.clone();
+        let callback = callback.clone(cx);
         drop(registry); // Release lock before calling
         
-        channel.send(move |mut cx| {
-            let this = cx.undefined();
-            let args: Vec<Handle<JsValue>> = args.into_iter()
-                .map(|arg| arg.upcast())
-                .collect();
-            
-            match callback.into_inner(&mut cx).call(&mut cx, this, args) {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    // Log error but don't propagate to avoid crashing
-                    eprintln!("Callback error: {:?}", e);
-                    Ok(())
-                }
+        let this = cx.undefined();
+        match callback.into_inner(cx).call(cx, this, args) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // Log error but don't propagate to avoid crashing
+                eprintln!("Callback error: {:?}", e);
+                Ok(())
             }
-        });
+        }
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
 /// Clear all registered callbacks (useful for cleanup)
@@ -97,34 +92,49 @@ pub struct ConnectivityCallbackData {
 }
 
 /// Convert transaction data to JS values
-pub fn transaction_to_js_values(mut cx: FunctionContext, data: &TransactionCallbackData) -> NeonResult<Vec<Handle<JsValue>>> {
+pub fn transaction_to_js_values<'a>(mut cx: FunctionContext<'a>, data: &TransactionCallbackData) -> NeonResult<Vec<Handle<'a, JsValue>>> {
     let obj = cx.empty_object();
-    obj.set(&mut cx, "id", cx.string(&data.transaction_id.to_string()))?;
-    obj.set(&mut cx, "amount", cx.string(&data.amount.to_string()))?;
-    obj.set(&mut cx, "fee", cx.string(&data.fee.to_string()))?;
-    obj.set(&mut cx, "message", cx.string(&data.message))?;
-    obj.set(&mut cx, "isOutbound", cx.boolean(data.is_outbound))?;
-    obj.set(&mut cx, "status", cx.number(data.status as f64))?;
+    let id_str = cx.string(&data.transaction_id.to_string());
+    let amount_str = cx.string(&data.amount.to_string());
+    let fee_str = cx.string(&data.fee.to_string());
+    let msg_str = cx.string(&data.message);
+    let is_outbound = cx.boolean(data.is_outbound);
+    let status_num = cx.number(data.status as f64);
+    
+    obj.set(&mut cx, "id", id_str)?;
+    obj.set(&mut cx, "amount", amount_str)?;
+    obj.set(&mut cx, "fee", fee_str)?;
+    obj.set(&mut cx, "message", msg_str)?;
+    obj.set(&mut cx, "isOutbound", is_outbound)?;
+    obj.set(&mut cx, "status", status_num)?;
     
     Ok(vec![obj.upcast()])
 }
 
 /// Convert balance data to JS values
-pub fn balance_to_js_values(mut cx: FunctionContext, data: &BalanceCallbackData) -> NeonResult<Vec<Handle<JsValue>>> {
+pub fn balance_to_js_values<'a>(mut cx: FunctionContext<'a>, data: &BalanceCallbackData) -> NeonResult<Vec<Handle<'a, JsValue>>> {
     let obj = cx.empty_object();
-    obj.set(&mut cx, "available", cx.string(&data.available.to_string()))?;
-    obj.set(&mut cx, "pending", cx.string(&data.pending.to_string()))?;
-    obj.set(&mut cx, "locked", cx.string(&data.locked.to_string()))?;
-    obj.set(&mut cx, "total", cx.string(&data.total.to_string()))?;
+    let available_str = cx.string(&data.available.to_string());
+    let pending_str = cx.string(&data.pending.to_string());
+    let locked_str = cx.string(&data.locked.to_string());
+    let total_str = cx.string(&data.total.to_string());
+    
+    obj.set(&mut cx, "available", available_str)?;
+    obj.set(&mut cx, "pending", pending_str)?;
+    obj.set(&mut cx, "locked", locked_str)?;
+    obj.set(&mut cx, "total", total_str)?;
     
     Ok(vec![obj.upcast()])
 }
 
 /// Convert connectivity data to JS values
-pub fn connectivity_to_js_values(mut cx: FunctionContext, data: &ConnectivityCallbackData) -> NeonResult<Vec<Handle<JsValue>>> {
+pub fn connectivity_to_js_values<'a>(mut cx: FunctionContext<'a>, data: &ConnectivityCallbackData) -> NeonResult<Vec<Handle<'a, JsValue>>> {
     let obj = cx.empty_object();
-    obj.set(&mut cx, "status", cx.number(data.status as f64))?;
-    obj.set(&mut cx, "connectionCount", cx.number(data.connection_count as f64))?;
+    let status_num = cx.number(data.status as f64);
+    let count_num = cx.number(data.connection_count as f64);
+    
+    obj.set(&mut cx, "status", status_num)?;
+    obj.set(&mut cx, "connectionCount", count_num)?;
     
     Ok(vec![obj.upcast()])
 }
@@ -191,43 +201,16 @@ pub fn get_wallet_callbacks(wallet_handle: u64) -> Option<WalletCallbacks> {
 }
 
 // Mock functions to trigger callbacks (in real implementation, these would be called by FFI)
+// Note: These are simplified for the mock implementation
 
-/// Simulate a received transaction event
-pub fn mock_transaction_received(channel: &Channel, wallet_handle: u64, tx_data: TransactionCallbackData) {
-    if let Some(callbacks) = get_wallet_callbacks(wallet_handle) {
-        if let Some(callback_id) = callbacks.transaction_received {
-            let _ = channel.send(move |mut cx| {
-                let args = transaction_to_js_values(cx, &tx_data)?;
-                call_callback(&cx.channel(), callback_id, args)?;
-                Ok(())
-            });
-        }
-    }
-}
-
-/// Simulate a balance update event
-pub fn mock_balance_updated(channel: &Channel, wallet_handle: u64, balance_data: BalanceCallbackData) {
-    if let Some(callbacks) = get_wallet_callbacks(wallet_handle) {
-        if let Some(callback_id) = callbacks.balance_updated {
-            let _ = channel.send(move |mut cx| {
-                let args = balance_to_js_values(cx, &balance_data)?;
-                call_callback(&cx.channel(), callback_id, args)?;
-                Ok(())
-            });
-        }
-    }
-}
-
-/// Simulate a connectivity change event
-pub fn mock_connectivity_changed(channel: &Channel, wallet_handle: u64, conn_data: ConnectivityCallbackData) {
-    if let Some(callbacks) = get_wallet_callbacks(wallet_handle) {
-        if let Some(callback_id) = callbacks.connectivity_changed {
-            let _ = channel.send(move |mut cx| {
-                let args = connectivity_to_js_values(cx, &conn_data)?;
-                call_callback(&cx.channel(), callback_id, args)?;
-                Ok(())
-            });
-        }
+/// Simulate a transaction event (simplified for mock)
+pub fn mock_trigger_callback(callback_id: CallbackId) {
+    // In a real implementation, this would be triggered by FFI events
+    // For now, just mark that the callback system is set up
+    let registry = CALLBACK_REGISTRY.lock().unwrap();
+    if registry.callbacks.contains_key(&callback_id) {
+        // Callback exists and would be triggered in real implementation
+        eprintln!("Mock: Would trigger callback {}", callback_id);
     }
 }
 

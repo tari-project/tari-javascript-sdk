@@ -264,10 +264,15 @@ fn get_balance(mut cx: FunctionContext) -> JsResult<JsObject> {
     
     // Create JS object
     let obj = cx.empty_object();
-    obj.set(&mut cx, "available", cx.string(&available.to_string()))?;
-    obj.set(&mut cx, "pending", cx.string(&pending.to_string()))?;
-    obj.set(&mut cx, "locked", cx.string(&locked.to_string()))?;
-    obj.set(&mut cx, "total", cx.string(&total.to_string()))?;
+    let available_str = cx.string(&available.to_string());
+    let pending_str = cx.string(&pending.to_string());
+    let locked_str = cx.string(&locked.to_string());
+    let total_str = cx.string(&total.to_string());
+    
+    obj.set(&mut cx, "available", available_str)?;
+    obj.set(&mut cx, "pending", pending_str)?;
+    obj.set(&mut cx, "locked", locked_str)?;
+    obj.set(&mut cx, "total", total_str)?;
     
     // Clean up
     mock_balance_destroy(balance_ptr);
@@ -305,8 +310,11 @@ fn get_address(mut cx: FunctionContext) -> JsResult<JsObject> {
     
     // Create result object
     let obj = cx.empty_object();
-    obj.set(&mut cx, "handle", cx.number(address_ptr as usize as f64))?;
-    obj.set(&mut cx, "emojiId", cx.string(emoji_id))?;
+    let handle_num = cx.number(address_ptr as usize as f64);
+    let emoji_str = cx.string(emoji_id);
+    
+    obj.set(&mut cx, "handle", handle_num)?;
+    obj.set(&mut cx, "emojiId", emoji_str)?;
     
     // Clean up emoji string but keep address handle for later use
     if !emoji_ptr.is_null() {
@@ -332,8 +340,10 @@ fn send_transaction(mut cx: FunctionContext) -> JsResult<JsString> {
     let amount = match params.get_value(&mut cx, "amount") {
         Ok(val) if val.is_a::<JsString, _>(&mut cx) => {
             let amount_str = val.downcast::<JsString, _>(&mut cx).or_throw(&mut cx)?.value(&mut cx);
-            amount_str.parse::<u64>()
-                .map_err(|_| cx.throw_error("Invalid amount"))?
+            match amount_str.parse::<u64>() {
+                Ok(amount) => amount,
+                Err(_) => return cx.throw_error("Invalid amount"),
+            }
         }
         _ => return cx.throw_error("amount required"),
     };
@@ -358,7 +368,7 @@ fn send_transaction(mut cx: FunctionContext) -> JsResult<JsString> {
         (wallet_handle as u64).wrapping_mul(amount).wrapping_add(fee_per_gram)
     );
     
-    Ok(cx.string(tx_id))
+    Ok(cx.string(&tx_id))
 }
 
 /// Destroy address handle

@@ -26,7 +26,7 @@ export class FFIWrapper {
    * Initialize the FFI wrapper (called automatically)
    */
   initialize(): void {
-    if (!this._initialized) {
+    if (!this._initialized && binding) {
       binding.initialize();
       this._initialized = true;
     }
@@ -47,7 +47,7 @@ export class FFIWrapper {
       if (!handle || !isWalletHandle(handle)) {
         throw new TariFFIError(
           'Failed to create wallet: Invalid handle returned',
-          TariErrorCode.WalletError
+          TariErrorCode.DatabaseError
         );
       }
       return handle;
@@ -57,7 +57,7 @@ export class FFIWrapper {
       }
       throw new TariFFIError(
         `Failed to create wallet: ${error}`,
-        TariErrorCode.WalletError,
+        TariErrorCode.DatabaseError,
         { originalError: error, config }
       );
     }
@@ -81,7 +81,7 @@ export class FFIWrapper {
     } catch (error) {
       throw new TariFFIError(
         `Failed to destroy wallet: ${error}`,
-        TariErrorCode.WalletError,
+        TariErrorCode.DatabaseError,
         { handle }
       );
     }
@@ -107,7 +107,7 @@ export class FFIWrapper {
       if (!words || typeof words !== 'string') {
         throw new TariFFIError(
           'Failed to get seed words: Empty response',
-          TariErrorCode.WalletError
+          TariErrorCode.KeyError
         );
       }
       return words;
@@ -117,7 +117,7 @@ export class FFIWrapper {
       }
       throw new TariFFIError(
         `Failed to get seed words: ${error}`,
-        TariErrorCode.WalletError,
+        TariErrorCode.KeyError,
         { handle }
       );
     }
@@ -143,7 +143,7 @@ export class FFIWrapper {
       if (!raw) {
         throw new TariFFIError(
           'Failed to get balance: Empty response',
-          TariErrorCode.WalletError
+          TariErrorCode.DatabaseError
         );
       }
 
@@ -169,7 +169,7 @@ export class FFIWrapper {
       }
       throw new TariFFIError(
         `Failed to get balance: ${error}`,
-        TariErrorCode.WalletError,
+        TariErrorCode.DatabaseError,
         { handle }
       );
     }
@@ -445,5 +445,4 @@ export function safeDestroyWallet(handle: WalletHandle): void {
 // Export singleton instance
 export const ffi = new FFIWrapper();
 
-// Auto-initialize on import
-ffi.initialize();
+// Note: Initialization happens in index.ts after bindings are loaded
