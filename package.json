@@ -1,5 +1,5 @@
 {
-  "name": "tari-js-sdk",
+  "name": "tari-javascript-sdk",
   "private": true,
   "workspaces": [
     "packages/*"

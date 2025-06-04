@@ -6,6 +6,7 @@ authors = ["Tari Development Team"]
 license = "BSD-3-Clause"
 
 [lib]
+name = "tari_core_native"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -20,7 +21,7 @@ neon-build = "0.10"
 [profile.release]
 opt-level = 3
 lto = true
-strip = true
+strip = false
 
 # Platform-specific dependencies
 [target.'cfg(windows)'.dependencies]

@@ -268,7 +268,7 @@ main().catch(console.error);
 - **📚 API Documentation**: [../docs/api-reference.md](../docs/api-reference.md)
 - **🚀 Getting Started**: [../docs/getting-started.md](../docs/getting-started.md)
 - **💬 Discord Community**: https://discord.gg/tari
-- **🐛 Issues**: https://github.com/tari-project/tari-js-sdk/issues
+- **🐛 Issues**: https://github.com/fluffypony/tari-javascript-sdk/issues
 - **📖 Tari Documentation**: https://docs.tari.com
 
 ## License
