@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "Full-featured Tari SDK with all protocol features",
   "keywords": ["tari", "cryptocurrency", "mining", "p2p", "blockchain"],
-  "homepage": "https://github.com/fluffypony/tari-javascript-sdk",
+  "homepage": "https://github.com/tari-project/tari-javascript-sdk",
   "bugs": {
-    "url": "https://github.com/fluffypony/tari-javascript-sdk/issues"
+    "url": "https://github.com/tari-project/tari-javascript-sdk/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fluffypony/tari-javascript-sdk.git",
+    "url": "git+https://github.com/tari-project/tari-javascript-sdk.git",
     "directory": "packages/@tari/full"
   },
   "license": "BSD-3-Clause",

@@ -109,7 +109,7 @@ node --version  # Should be >= 16.0.0
 
 If you're still experiencing issues:
 
-1. Check existing issues: https://github.com/fluffypony/tari-javascript-sdk/issues
+1. Check existing issues: https://github.com/tari-project/tari-javascript-sdk/issues
 2. Join our Discord: https://discord.gg/tari
 3. Create a new issue with:
    - Your platform (OS, architecture)

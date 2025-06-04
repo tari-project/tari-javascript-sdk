@@ -114,7 +114,7 @@ For development setup and contribution guidelines, see our [Contributing Guide](
 
 ```bash
 # Quick start for contributors
-git clone https://github.com/fluffypony/tari-javascript-sdk.git
+git clone https://github.com/tari-project/tari-javascript-sdk.git
 cd tari-js-sdk
 pnpm install
 pnpm build
@@ -124,7 +124,7 @@ pnpm test
 ## Support
 
 - 💬 **Discord**: [discord.gg/tari](https://discord.gg/tari)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/fluffypony/tari-javascript-sdk/issues)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/tari-project/tari-javascript-sdk/issues)
 - 📚 **Docs**: [docs.tari.com](https://docs.tari.com)
 - 📧 **Exchange Support**: exchange-support@tari.com
 

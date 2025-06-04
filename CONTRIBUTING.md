@@ -26,7 +26,7 @@ These guidelines help us achieve four key goals:
 Before contributing, please:
 
 1. Join our [Discord](https://discord.gg/tari) and introduce yourself in the #dev channel
-2. Check existing [issues](https://github.com/fluffypony/tari-javascript-sdk/issues) to avoid duplicating work
+2. Check existing [issues](https://github.com/tari-project/tari-javascript-sdk/issues) to avoid duplicating work
 3. For substantial changes, discuss your ideas with the community first
 4. Review our [Code of Conduct](CODE_OF_CONDUCT.md)
 
