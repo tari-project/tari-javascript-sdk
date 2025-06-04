@@ -56,8 +56,7 @@ pub struct WalletInstance {
     pub runtime: Arc<tokio::runtime::Runtime>,
     pub network: Network,
     pub data_path: PathBuf,
-    // TODO: Add actual wallet when we implement real wallet creation
-    pub placeholder: String,
+    pub real_wallet: Option<crate::wallet_real::RealWalletInstance>,
 }
 
 impl WalletInstance {
@@ -69,19 +68,22 @@ impl WalletInstance {
         };
         
         let data_path = config.db_path
+            .as_ref()
             .map(PathBuf::from)
             .unwrap_or_else(|| default_wallet_path(&network));
             
         let runtime = Arc::new(tokio::runtime::Runtime::new()
             .map_err(|e| TariError::RuntimeError(format!("Failed to create runtime: {}", e)))?);
         
-        // TODO: Implement actual wallet creation with Tari
-        // For now, we'll create a placeholder until wallet config is properly set up
+        // Create actual Tari wallet
+        log::info!("Creating real Tari wallet for network: {:?}", network);
+        let real_wallet = crate::wallet_real::RealWalletInstance::create_real_wallet(config).await?;
+        
         Ok(Self {
             runtime,
             network,
             data_path,
-            placeholder: format!("wallet_{}", rand::random::<u64>()),
+            real_wallet: Some(real_wallet),
         })
     }
     

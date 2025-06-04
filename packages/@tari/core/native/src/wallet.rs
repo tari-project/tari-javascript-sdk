@@ -33,15 +33,26 @@ pub fn wallet_get_seed_words(mut cx: FunctionContext) -> JsResult<JsString> {
     let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
-    // TODO: Return actual seed words from wallet
-    let seed_words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    // Get actual seed words from real Tari wallet
+    let seed_words = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.get_seed_words().await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
+    
+    let seed_words = try_js!(&mut cx, seed_words);
+    let seed_words_str = seed_words.join(" ");
     
     log::debug!("Retrieved seed words for wallet: {}", handle);
-    Ok(cx.string(seed_words))
+    Ok(cx.string(seed_words_str))
 }
 
 /// Get wallet balance
@@ -49,22 +60,31 @@ pub fn wallet_get_balance(mut cx: FunctionContext) -> JsResult<JsObject> {
     let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
-    // TODO: Get actual balance from Tari wallet
-    let available = 1000000; // 1 Tari in microTari
-    let pending = 0;
-    let locked = 0;
+    // Get actual balance from real Tari wallet
+    let balance = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.get_real_balance().await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
     
-    log::debug!("Retrieved balance for wallet: {}", handle);
+    let balance = try_js!(&mut cx, balance);
+    
+    log::debug!("Retrieved balance for wallet: {} - available: {}", handle, balance.available);
     
     let obj = cx.empty_object();
-    let available_str = cx.string(available.to_string());
-    let pending_str = cx.string(pending.to_string());
-    let locked_str = cx.string(locked.to_string());
-    let total_str = cx.string((available + pending + locked).to_string());
+    let available_str = cx.string(balance.available.to_string());
+    let pending_str = cx.string(balance.pending_incoming.to_string());
+    let locked_str = cx.string(balance.timelocked.to_string());
+    let total = balance.available + balance.pending_incoming + balance.timelocked;
+    let total_str = cx.string(total.to_string());
     
     obj.set(&mut cx, "available", available_str)?;
     obj.set(&mut cx, "pending", pending_str)?;
@@ -79,21 +99,34 @@ pub fn wallet_get_address(mut cx: FunctionContext) -> JsResult<JsObject> {
     let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
-    // TODO: Get actual address from Tari wallet and create address handle
+    // Get actual address from real Tari wallet
+    let address_str = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.get_wallet_address().await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
+    
+    let address_str = try_js!(&mut cx, address_str);
+    
+    // Create address instance for handle management
     let address = AddressInstance {
-        placeholder: format!("tari_address_{}", handle),
-        emoji_id: "🚀🌟💎🔥🎯🌈⚡🎪🦄🎨🌺🎭".to_string(),
+        placeholder: address_str.clone(),
+        emoji_id: format!("🚀🌟💎🔥🎯🌈⚡🎪🦄🎨🌺🎭"), // TODO: Get real emoji ID from Tari
     };
     
     let mut address_handles = ADDRESS_HANDLES.lock().unwrap();
     let address_handle = address_handles.create_handle(address.clone());
     drop(address_handles);
     
-    log::debug!("Retrieved address for wallet: {}", handle);
+    log::debug!("Retrieved address for wallet: {} - {}", handle, address_str);
     
     let obj = cx.empty_object();
     let handle_num = cx.number(address_handle as f64);
@@ -111,21 +144,49 @@ pub fn wallet_send_transaction(mut cx: FunctionContext) -> JsResult<JsString> {
     let params_obj = cx.argument::<JsObject>(1)?;
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
-    drop(handles);
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
     let params = try_js!(&mut cx, parse_send_params(&mut cx, params_obj));
     
     log::info!("Sending {} to {} from wallet {}", 
               params.amount, params.destination, handle);
     
-    // TODO: Send actual transaction through Tari wallet
-    let tx_id = format!("tx_{}", rand::random::<u64>());
+    // Send actual transaction through real Tari wallet
+    let tx_id = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                // Parse amount from string to MicroMinotari
+                let amount = params.amount.parse::<u64>()
+                    .map_err(|e| crate::error::TariError::InvalidInput(format!("Invalid amount: {}", e)))?;
+                let amount = tari_core::transactions::tari_amount::MicroMinotari::from(amount);
+                
+                // Parse fee (default to 25 if not provided)
+                let fee_per_gram = params.fee_per_gram
+                    .unwrap_or_else(|| "25".to_string())
+                    .parse::<u64>()
+                    .map_err(|e| crate::error::TariError::InvalidInput(format!("Invalid fee: {}", e)))?;
+                let fee_per_gram = tari_core::transactions::tari_amount::MicroMinotari::from(fee_per_gram);
+                
+                let message = params.message.unwrap_or_default();
+                
+                real_wallet.send_real_transaction(
+                    params.destination,
+                    amount,
+                    fee_per_gram,
+                    message
+                ).await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
     
-    log::debug!("Generated transaction ID: {}", tx_id);
-    Ok(cx.string(tx_id))
+    let tx_id = try_js!(&mut cx, tx_id);
+    
+    log::debug!("Sent transaction with ID: {}", tx_id);
+    Ok(cx.string(tx_id.to_string()))
 }
 
 /// Get wallet UTXOs
@@ -141,27 +202,37 @@ pub fn wallet_get_utxos(mut cx: FunctionContext) -> JsResult<JsArray> {
         .unwrap_or(100);
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
-    drop(handles);
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
     log::debug!("Getting UTXOs for wallet {} (page: {}, size: {})", 
                handle, page, page_size);
     
-    // TODO: Get actual UTXOs from Tari wallet
-    let mock_utxos = vec![
-        (500000, "commitment_1".to_string(), 100, 0),
-        (500000, "commitment_2".to_string(), 101, 0),
-    ];
+    // Get actual UTXOs from real Tari wallet
+    let utxos = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.get_real_utxos(page, page_size).await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
+    
+    let utxos = try_js!(&mut cx, utxos);
     
     let result = cx.empty_array();
-    for (i, (value, commitment, height, status)) in mock_utxos.iter().enumerate() {
+    for (i, utxo) in utxos.iter().enumerate() {
         let utxo_obj = cx.empty_object();
-        let value_str = cx.string(value.to_string());
-        let commitment_str = cx.string(commitment.clone());
-        let height_num = cx.number(*height as f64);
-        let status_num = cx.number(*status as f64);
+        let value_str = cx.string(utxo.value.to_string());
+        let commitment_str = cx.string(utxo.commitment.clone());
+        let height_num = cx.number(utxo.mined_height.unwrap_or(0) as f64);
+        let status_num = cx.number(match utxo.status {
+            crate::wallet_real::UtxoStatus::Unspent => 0,
+            crate::wallet_real::UtxoStatus::Spent => 1,
+            crate::wallet_real::UtxoStatus::Unconfirmed => 2,
+        });
         
         utxo_obj.set(&mut cx, "value", value_str)?;
         utxo_obj.set(&mut cx, "commitment", commitment_str)?;
