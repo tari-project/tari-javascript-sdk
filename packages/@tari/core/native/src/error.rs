@@ -1,34 +1,70 @@
 use neon::prelude::*;
+use thiserror::Error;
 
-pub type TariResult<T> = Result<T, TariError>;
-
-#[derive(Debug)]
+/// Main error type for FFI operations
+#[derive(Error, Debug)]
 pub enum TariError {
+    #[error("Wallet error: {0}")]
+    WalletError(String),
+    
+    #[error("Invalid handle: {0}")]
+    InvalidHandle(u64),
+    
+    #[error("Crypto error: {0}")]
+    CryptoError(String),
+    
+    #[error("Transaction error: {0}")]
+    TransactionError(String),
+    
+    #[error("Network error: {0}")]
+    NetworkError(String),
+    
+    #[error("Invalid argument: {0}")]
     InvalidArgument(String),
-    WalletError(i32), // FFI error code
-    InternalError(String),
-    NotInitialized,
+    
+    #[error("Runtime error: {0}")]
+    RuntimeError(String),
+    
+    #[error("Not implemented: {0}")]
+    NotImplemented(String),
 }
 
 impl TariError {
-    pub fn throw<'a, C: Context<'a>>(self, cx: &mut C) -> NeonResult<()> {
-        let message = match self {
-            TariError::InvalidArgument(msg) => format!("Invalid argument: {}", msg),
-            TariError::WalletError(code) => format!("Wallet error: {}", error_code_to_string(code)),
-            TariError::InternalError(msg) => format!("Internal error: {}", msg),
-            TariError::NotInitialized => "Tari core not initialized".to_string(),
-        };
-        
-        cx.throw_error(message)
+    /// Convert to a JavaScript exception
+    pub fn to_js_error<'a, T>(&self, cx: &mut FunctionContext<'a>) -> JsResult<'a, T> {
+        let error_msg = format!("TariError: {}", self);
+        cx.throw_error(error_msg)
     }
 }
 
-fn error_code_to_string(code: i32) -> &'static str {
-    match code {
-        1 => "Invalid seed phrase",
-        2 => "Network error",
-        3 => "Insufficient balance",
-        4 => "Transaction failed",
-        _ => "Unknown error",
+/// Result type for FFI operations
+pub type TariResult<T> = Result<T, TariError>;
+
+/// Safe execution wrapper for FFI functions
+pub fn safe_execute<'a, F, T>(
+    cx: &mut FunctionContext<'a>,
+    operation: F,
+) -> JsResult<'a, T>
+where
+    F: FnOnce() -> TariResult<T>,
+    T: neon::types::Value,
+{
+    match operation() {
+        Ok(result) => Ok(result),
+        Err(e) => e.to_js_error(cx),
+    }
+}
+
+/// Convert anyhow errors to TariError
+impl From<anyhow::Error> for TariError {
+    fn from(err: anyhow::Error) -> Self {
+        TariError::RuntimeError(err.to_string())
+    }
+}
+
+/// Convert tokio join errors to TariError
+impl From<tokio::task::JoinError> for TariError {
+    fn from(err: tokio::task::JoinError) -> Self {
+        TariError::RuntimeError(format!("Async task failed: {}", err))
     }
 }

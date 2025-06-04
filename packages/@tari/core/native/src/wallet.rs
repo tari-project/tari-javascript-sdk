@@ -1,119 +1,180 @@
 use neon::prelude::*;
-use std::sync::Mutex;
+use crate::error::{safe_execute, TariError, TariResult};
+use crate::types::{WalletInstance, AddressInstance, create_wallet_handle, destroy_wallet_handle, WALLET_HANDLES, ADDRESS_HANDLES};
+use crate::utils::{parse_wallet_config, create_balance_object, create_address_object, create_utxo_object, parse_send_params};
 
-// Simple mock wallet state
-static MOCK_WALLET: Mutex<Option<MockWallet>> = Mutex::new(None);
-
-#[derive(Debug, Clone)]
-struct MockWallet {
-    address: String,
-    balance: u64,
-    utxos: Vec<MockUtxo>,
-}
-
-#[derive(Debug, Clone)]
-struct MockUtxo {
-    value: u64,
-    commitment: String,
-}
-
+/// Create a new wallet instance
 pub fn wallet_create(mut cx: FunctionContext) -> JsResult<JsNumber> {
-    let seed_phrase = cx.argument::<JsString>(0)?.value(&mut cx);
-    let wallet_name = cx.argument::<JsString>(1)?.value(&mut cx);
-    
-    println!("Creating wallet: {} with seed: {}", wallet_name, seed_phrase);
-    
-    let wallet = MockWallet {
-        address: "tari_mock_address_123".to_string(),
-        balance: 1000000, // 1 Tari
-        utxos: vec![
-            MockUtxo {
-                value: 500000,
-                commitment: "commitment_1".to_string(),
-            },
-            MockUtxo {
-                value: 500000,
-                commitment: "commitment_2".to_string(),
-            },
-        ],
-    };
-    
-    let mut mock_wallet = MOCK_WALLET.lock().unwrap();
-    *mock_wallet = Some(wallet);
-    
-    // Return mock wallet handle
-    Ok(cx.number(1))
+    safe_execute(&mut cx, || {
+        let config_obj = cx.argument::<JsObject>(0)?;
+        let config = parse_wallet_config(&mut cx, config_obj)?;
+        
+        log::info!("Creating wallet with network: {:?}", config.network);
+        
+        // TODO: Replace with actual Tari wallet creation
+        let wallet = WalletInstance::new()?;
+        let handle = create_wallet_handle(wallet);
+        
+        log::debug!("Created wallet with handle: {}", handle);
+        Ok(cx.number(handle as f64))
+    })
 }
 
+/// Destroy a wallet instance
+pub fn wallet_destroy(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+    safe_execute(&mut cx, || {
+        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+        
+        match destroy_wallet_handle(handle) {
+            Ok(_) => {
+                log::debug!("Destroyed wallet handle: {}", handle);
+                Ok(cx.undefined())
+            }
+            Err(e) => Err(e),
+        }
+    })
+}
+
+/// Get wallet seed words
+pub fn wallet_get_seed_words(mut cx: FunctionContext) -> JsResult<JsString> {
+    safe_execute(&mut cx, || {
+        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+        
+        let handles = WALLET_HANDLES.lock().unwrap();
+        if !handles.is_valid(handle) {
+            return Err(TariError::InvalidHandle(handle));
+        }
+        
+        // TODO: Return actual seed words from wallet
+        let seed_words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        
+        log::debug!("Retrieved seed words for wallet: {}", handle);
+        Ok(cx.string(seed_words))
+    })
+}
+
+/// Get wallet balance
 pub fn wallet_get_balance(mut cx: FunctionContext) -> JsResult<JsObject> {
-    let _wallet_handle = cx.argument::<JsNumber>(0)?.value(&mut cx);
-    
-    let mock_wallet = MOCK_WALLET.lock().unwrap();
-    let balance = mock_wallet.as_ref().map(|w| w.balance).unwrap_or(0);
-    
-    let result = cx.empty_object();
-    let available_val = cx.number(balance as f64);
-    let pending_in_val = cx.number(0);
-    let pending_out_val = cx.number(0);
-    let locked_val = cx.number(0);
-    
-    result.set(&mut cx, "available", available_val)?;
-    result.set(&mut cx, "pendingIncoming", pending_in_val)?;
-    result.set(&mut cx, "pendingOutgoing", pending_out_val)?;
-    result.set(&mut cx, "locked", locked_val)?;
-    
-    Ok(result)
-}
-
-pub fn wallet_get_address(mut cx: FunctionContext) -> JsResult<JsString> {
-    let _wallet_handle = cx.argument::<JsNumber>(0)?.value(&mut cx);
-    
-    let mock_wallet = MOCK_WALLET.lock().unwrap();
-    let address = mock_wallet.as_ref()
-        .map(|w| w.address.clone())
-        .unwrap_or_else(|| "tari_default_address".to_string());
-    
-    Ok(cx.string(address))
-}
-
-pub fn send_transaction(mut cx: FunctionContext) -> JsResult<JsString> {
-    let _wallet_handle = cx.argument::<JsNumber>(0)?.value(&mut cx);
-    let destination = cx.argument::<JsString>(1)?.value(&mut cx);
-    let amount = cx.argument::<JsNumber>(2)?.value(&mut cx) as u64;
-    let _fee = cx.argument::<JsNumber>(3)?.value(&mut cx) as u64;
-    let _message = cx.argument::<JsString>(4)?.value(&mut cx);
-    
-    println!("Sending {} to {}", amount, destination);
-    
-    // Generate mock transaction ID
-    let tx_id = format!("tx_{}", rand::random::<u64>());
-    
-    Ok(cx.string(tx_id))
-}
-
-pub fn get_utxos(mut cx: FunctionContext) -> JsResult<JsArray> {
-    let _wallet_handle = cx.argument::<JsNumber>(0)?.value(&mut cx);
-    let _page = cx.argument::<JsNumber>(1)?.value(&mut cx) as u32;
-    let _page_size = cx.argument::<JsNumber>(2)?.value(&mut cx) as u32;
-    
-    let mock_wallet = MOCK_WALLET.lock().unwrap();
-    let empty_utxos = vec![];
-    let utxos = mock_wallet.as_ref().map(|w| &w.utxos).unwrap_or(&empty_utxos);
-    
-    let result = cx.empty_array();
-    
-    for (i, utxo) in utxos.iter().enumerate() {
-        let utxo_obj = cx.empty_object();
-        let value_val = cx.number(utxo.value as f64);
-        let commitment_val = cx.string(&utxo.commitment);
-        let height_val = cx.number(100.0 + i as f64);
+    safe_execute(&mut cx, || {
+        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
         
-        utxo_obj.set(&mut cx, "value", value_val)?;
-        utxo_obj.set(&mut cx, "commitment", commitment_val)?;
-        utxo_obj.set(&mut cx, "minedHeight", height_val)?;
+        let handles = WALLET_HANDLES.lock().unwrap();
+        if !handles.is_valid(handle) {
+            return Err(TariError::InvalidHandle(handle));
+        }
         
-        result.set(&mut cx, i as u32, utxo_obj)?;
-    }
-    
-    Ok(result)
+        // TODO: Get actual balance from Tari wallet
+        let available = 1000000; // 1 Tari in microTari
+        let pending = 0;
+        let locked = 0;
+        
+        log::debug!("Retrieved balance for wallet: {}", handle);
+        create_balance_object(&mut cx, available, pending, locked)
+    })
+}
+
+/// Get wallet address  
+pub fn wallet_get_address(mut cx: FunctionContext) -> JsResult<JsObject> {
+    safe_execute(&mut cx, || {
+        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+        
+        let handles = WALLET_HANDLES.lock().unwrap();
+        if !handles.is_valid(handle) {
+            return Err(TariError::InvalidHandle(handle));
+        }
+        
+        // TODO: Get actual address from Tari wallet and create address handle
+        let address = AddressInstance {
+            placeholder: format!("tari_address_{}", handle),
+            emoji_id: "🚀🌟💎🔥🎯🌈⚡🎪🦄🎨🌺🎭".to_string(),
+        };
+        
+        let mut address_handles = ADDRESS_HANDLES.lock().unwrap();
+        let address_handle = address_handles.create_handle(address.clone());
+        drop(address_handles);
+        
+        log::debug!("Retrieved address for wallet: {}", handle);
+        create_address_object(&mut cx, address_handle, address.emoji_id)
+    })
+}
+
+/// Send a transaction
+pub fn wallet_send_transaction(mut cx: FunctionContext) -> JsResult<JsString> {
+    safe_execute(&mut cx, || {
+        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+        let params_obj = cx.argument::<JsObject>(1)?;
+        
+        let handles = WALLET_HANDLES.lock().unwrap();
+        if !handles.is_valid(handle) {
+            return Err(TariError::InvalidHandle(handle));
+        }
+        drop(handles);
+        
+        let params = parse_send_params(&mut cx, params_obj)?;
+        
+        log::info!("Sending {} to {} from wallet {}", 
+                  params.amount, params.destination, handle);
+        
+        // TODO: Send actual transaction through Tari wallet
+        let tx_id = format!("tx_{}", rand::random::<u64>());
+        
+        log::debug!("Generated transaction ID: {}", tx_id);
+        Ok(cx.string(tx_id))
+    })
+}
+
+/// Get wallet UTXOs
+pub fn wallet_get_utxos(mut cx: FunctionContext) -> JsResult<JsArray> {
+    safe_execute(&mut cx, || {
+        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+        let page = cx.argument_opt(1)
+            .map(|arg: Handle<JsNumber>| arg.value(&mut cx) as u32)
+            .unwrap_or(0);
+        let page_size = cx.argument_opt(2)
+            .map(|arg: Handle<JsNumber>| arg.value(&mut cx) as u32)
+            .unwrap_or(100);
+        
+        let handles = WALLET_HANDLES.lock().unwrap();
+        if !handles.is_valid(handle) {
+            return Err(TariError::InvalidHandle(handle));
+        }
+        drop(handles);
+        
+        log::debug!("Getting UTXOs for wallet {} (page: {}, size: {})", 
+                   handle, page, page_size);
+        
+        // TODO: Get actual UTXOs from Tari wallet
+        let mock_utxos = vec![
+            (500000, "commitment_1".to_string(), 100, 0),
+            (500000, "commitment_2".to_string(), 101, 0),
+        ];
+        
+        let result = cx.empty_array();
+        for (i, (value, commitment, height, status)) in mock_utxos.iter().enumerate() {
+            let utxo_obj = create_utxo_object(&mut cx, *value, commitment.clone(), *height, *status)?;
+            result.set(&mut cx, i as u32, utxo_obj)?;
+        }
+        
+        Ok(result)
+    })
+}
+
+/// Import a UTXO into the wallet
+pub fn wallet_import_utxo(mut cx: FunctionContext) -> JsResult<JsBoolean> {
+    safe_execute(&mut cx, || {
+        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+        let _params_obj = cx.argument::<JsObject>(1)?;
+        
+        let handles = WALLET_HANDLES.lock().unwrap();
+        if !handles.is_valid(handle) {
+            return Err(TariError::InvalidHandle(handle));
+        }
+        drop(handles);
+        
+        // TODO: Parse import parameters and import UTXO
+        log::debug!("Importing UTXO for wallet: {}", handle);
+        
+        // For now, always return success
+        Ok(cx.boolean(true))
+    })
 }
