@@ -47,6 +47,9 @@ importers:
 
   examples/exchange-basic:
     dependencies:
+      '@tari-project/core':
+        specifier: workspace:*
+        version: link:../../packages/@tari/core
       '@tari-project/wallet':
         specifier: workspace:*
         version: link:../../packages/@tari/wallet
@@ -60,6 +63,9 @@ importers:
 
   examples/wallet-cli:
     dependencies:
+      '@tari-project/core':
+        specifier: workspace:*
+        version: link:../../packages/@tari/core
       '@tari-project/wallet':
         specifier: workspace:*
         version: link:../../packages/@tari/wallet

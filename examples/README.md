@@ -1,276 +1,164 @@
-# Tari SDK Examples
+# Tari JavaScript SDK Examples
 
-This directory contains example applications demonstrating how to use the Tari JavaScript SDK in various scenarios.
+This directory contains example applications demonstrating how to use the Tari JavaScript SDK.
 
-## Examples Overview
+## Current Status
 
-### 🏪 exchange-basic
-A simple exchange integration showing:
-- Wallet creation and connection
-- Deposit address generation for users
-- Real-time deposit monitoring
-- Basic balance tracking
-- Event-driven transaction handling
+The SDK is currently in **development phase**. The TypeScript interfaces, utility functions, and high-level APIs are implemented and working, but the native Rust bindings are still being completed.
 
-**Perfect for:** Learning the basics, simple payment processors
+### What Works ✅
 
-### 🏛️ exchange-advanced
-A complete exchange implementation featuring:
-- SQLite database integration
-- REST API for deposits/withdrawals
-- WebSocket for real-time updates
-- Withdrawal queue management
-- Docker deployment ready
-- Production-grade error handling
+- **Package compilation and imports**: All packages build successfully
+- **Wallet builder pattern**: Fluent API for wallet configuration
+- **Type safety**: Full TypeScript support with proper types
+- **Utility functions**: Amount formatting, parsing, validation
+- **Event system**: Typed event handlers for wallet events
+- **Mock testing**: Complete test infrastructure with mocks
 
-**Perfect for:** Real exchanges, comprehensive integrations
+### What's In Progress 🚧
 
-### 💻 wallet-cli
-Interactive command-line wallet with:
-- Full wallet management
+- **Native Rust bindings**: FFI functions for actual wallet operations
+- **Network connectivity**: Real connection to Tari network
+- **Transaction handling**: Sending and receiving actual transactions
+
+## Examples
+
+### 1. Simple Demo (`simple-demo.js`)
+
+A basic demonstration of the SDK's current capabilities:
+
+```bash
+cd examples/exchange-basic
+node simple-demo.js
+```
+
+This example shows:
+- Wallet creation using the builder pattern
+- Amount formatting and parsing utilities
+- Available event types
+- Error handling for incomplete native bindings
+
+### 2. Exchange Basic (`index.js`)
+
+A comprehensive exchange integration example (will work once native bindings are complete):
+
+```bash
+cd examples/exchange-basic
+npm start
+```
+
+This example demonstrates:
+- Hot wallet management for exchanges
+- Deposit address generation per user
+- Real-time balance monitoring
+- Transaction event handling
+- Graceful shutdown procedures
+
+### 3. Wallet CLI (`index.js`)
+
+An interactive command-line wallet interface:
+
+```bash
+cd examples/wallet-cli
+npm start
+```
+
+Features:
+- Interactive wallet management
+- Balance checking
 - Transaction history
-- Address book functionality
-- QR code generation for addresses
-- Import/export capabilities
+- Send/receive functionality
 
-**Perfect for:** Desktop applications, power users
+## Development Workflow
 
-### ⛏️ mining-pool
-Basic mining pool implementation:
-- Miner registration and management
-- Share submission tracking
-- Automatic payout calculation
-- Pool statistics API
-- Real-time mining dashboard
-
-**Perfect for:** Mining operations, pool operators
-
-## Quick Start
-
-### Running Any Example
-
-1. **Install dependencies in the root:**
+1. **Test the SDK interfaces**:
    ```bash
-   pnpm install
-   ```
-
-2. **Navigate to an example:**
-   ```bash
+   # Run the simple demo to verify SDK structure
    cd examples/exchange-basic
+   node simple-demo.js
    ```
 
-3. **Install example dependencies:**
+2. **Run the full test suite**:
    ```bash
-   npm install
+   # From the root directory
+   pnpm test
    ```
 
-4. **Set up configuration:**
+3. **Build all packages**:
    ```bash
-   cp .env.example .env
-   # Edit .env with your settings
+   # From the root directory
+   pnpm build
    ```
 
-5. **Run the example:**
-   ```bash
-   npm start
-   ```
+## API Usage Examples
 
-### Running All Examples (from root)
+### Creating a Wallet
 
-```bash
-# Basic exchange
-pnpm run example:exchange-basic
-
-# Advanced exchange
-pnpm run example:exchange-advanced
-
-# CLI wallet
-pnpm run example:wallet-cli
-
-# Mining pool
-pnpm run example:mining-pool
-```
-
-## Common Configuration
-
-All examples support these environment variables:
-
-```bash
-# Network (testnet recommended for development)
-TARI_NETWORK=testnet
-
-# Wallet seed words (NEVER use real ones in development!)
-SEED_WORDS="abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
-
-# Data directory
-TARI_DATA_DIR=./wallet-data
-
-# Optional custom base node
-TARI_BASE_NODE_ADDRESS=tcp://testnet.tari.com:18142
-TARI_BASE_NODE_PUBLIC_KEY=testnet_public_key
-
-# Logging
-LOG_LEVEL=info
-```
-
-## Development Tips
-
-### 1. Use Testnet First
-Always start with testnet for development:
 ```javascript
+const { TariWallet } = require('@tari-project/wallet');
+const { Network } = require('@tari-project/core');
+
+// Using builder pattern
 const wallet = TariWallet.builder()
-  .network(Network.Testnet)  // Safe for testing
+  .network(Network.Testnet)
+  .seedWords('your seed words here')
+  .dataDirectory('./wallet-data')
+  .baseNode('tcp://basenode.tari.com:18189', 'public_key_here')
   .build();
-```
 
-### 2. Never Commit Real Seed Words
-```bash
-# ❌ BAD - Real seed words in code
-SEED_WORDS="real words from actual wallet"
-
-# ✅ GOOD - Test seed words for development
-SEED_WORDS="abandon abandon abandon ... art"
-```
-
-### 3. Handle Errors Gracefully
-```javascript
-try {
-  await wallet.sendTransaction({...});
-} catch (error) {
-  if (error.code === 'INSUFFICIENT_BALANCE') {
-    // Handle insufficient funds
-  } else if (error.code === 'NETWORK_ERROR') {
-    // Handle network issues
-  }
-}
-```
-
-### 4. Clean Up Resources
-```javascript
-process.on('SIGINT', async () => {
-  await wallet.close();
-  process.exit(0);
+// Or using constructor directly
+const wallet = new TariWallet({
+  network: Network.Testnet,
+  seedWords: 'your seed words here',
+  dbPath: './wallet-data'
 });
 ```
 
-## Example Comparison
+### Amount Handling
 
-| Feature | Basic Exchange | Advanced Exchange | Wallet CLI | Mining Pool |
-|---------|----------------|------------------|------------|-------------|
-| Difficulty | Beginner | Intermediate | Intermediate | Advanced |
-| Database | No | SQLite | No | Yes |
-| API | No | REST + WebSocket | No | REST |
-| UI | Console | Web Dashboard | CLI | Web Dashboard |
-| Docker | No | Yes | No | Yes |
-| Withdrawals | No | Yes | Yes | Yes |
-| Mining | No | No | No | Yes |
-
-## Getting Testnet Funds
-
-To test the examples, you'll need testnet Tari:
-
-1. **Faucet** (if available): Check the Tari Discord for testnet faucet links
-2. **Mining**: Use the mining-pool example to mine testnet coins
-3. **Community**: Ask in the Tari Discord for testnet funds
-
-## Troubleshooting
-
-### Common Issues
-
-**Connection Errors:**
-```
-Error: Cannot connect to base node
-```
-Solution: Check network connectivity and try alternative base nodes
-
-**Native Module Errors:**
-```
-Error: Cannot find module 'tari_wallet_ffi.node'
-```
-Solution: Rebuild native modules:
-```bash
-npm rebuild @tari-project/wallet
-```
-
-**Permission Errors:**
-```
-Error: EACCES: permission denied
-```
-Solution: Check data directory permissions:
-```bash
-chmod 755 ./wallet-data
-```
-
-### Debug Mode
-
-Enable detailed logging:
-```bash
-LOG_LEVEL=debug npm start
-```
-
-Or in code:
 ```javascript
-import { setLogLevel, LogLevel } from '@tari-project/wallet';
-setLogLevel(LogLevel.Debug);
+const { formatTari, parseTari } = require('@tari-project/wallet');
+
+// Format microTari for display
+const amount = 1500000n; // 1.5 Tari in microTari
+console.log(formatTari(amount)); // "1.500000 XTR"
+
+// Parse user input to microTari
+const userInput = "1.5";
+const microTari = parseTari(userInput); // 1500000n
+```
+
+### Event Handling
+
+```javascript
+const { WalletEvent } = require('@tari-project/wallet');
+
+wallet.on(WalletEvent.Connected, (info) => {
+  console.log('Wallet connected:', info);
+});
+
+wallet.on(WalletEvent.TransactionReceived, (transaction) => {
+  console.log('Received transaction:', transaction);
+});
+
+wallet.on(WalletEvent.BalanceUpdated, (balance) => {
+  console.log('Balance updated:', formatTari(balance.available));
+});
 ```
 
 ## Contributing
 
-Want to add an example or improve existing ones?
+The examples serve as both demonstrations and integration tests for the SDK. When adding new features:
 
-1. **Fork the repository**
-2. **Create a new example directory**
-3. **Follow the existing structure:**
-   ```
-   examples/your-example/
-   ├── package.json
-   ├── index.js (or src/)
-   ├── README.md
-   ├── .env.example
-   └── docker-compose.yml (if applicable)
-   ```
-4. **Update this README**
-5. **Submit a pull request**
+1. Update the relevant example to demonstrate the new functionality
+2. Ensure the example handles both working and error states gracefully
+3. Add appropriate documentation and comments
+4. Test with both mock and real native bindings (when available)
 
-### Example Template
+## Support
 
-Use this template for new examples:
+- Check the main README for build instructions
+- Review the TESTING.md guide for running tests
+- See the CONTRIBUTING.md for development guidelines
 
-```javascript
-const { TariWallet, Network } = require('@tari-project/wallet');
-
-async function main() {
-  console.log('🚀 Starting Your Example...');
-  
-  const wallet = TariWallet.builder()
-    .network(Network.Testnet)
-    .seedWords(process.env.SEED_WORDS)
-    .build();
-  
-  try {
-    await wallet.connect();
-    console.log('✅ Connected!');
-    
-    // Your example code here
-    
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-  } finally {
-    await wallet.close();
-  }
-}
-
-main().catch(console.error);
-```
-
-## Resources
-
-- **📚 API Documentation**: [../docs/api-reference.md](../docs/api-reference.md)
-- **🚀 Getting Started**: [../docs/getting-started.md](../docs/getting-started.md)
-- **💬 Discord Community**: https://discord.gg/tari
-- **🐛 Issues**: https://github.com/tari-project/tari-javascript-sdk/issues
-- **📖 Tari Documentation**: https://docs.tari.com
-
-## License
-
-All examples are licensed under BSD-3-Clause, same as the main SDK.
+The SDK is designed to provide a clean, type-safe interface for Tari wallet operations. These examples will evolve as the native implementation progresses.

@@ -1,4 +1,5 @@
-const { TariWallet, Network, DepositManager, formatTari, parseTari, WalletEvent } = require('@tari-project/wallet');
+const { TariWallet, DepositManager, formatTari, parseTari, WalletEvent } = require('@tari-project/wallet');
+const { Network } = require('@tari-project/core');
 require('dotenv').config();
 
 async function main() {
