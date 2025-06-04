@@ -1,0 +1,17 @@
+{
+  "name": "tari-exchange-basic-example",
+  "version": "1.0.0",
+  "description": "Basic exchange integration example",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@tari/wallet": "workspace:*",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}

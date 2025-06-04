@@ -1,0 +1,15 @@
+{
+  "name": "@tari/examples",
+  "version": "1.0.0",
+  "description": "Example applications for Tari JavaScript SDK",
+  "private": true,
+  "scripts": {
+    "exchange-basic": "cd exchange-basic && npm start",
+    "exchange-advanced": "cd exchange-advanced && npm start",
+    "wallet-cli": "cd wallet-cli && npm start",
+    "mining-pool": "cd mining-pool && npm start"
+  },
+  "keywords": ["tari", "cryptocurrency", "wallet", "examples"],
+  "author": "Tari Development Community",
+  "license": "BSD-3-Clause"
+}
