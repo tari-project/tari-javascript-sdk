@@ -248,19 +248,70 @@ pub fn wallet_get_utxos(mut cx: FunctionContext) -> JsResult<JsArray> {
 /// Import a UTXO into the wallet
 pub fn wallet_import_utxo(mut cx: FunctionContext) -> JsResult<JsBoolean> {
     let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-    let _params_obj = cx.argument::<JsObject>(1)?;
+    let params_obj = cx.argument::<JsObject>(1)?;
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
-    drop(handles);
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
-    // TODO: Parse import parameters and import UTXO
-    log::debug!("Importing UTXO for wallet: {}", handle);
+    // Parse UTXO import parameters
+    let value_str = params_obj.get::<JsString, _, _>(&mut cx, "value")?.value(&mut cx);
+    let spending_key = params_obj.get::<JsString, _, _>(&mut cx, "spendingKey")?.value(&mut cx);
+    let script_bytes = params_obj.get::<JsArray, _, _>(&mut cx, "script")?;
+    let input_data_bytes = params_obj.get::<JsArray, _, _>(&mut cx, "inputData")?;
+    let script_private_key = params_obj.get::<JsString, _, _>(&mut cx, "scriptPrivateKey")?.value(&mut cx);
+    let sender_offset_public_key = params_obj.get::<JsString, _, _>(&mut cx, "senderOffsetPublicKey")?.value(&mut cx);
+    let metadata_sig_ephemeral_commitment = params_obj.get::<JsString, _, _>(&mut cx, "metadataSignatureEphemeralCommitment")?.value(&mut cx);
+    let metadata_sig_ephemeral_pubkey = params_obj.get::<JsString, _, _>(&mut cx, "metadataSignatureEphemeralPubkey")?.value(&mut cx);
+    let metadata_sig_u_a = params_obj.get::<JsString, _, _>(&mut cx, "metadataSignatureUA")?.value(&mut cx);
+    let metadata_sig_u_x = params_obj.get::<JsString, _, _>(&mut cx, "metadataSignatureUX")?.value(&mut cx);
+    let metadata_sig_u_y = params_obj.get::<JsString, _, _>(&mut cx, "metadataSignatureUY")?.value(&mut cx);
+    let mined_height = params_obj.get_opt::<JsNumber, _, _>(&mut cx, "minedHeight")?.map(|n| n.value(&mut cx) as u64);
     
-    // For now, always return success
-    Ok(cx.boolean(true))
+    // Convert JS arrays to Rust Vec<u8>
+    let script = (0..script_bytes.len(&mut cx))
+        .map(|i| script_bytes.get::<JsNumber, _, _>(&mut cx, i as u32).unwrap().value(&mut cx) as u8)
+        .collect::<Vec<u8>>();
+    let input_data = (0..input_data_bytes.len(&mut cx))
+        .map(|i| input_data_bytes.get::<JsNumber, _, _>(&mut cx, i as u32).unwrap().value(&mut cx) as u8)
+        .collect::<Vec<u8>>();
+    
+    // Parse amount
+    let value = value_str.parse::<u64>()
+        .map_err(|e| TariError::InvalidInput(format!("Invalid value: {}", e)))
+        .and_then(|v| Ok(tari_core::transactions::tari_amount::MicroMinotari::from(v)));
+    let value = try_js!(&mut cx, value);
+    
+    log::debug!("Importing UTXO for wallet: {} with value: {}", handle, value);
+    
+    // Import UTXO through real Tari wallet
+    let result = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.import_utxo(
+                    value,
+                    spending_key,
+                    script,
+                    input_data,
+                    script_private_key,
+                    sender_offset_public_key,
+                    metadata_sig_ephemeral_commitment,
+                    metadata_sig_ephemeral_pubkey,
+                    metadata_sig_u_a,
+                    metadata_sig_u_x,
+                    metadata_sig_u_y,
+                    mined_height,
+                ).await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
+    
+    let success = try_js!(&mut cx, result);
+    log::debug!("UTXO import result for wallet {}: {}", handle, success);
+    Ok(cx.boolean(success))
 }
 
 /// Split coins for mining preparation
@@ -269,36 +320,63 @@ pub fn wallet_coin_split(mut cx: FunctionContext) -> JsResult<JsString> {
     let params_obj = cx.argument::<JsObject>(1)?;
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
-    drop(handles);
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
     // Parse split parameters
-    let amount = params_obj
+    let amount_str = params_obj
         .get::<JsString, _, _>(&mut cx, "amount")?
         .value(&mut cx);
     let count = params_obj
         .get::<JsNumber, _, _>(&mut cx, "count")?
         .value(&mut cx) as usize;
-    let fee_per_gram = params_obj
+    let fee_per_gram_str = params_obj
         .get_opt::<JsString, _, _>(&mut cx, "feePerGram")?
-        .map(|s| s.value(&mut cx));
+        .map(|s| s.value(&mut cx))
+        .unwrap_or_else(|| "25".to_string());
     let message = params_obj
         .get_opt::<JsString, _, _>(&mut cx, "message")?
-        .map(|s| s.value(&mut cx));
+        .map(|s| s.value(&mut cx))
+        .unwrap_or_default();
     let lock_height = params_obj
         .get_opt::<JsNumber, _, _>(&mut cx, "lockHeight")?
         .map(|n| n.value(&mut cx) as u64);
     
+    // Parse amounts
+    let amount = amount_str.parse::<u64>()
+        .map_err(|e| TariError::InvalidInput(format!("Invalid amount: {}", e)))
+        .and_then(|v| Ok(tari_core::transactions::tari_amount::MicroMinotari::from(v)));
+    let amount = try_js!(&mut cx, amount);
+    
+    let fee_per_gram = fee_per_gram_str.parse::<u64>()
+        .map_err(|e| TariError::InvalidInput(format!("Invalid fee: {}", e)))
+        .and_then(|v| Ok(tari_core::transactions::tari_amount::MicroMinotari::from(v)));
+    let fee_per_gram = try_js!(&mut cx, fee_per_gram);
+    
     log::info!("Splitting {} coins into {} UTXOs for wallet {}", 
                amount, count, handle);
     
-    // TODO: Implement actual coin splitting through Tari wallet
-    let tx_id = format!("split_tx_{}", rand::random::<u64>());
+    // Create coin split through real Tari wallet
+    let tx_id = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.create_coin_split(
+                    amount,
+                    count,
+                    fee_per_gram,
+                    message,
+                    lock_height,
+                ).await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
     
-    log::debug!("Generated coin split transaction ID: {}", tx_id);
-    Ok(cx.string(tx_id))
+    let tx_id = try_js!(&mut cx, tx_id);
+    log::debug!("Created coin split transaction ID: {}", tx_id);
+    Ok(cx.string(tx_id.to_string()))
 }
 
 /// Join coins for UTXO consolidation
@@ -307,30 +385,55 @@ pub fn wallet_coin_join(mut cx: FunctionContext) -> JsResult<JsString> {
     let params_obj = cx.argument::<JsObject>(1)?;
     
     let handles = WALLET_HANDLES.lock().unwrap();
-    if !handles.is_valid(handle) {
-        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
-    }
-    drop(handles);
+    let wallet = match handles.get_handle(handle) {
+        Some(w) => w,
+        None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
+    };
     
     // Parse join parameters
-    let commitments = params_obj
+    let commitments_array = params_obj
         .get::<JsArray, _, _>(&mut cx, "commitments")?;
-    let fee_per_gram = params_obj
+    let fee_per_gram_str = params_obj
         .get_opt::<JsString, _, _>(&mut cx, "feePerGram")?
-        .map(|s| s.value(&mut cx));
+        .map(|s| s.value(&mut cx))
+        .unwrap_or_else(|| "25".to_string());
     let message = params_obj
         .get_opt::<JsString, _, _>(&mut cx, "message")?
-        .map(|s| s.value(&mut cx));
+        .map(|s| s.value(&mut cx))
+        .unwrap_or_default();
     
-    let commitment_count = commitments.len(&mut cx);
+    // Convert JS array to Vec<String>
+    let commitment_count = commitments_array.len(&mut cx);
+    let commitments = (0..commitment_count)
+        .map(|i| commitments_array.get::<JsString, _, _>(&mut cx, i).unwrap().value(&mut cx))
+        .collect::<Vec<String>>();
+    
+    // Parse fee
+    let fee_per_gram = fee_per_gram_str.parse::<u64>()
+        .map_err(|e| TariError::InvalidInput(format!("Invalid fee: {}", e)))
+        .and_then(|v| Ok(tari_core::transactions::tari_amount::MicroMinotari::from(v)));
+    let fee_per_gram = try_js!(&mut cx, fee_per_gram);
+    
     log::info!("Joining {} UTXOs for wallet {}", 
                commitment_count, handle);
     
-    // TODO: Implement actual coin joining through Tari wallet
-    let tx_id = format!("join_tx_{}", rand::random::<u64>());
+    // Create coin join through real Tari wallet
+    let tx_id = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.create_coin_join(
+                    commitments,
+                    fee_per_gram,
+                    message,
+                ).await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
     
-    log::debug!("Generated coin join transaction ID: {}", tx_id);
-    Ok(cx.string(tx_id))
+    let tx_id = try_js!(&mut cx, tx_id);
+    log::debug!("Created coin join transaction ID: {}", tx_id);
+    Ok(cx.string(tx_id.to_string()))
 }
 
 /// Start wallet recovery from blockchain

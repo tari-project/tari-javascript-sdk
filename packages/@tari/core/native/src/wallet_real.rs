@@ -4,7 +4,7 @@ use tokio::runtime::Runtime;
 
 use tari_crypto::keys::PublicKey;
 use tari_core::transactions::tari_amount::MicroMinotari;
-use tari_utilities::hex::Hex;
+use tari_utilities::hex::{Hex, from_hex};
 use tari_common_types::types::PublicKey as CommsPublicKey;
 
 // Wallet and communication types
@@ -343,6 +343,125 @@ impl RealWalletInstance {
         }
     }
     
+    /// Import a UTXO into the wallet
+    pub async fn import_utxo(
+        &self,
+        value: MicroMinotari,
+        spending_key: String,
+        script: Vec<u8>,
+        input_data: Vec<u8>,
+        script_private_key: String,
+        sender_offset_public_key: String,
+        metadata_signature_ephemeral_commitment: String,
+        metadata_signature_ephemeral_pubkey: String,
+        metadata_signature_u_a: String,
+        metadata_signature_u_x: String,
+        metadata_signature_u_y: String,
+        mined_height: Option<u64>,
+    ) -> TariResult<bool> {
+        log::info!("Importing UTXO with value: {}", value);
+        
+        match &self.wallet {
+            Some(wallet) => {
+                let output_manager = wallet.output_manager_service();
+                
+                // Parse the required fields for UTXO import
+                let spending_key_bytes = from_hex(&spending_key)
+                    .map_err(|e| TariError::InvalidInput(format!("Invalid spending key: {}", e)))?;
+                let script_private_key_bytes = from_hex(&script_private_key)  
+                    .map_err(|e| TariError::InvalidInput(format!("Invalid script private key: {}", e)))?;
+                
+                // Import the UTXO using Tari's output manager
+                output_manager.add_unspent_output(
+                    value,
+                    spending_key_bytes,
+                    script,
+                    input_data,
+                    script_private_key_bytes,
+                    sender_offset_public_key,
+                    metadata_signature_ephemeral_commitment,
+                    metadata_signature_ephemeral_pubkey,  
+                    metadata_signature_u_a,
+                    metadata_signature_u_x,
+                    metadata_signature_u_y,
+                    mined_height,
+                ).await
+                .map_err(|e| TariError::WalletError(format!("Failed to import UTXO: {}", e)))?;
+                
+                log::debug!("Successfully imported UTXO with value: {}", value);
+                Ok(true)
+            }
+            None => {
+                log::error!("Wallet not initialized, cannot import UTXO");
+                Err(TariError::WalletError("Wallet not initialized".to_string()))
+            }
+        }
+    }
+
+    /// Create a coin split transaction
+    pub async fn create_coin_split(
+        &self,
+        amount: MicroMinotari,
+        count: usize,
+        fee_per_gram: MicroMinotari,
+        message: String,
+        lock_height: Option<u64>,
+    ) -> TariResult<TxId> {
+        log::info!("Creating coin split: {} into {} UTXOs", amount, count);
+        
+        match &self.wallet {
+            Some(wallet) => {
+                let output_manager = wallet.output_manager_service();
+                
+                let tx_id = output_manager.create_coin_split(
+                    amount,
+                    count,
+                    fee_per_gram,
+                    message,
+                    lock_height.unwrap_or(0),
+                ).await
+                .map_err(|e| TariError::WalletError(format!("Failed to create coin split: {}", e)))?;
+                
+                log::debug!("Successfully created coin split transaction: {}", tx_id);
+                Ok(tx_id)
+            }
+            None => {
+                log::error!("Wallet not initialized, cannot create coin split");
+                Err(TariError::WalletError("Wallet not initialized".to_string()))
+            }
+        }
+    }
+
+    /// Create a coin join transaction
+    pub async fn create_coin_join(
+        &self,
+        commitments: Vec<String>,
+        fee_per_gram: MicroMinotari,
+        message: String,
+    ) -> TariResult<TxId> {
+        log::info!("Creating coin join for {} UTXOs", commitments.len());
+        
+        match &self.wallet {
+            Some(wallet) => {
+                let output_manager = wallet.output_manager_service();
+                
+                let tx_id = output_manager.create_coin_join(
+                    commitments,
+                    fee_per_gram,
+                    message,
+                ).await
+                .map_err(|e| TariError::WalletError(format!("Failed to create coin join: {}", e)))?;
+                
+                log::debug!("Successfully created coin join transaction: {}", tx_id);
+                Ok(tx_id)
+            }
+            None => {
+                log::error!("Wallet not initialized, cannot create coin join");
+                Err(TariError::WalletError("Wallet not initialized".to_string()))
+            }
+        }
+    }
+
     /// Generate seed words for wallet
     pub async fn get_seed_words(&self) -> TariResult<Vec<String>> {
         log::debug!("Getting seed words");
