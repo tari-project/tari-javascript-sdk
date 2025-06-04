@@ -1,7 +1,19 @@
 {
   "name": "@tari/wallet",
-  "version": "0.0.1",
-  "description": "High-level Tari wallet SDK for exchanges",
+  "version": "0.1.0",
+  "description": "High-level Tari wallet SDK for cryptocurrency exchanges",
+  "keywords": ["tari", "cryptocurrency", "wallet", "exchange", "blockchain"],
+  "homepage": "https://github.com/tari-project/tari-js-sdk",
+  "bugs": {
+    "url": "https://github.com/tari-project/tari-js-sdk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tari-project/tari-js-sdk.git",
+    "directory": "packages/@tari/wallet"
+  },
+  "license": "BSD-3-Clause",
+  "author": "Tari Development Team",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
@@ -9,10 +21,11 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "test": "jest",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
-    "@tari/core": "workspace:*",
+    "@tari/core": "^0.1.0",
     "eventemitter3": "^5.0.1",
     "p-retry": "^5.1.2",
     "p-limit": "^4.0.0"
@@ -29,5 +42,8 @@
   },
   "engines": {
     "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
