@@ -304,16 +304,43 @@ impl RealWalletInstance {
     pub async fn start_recovery(&self, base_node_public_key: String) -> TariResult<bool> {
         log::info!("Starting wallet recovery with base node: {}", base_node_public_key);
         
-        // TODO: Start actual wallet recovery
-        Ok(true)
+        match &self.wallet {
+            Some(wallet) => {
+                let base_node_id = CommsPublicKey::from_hex(&base_node_public_key)
+                    .map_err(|e| TariError::InvalidInput(format!("Invalid base node public key: {}", e)))?;
+                
+                let recovery_service = wallet.recovery_service();
+                recovery_service.start_recovery(base_node_id.into()).await
+                    .map_err(|e| TariError::WalletError(format!("Failed to start recovery: {}", e)))?;
+                
+                log::debug!("Successfully started wallet recovery with base node: {}", base_node_public_key);
+                Ok(true)
+            }
+            None => {
+                log::error!("Wallet not initialized, cannot start recovery");
+                Err(TariError::WalletError("Wallet not initialized".to_string()))
+            }
+        }
     }
     
     /// Check if recovery is in progress
     pub async fn is_recovery_in_progress(&self) -> TariResult<bool> {
         log::debug!("Checking recovery status");
         
-        // TODO: Check actual recovery status
-        Ok(false)
+        match &self.wallet {
+            Some(wallet) => {
+                let recovery_service = wallet.recovery_service();
+                let is_in_progress = recovery_service.is_recovery_in_progress().await
+                    .map_err(|e| TariError::WalletError(format!("Failed to check recovery status: {}", e)))?;
+                
+                log::debug!("Recovery status: {}", is_in_progress);
+                Ok(is_in_progress)
+            }
+            None => {
+                log::warn!("Wallet not initialized, recovery is not in progress");
+                Ok(false)
+            }
+        }
     }
     
     /// Generate seed words for wallet
