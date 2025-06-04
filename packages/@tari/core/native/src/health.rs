@@ -351,22 +351,47 @@ pub fn get_health_status(mut cx: FunctionContext) -> JsResult<JsObject> {
     let health = HEALTH_MONITOR.get_health_status();
     
     let obj = cx.empty_object();
-    obj.set(&mut cx, "status", cx.string(health.status))?;
-    obj.set(&mut cx, "walletCount", cx.number(health.wallet_count as f64))?;
-    obj.set(&mut cx, "activeOperations", cx.number(health.active_operations as f64))?;
-    obj.set(&mut cx, "errorCount", cx.number(health.error_count as f64))?;
-    obj.set(&mut cx, "warningCount", cx.number(health.warning_count as f64))?;
-    obj.set(&mut cx, "memoryUsage", cx.number(health.memory_usage as f64))?;
-    obj.set(&mut cx, "peakMemory", cx.number(health.peak_memory as f64))?;
-    obj.set(&mut cx, "uptimeSeconds", cx.number(health.uptime_seconds as f64))?;
+    let status_str = cx.string(health.status);
+    obj.set(&mut cx, "status", status_str)?;
+    
+    let wallet_count_num = cx.number(health.wallet_count as f64);
+    obj.set(&mut cx, "walletCount", wallet_count_num)?;
+    
+    let active_ops_num = cx.number(health.active_operations as f64);
+    obj.set(&mut cx, "activeOperations", active_ops_num)?;
+    
+    let error_count_num = cx.number(health.error_count as f64);
+    obj.set(&mut cx, "errorCount", error_count_num)?;
+    
+    let warning_count_num = cx.number(health.warning_count as f64);
+    obj.set(&mut cx, "warningCount", warning_count_num)?;
+    
+    let memory_usage_num = cx.number(health.memory_usage as f64);
+    obj.set(&mut cx, "memoryUsage", memory_usage_num)?;
+    
+    let peak_memory_num = cx.number(health.peak_memory as f64);
+    obj.set(&mut cx, "peakMemory", peak_memory_num)?;
+    
+    let uptime_num = cx.number(health.uptime_seconds as f64);
+    obj.set(&mut cx, "uptimeSeconds", uptime_num)?;
     
     // System info
     let system_info = cx.empty_object();
-    system_info.set(&mut cx, "platform", cx.string(health.system_info.platform))?;
-    system_info.set(&mut cx, "architecture", cx.string(health.system_info.architecture))?;
-    system_info.set(&mut cx, "cpuCount", cx.number(health.system_info.cpu_count as f64))?;
-    system_info.set(&mut cx, "memoryTotal", cx.number(health.system_info.memory_total as f64))?;
-    system_info.set(&mut cx, "memoryAvailable", cx.number(health.system_info.memory_available as f64))?;
+    let platform_str = cx.string(health.system_info.platform);
+    system_info.set(&mut cx, "platform", platform_str)?;
+    
+    let arch_str = cx.string(health.system_info.architecture);
+    system_info.set(&mut cx, "architecture", arch_str)?;
+    
+    let cpu_count_num = cx.number(health.system_info.cpu_count as f64);
+    system_info.set(&mut cx, "cpuCount", cpu_count_num)?;
+    
+    let memory_total_num = cx.number(health.system_info.memory_total as f64);
+    system_info.set(&mut cx, "memoryTotal", memory_total_num)?;
+    
+    let memory_available_num = cx.number(health.system_info.memory_available as f64);
+    system_info.set(&mut cx, "memoryAvailable", memory_available_num)?;
+    
     obj.set(&mut cx, "systemInfo", system_info)?;
     
     Ok(obj)
@@ -377,15 +402,24 @@ pub fn get_health_check(mut cx: FunctionContext) -> JsResult<JsObject> {
     let health_check = HEALTH_MONITOR.get_health_check();
     
     let obj = cx.empty_object();
-    obj.set(&mut cx, "healthy", cx.boolean(health_check.healthy))?;
-    obj.set(&mut cx, "status", cx.string(health_check.status))?;
+    let healthy_bool = cx.boolean(health_check.healthy);
+    obj.set(&mut cx, "healthy", healthy_bool)?;
+    
+    let status_str = cx.string(health_check.status);
+    obj.set(&mut cx, "status", status_str)?;
     
     let checks_array = cx.empty_array();
     for (i, check) in health_check.checks.iter().enumerate() {
         let check_obj = cx.empty_object();
-        check_obj.set(&mut cx, "name", cx.string(check.name.clone()))?;
-        check_obj.set(&mut cx, "status", cx.string(check.status.clone()))?;
-        check_obj.set(&mut cx, "message", cx.string(check.message.clone()))?;
+        let name_str = cx.string(check.name.clone());
+        check_obj.set(&mut cx, "name", name_str)?;
+        
+        let status_str = cx.string(check.status.clone());
+        check_obj.set(&mut cx, "status", status_str)?;
+        
+        let message_str = cx.string(check.message.clone());
+        check_obj.set(&mut cx, "message", message_str)?;
+        
         checks_array.set(&mut cx, i as u32, check_obj)?;
     }
     obj.set(&mut cx, "checks", checks_array)?;
@@ -394,7 +428,8 @@ pub fn get_health_check(mut cx: FunctionContext) -> JsResult<JsObject> {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    obj.set(&mut cx, "timestamp", cx.number(timestamp as f64))?;
+    let timestamp_num = cx.number(timestamp as f64);
+    obj.set(&mut cx, "timestamp", timestamp_num)?;
     
     Ok(obj)
 }

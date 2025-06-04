@@ -2,9 +2,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-use tari_common_types::types::{PublicKey, PrivateKey, Commitment};
-use tari_core::transactions::tari_amount::MicroTari;
-use tari_crypto::keys::{PublicKey as PK, SecretKey as SK};
+use tari_crypto::keys::PublicKey;
+use tari_core::transactions::tari_amount::MicroMinotari;
 use tari_utilities::hex::Hex;
 
 use crate::error::{TariError, TariResult};
@@ -59,7 +58,7 @@ impl RealWalletInstance {
         
         let instance = Self {
             runtime,
-            network,
+            network: config.network.clone(),
             data_path,
             wallet_db_path,
             config,
@@ -153,10 +152,10 @@ impl RealWalletInstance {
         // TODO: Get actual balance from Tari wallet services
         // For now, return mock data
         Ok(WalletBalance {
-            available: MicroTari::from(1000000), // 1 XTR
-            pending_incoming: MicroTari::from(0),
-            pending_outgoing: MicroTari::from(0),
-            timelocked: MicroTari::from(0),
+            available: MicroMinotari::from(1000000), // 1 XTR
+            pending_incoming: MicroMinotari::from(0),
+            pending_outgoing: MicroMinotari::from(0),
+            timelocked: MicroMinotari::from(0),
         })
     }
     
@@ -164,8 +163,8 @@ impl RealWalletInstance {
     pub async fn send_real_transaction(
         &self,
         destination: TariAddress,
-        amount: MicroTari,
-        fee_per_gram: MicroTari,
+        amount: MicroMinotari,
+        fee_per_gram: MicroMinotari,
         message: String,
     ) -> TariResult<TxId> {
         log::info!("Sending transaction: {} to {}", amount, destination);
@@ -189,15 +188,15 @@ impl RealWalletInstance {
         // For now, return mock data
         Ok(vec![
             WalletUtxo {
-                commitment: Commitment::default(),
-                value: MicroTari::from(500000),
+                commitment: "test_commitment_1".to_string(),
+                value: MicroMinotari::from(500000),
                 mined_height: Some(100),
                 status: UtxoStatus::Unspent,
                 script: vec![],
             },
             WalletUtxo {
-                commitment: Commitment::default(),
-                value: MicroTari::from(500000),
+                commitment: "test_commitment_2".to_string(),
+                value: MicroMinotari::from(500000),
                 mined_height: Some(101),
                 status: UtxoStatus::Unspent,
                 script: vec![],
@@ -211,7 +210,7 @@ impl RealWalletInstance {
         
         // TODO: Get actual address from Tari wallet
         // For now, return mock address
-        Ok(TariAddress::default())
+        Ok("tari_test_address_123".to_string())
     }
     
     /// Get connected peers
@@ -222,7 +221,7 @@ impl RealWalletInstance {
         // For now, return mock data
         Ok(vec![
             WalletPeer {
-                public_key: PublicKey::default(),
+                public_key: "test_public_key".to_string(),
                 address: "/ip4/127.0.0.1/tcp/18141".to_string(),
                 last_seen: std::time::SystemTime::now(),
                 banned: false,
@@ -232,24 +231,24 @@ impl RealWalletInstance {
     }
     
     /// Add a peer to the wallet
-    pub async fn add_peer(&self, public_key: PublicKey, address: String) -> TariResult<bool> {
-        log::info!("Adding peer: {} at {}", public_key.to_hex(), address);
+    pub async fn add_peer(&self, public_key: String, address: String) -> TariResult<bool> {
+        log::info!("Adding peer: {} at {}", public_key, address);
         
         // TODO: Add actual peer through Tari wallet
         Ok(true)
     }
     
     /// Ban a peer from the wallet
-    pub async fn ban_peer(&self, public_key: PublicKey, duration: Option<u64>) -> TariResult<bool> {
-        log::info!("Banning peer: {} for {:?} seconds", public_key.to_hex(), duration);
+    pub async fn ban_peer(&self, public_key: String, duration: Option<u64>) -> TariResult<bool> {
+        log::info!("Banning peer: {} for {:?} seconds", public_key, duration);
         
         // TODO: Ban actual peer through Tari wallet
         Ok(true)
     }
     
     /// Start wallet recovery
-    pub async fn start_recovery(&self, base_node_public_key: PublicKey) -> TariResult<bool> {
-        log::info!("Starting wallet recovery with base node: {}", base_node_public_key.to_hex());
+    pub async fn start_recovery(&self, base_node_public_key: String) -> TariResult<bool> {
+        log::info!("Starting wallet recovery with base node: {}", base_node_public_key);
         
         // TODO: Start actual wallet recovery
         Ok(true)
@@ -281,16 +280,16 @@ impl RealWalletInstance {
 // Data structures for wallet operations
 #[derive(Debug, Clone)]
 pub struct WalletBalance {
-    pub available: MicroTari,
-    pub pending_incoming: MicroTari,
-    pub pending_outgoing: MicroTari,
-    pub timelocked: MicroTari,
+    pub available: MicroMinotari,
+    pub pending_incoming: MicroMinotari,
+    pub pending_outgoing: MicroMinotari,
+    pub timelocked: MicroMinotari,
 }
 
 #[derive(Debug, Clone)]
 pub struct WalletUtxo {
-    pub commitment: Commitment,
-    pub value: MicroTari,
+    pub commitment: String,
+    pub value: MicroMinotari,
     pub mined_height: Option<u64>,
     pub status: UtxoStatus,
     pub script: Vec<u8>,
@@ -305,7 +304,7 @@ pub enum UtxoStatus {
 
 #[derive(Debug, Clone)]
 pub struct WalletPeer {
-    pub public_key: PublicKey,
+    pub public_key: String,
     pub address: String,
     pub last_seen: std::time::SystemTime,
     pub banned: bool,
@@ -313,7 +312,7 @@ pub struct WalletPeer {
 }
 
 // Type aliases for Tari types
-pub type TariAddress = PublicKey; // Simplified for now
+pub type TariAddress = String; // Simplified for now
 pub type TxId = u64; // Simplified for now
 
 /// Convert SDK network type to Tari network type
@@ -375,7 +374,7 @@ mod tests {
         let wallet = RealWalletInstance::create_real_wallet(config).await.unwrap();
         let balance = wallet.get_real_balance().await.unwrap();
         
-        assert!(balance.available > MicroTari::from(0));
+        assert!(balance.available > MicroMinotari::from(0));
     }
     
     #[tokio::test]
@@ -391,6 +390,6 @@ mod tests {
         let address = wallet.get_wallet_address().await.unwrap();
         
         // Address should be valid (not checking specific format for mock data)
-        assert!(!address.to_hex().is_empty());
+        assert!(!address.is_empty());
     }
 }

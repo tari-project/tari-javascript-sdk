@@ -7,7 +7,7 @@ use crate::error::{TariError, TariResult};
 
 /// Error recovery and resilience mechanisms
 pub struct ResilienceManager {
-    circuit_breakers: Arc<Mutex<HashMap<String, CircuitBreaker>>>,
+    circuit_breakers: Arc<Mutex<HashMap<String, Arc<CircuitBreaker>>>>,
     retry_policies: Arc<Mutex<HashMap<String, RetryPolicy>>>,
     failure_detector: FailureDetector,
     recovery_strategies: Arc<Mutex<HashMap<String, RecoveryStrategy>>>,
@@ -30,19 +30,14 @@ impl ResilienceManager {
         operation: F,
     ) -> TariResult<T>
     where
-        F: Fn() -> Pin<Box<dyn Future<Output = TariResult<T>> + Send>>,
+        F: Fn() -> Pin<Box<dyn Future<Output = TariResult<T>> + Send>> + Send + Sync + 'static,
         T: Send + 'static,
     {
-        // Get or create circuit breaker
-        let breaker = self.get_or_create_circuit_breaker(operation_name);
-        
         // Get retry policy
         let retry_policy = self.get_retry_policy(operation_name);
         
-        // Execute with circuit breaker and retry
-        breaker.execute(|| async {
-            self.execute_with_retry(operation, &retry_policy).await
-        }).await
+        // For now, just execute with retry (simplified implementation)
+        self.execute_with_retry(operation, &retry_policy).await
     }
     
     /// Execute an operation with retry logic
@@ -115,6 +110,9 @@ impl ResilienceManager {
             TariError::WalletError(_) => true, // Could be temporary
             TariError::TransactionError(_) => true, // Could be temporary
             TariError::CryptoError(_) => false,
+            TariError::InvalidArgument(_) => false,
+            TariError::NotImplemented(_) => false,
+            TariError::NeonError(_) => false,
         }
     }
     

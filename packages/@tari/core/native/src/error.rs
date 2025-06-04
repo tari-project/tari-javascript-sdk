@@ -23,6 +23,12 @@ pub enum TariError {
     #[error("Invalid argument: {0}")]
     InvalidArgument(String),
     
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+    
+    #[error("Database error: {0}")]
+    DatabaseError(String),
+    
     #[error("Runtime error: {0}")]
     RuntimeError(String),
     
