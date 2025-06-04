@@ -1,0 +1,38 @@
+FROM rust:1.75-slim
+
+# Install Node.js
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    python3 \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+# Install cross-compilation tools
+RUN apt-get install -y \
+    gcc-aarch64-linux-gnu \
+    g++-aarch64-linux-gnu \
+    libc6-dev-arm64-cross
+
+# Set up Rust targets
+RUN rustup target add \
+    x86_64-unknown-linux-gnu \
+    aarch64-unknown-linux-gnu
+
+WORKDIR /build
+
+# Copy package files
+COPY package*.json ./
+COPY native/Cargo.* ./native/
+
+# Install dependencies
+RUN npm ci
+
+# Copy source
+COPY . .
+
+# Build script
+COPY docker/build-linux.sh /build-linux.sh
+RUN chmod +x /build-linux.sh
+
+CMD ["/build-linux.sh"]
