@@ -3,26 +3,25 @@
     "target": "ES2022",
     "module": "commonjs",
     "lib": ["ES2022"],
-    "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "moduleResolution": "node",
-    "composite": true
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
+  "files": [],
   "references": [
     {
-      "path": "../core"
+      "path": "./packages/@tari/core"
     },
     {
-      "path": "../wallet"
+      "path": "./packages/@tari/wallet"
+    },
+    {
+      "path": "./packages/@tari/full"
     }
   ]
 }
