@@ -1,0 +1,101 @@
+#!/usr/bin/env node
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const platform = process.platform;
+const arch = process.arch;
+
+console.log(`Building native module for ${platform}-${arch}`);
+
+// Determine Rust target
+const rustTarget = getRustTarget(platform, arch);
+console.log(`Rust target: ${rustTarget}`);
+
+// Install target if needed
+try {
+  execSync(`rustup target add ${rustTarget}`, { stdio: 'inherit' });
+} catch (e) {
+  console.warn(`Could not add target ${rustTarget}, may already be installed`);
+}
+
+// Set up cross-compilation environment
+setupCrossCompileEnv(platform, arch);
+
+// Build native module
+const buildCmd = `cargo build --release --target ${rustTarget}`;
+console.log(`Running: ${buildCmd}`);
+
+try {
+  execSync(buildCmd, {
+    stdio: 'inherit',
+    cwd: path.join(__dirname, '..', 'native'),
+  });
+} catch (error) {
+  console.error('Build failed:', error.message);
+  process.exit(1);
+}
+
+// Copy built library to expected location
+copyBuiltLibrary(rustTarget, platform);
+
+console.log('Native module built successfully');
+
+function getRustTarget(platform, arch) {
+  const targets = {
+    'darwin-x64': 'x86_64-apple-darwin',
+    'darwin-arm64': 'aarch64-apple-darwin',
+    'linux-x64': 'x86_64-unknown-linux-gnu',
+    'linux-arm64': 'aarch64-unknown-linux-gnu',
+    'win32-x64': 'x86_64-pc-windows-msvc',
+  };
+
+  const key = `${platform}-${arch}`;
+  if (!targets[key]) {
+    throw new Error(`Unsupported platform: ${key}`);
+  }
+
+  return targets[key];
+}
+
+function setupCrossCompileEnv(platform, arch) {
+  if (platform === 'linux' && arch === 'arm64' && process.arch === 'x64') {
+    // Cross-compiling Linux ARM64 on x64
+    process.env.CC = 'aarch64-linux-gnu-gcc';
+    process.env.CXX = 'aarch64-linux-gnu-g++';
+    process.env.AR = 'aarch64-linux-gnu-ar';
+    process.env.CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = 'aarch64-linux-gnu-gcc';
+  }
+}
+
+function copyBuiltLibrary(rustTarget, platform) {
+  const srcDir = path.join(__dirname, '..', 'native', 'target', rustTarget, 'release');
+  const destDir = path.join(__dirname, '..', 'native');
+
+  let srcFile, destFile;
+
+  switch (platform) {
+    case 'darwin':
+      srcFile = 'libtari_core_native.dylib';
+      destFile = 'index.node';
+      break;
+    case 'linux':
+      srcFile = 'libtari_core_native.so';
+      destFile = 'index.node';
+      break;
+    case 'win32':
+      srcFile = 'tari_core_native.dll';
+      destFile = 'index.node';
+      break;
+  }
+
+  const src = path.join(srcDir, srcFile);
+  const dest = path.join(destDir, destFile);
+
+  if (!fs.existsSync(src)) {
+    throw new Error(`Built library not found: ${src}`);
+  }
+
+  fs.copyFileSync(src, dest);
+  console.log(`Copied ${src} to ${dest}`);
+}
