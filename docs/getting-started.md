@@ -577,7 +577,7 @@ if (!validateAddress(destinationAddress)) {
 ### Getting Help
 
 - **Documentation**: [https://docs.tari.com](https://docs.tari.com)
-- **GitHub Issues**: [https://github.com/tari-project/tari-js-sdk/issues](https://github.com/tari-project/tari-js-sdk/issues)
+- **GitHub Issues**: [https://github.com/tari-project/tari-javascript-sdk/issues](https://github.com/tari-project/tari-javascript-sdk/issues)
 - **Discord Community**: [https://discord.gg/tari](https://discord.gg/tari)
 - **API Reference**: [API Documentation](./api-reference.md)
 
@@ -618,6 +618,6 @@ Now that you have the basics working:
 1. **Read the [API Reference](./api-reference.md)** for detailed method documentation
 2. **Check the [Examples](../examples/)** directory for complete applications
 3. **Join the [Tari Community](https://discord.gg/tari)** for support and updates
-4. **Star the [GitHub Repository](https://github.com/tari-project/tari-js-sdk)** to stay updated
+4. **Star the [GitHub Repository](https://github.com/tari-project/tari-javascript-sdk)** to stay updated
 
 Happy building with Tari! 🚀

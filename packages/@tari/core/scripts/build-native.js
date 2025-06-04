@@ -69,33 +69,38 @@ function setupCrossCompileEnv(platform, arch) {
 }
 
 function copyBuiltLibrary(rustTarget, platform) {
+  // Neon automatically creates index.node during the build process
+  // Check if index.node exists in the native directory
+  const nativeDir = path.join(__dirname, '..', 'native');
+  const indexNode = path.join(nativeDir, 'index.node');
+
+  if (fs.existsSync(indexNode)) {
+    console.log(`Native module built successfully: ${indexNode}`);
+    return;
+  }
+
+  // Fallback: check if we need to copy from target directory
   const srcDir = path.join(__dirname, '..', 'native', 'target', rustTarget, 'release');
-  const destDir = path.join(__dirname, '..', 'native');
-
-  let srcFile, destFile;
-
+  
+  let srcFile;
   switch (platform) {
     case 'darwin':
       srcFile = 'libtari_core_native.dylib';
-      destFile = 'index.node';
       break;
     case 'linux':
       srcFile = 'libtari_core_native.so';
-      destFile = 'index.node';
       break;
     case 'win32':
       srcFile = 'tari_core_native.dll';
-      destFile = 'index.node';
       break;
   }
 
   const src = path.join(srcDir, srcFile);
-  const dest = path.join(destDir, destFile);
-
-  if (!fs.existsSync(src)) {
-    throw new Error(`Built library not found: ${src}`);
+  
+  if (fs.existsSync(src)) {
+    fs.copyFileSync(src, indexNode);
+    console.log(`Copied ${src} to ${indexNode}`);
+  } else {
+    throw new Error(`Built library not found: ${src} and index.node was not created automatically`);
   }
-
-  fs.copyFileSync(src, dest);
-  console.log(`Copied ${src} to ${dest}`);
 }

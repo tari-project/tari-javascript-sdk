@@ -47,7 +47,7 @@ export function loadNativeBinding(): NativeBinding {
       `To fix this, try:\n` +
       `1. Run 'npm run build:native' to build locally\n` +
       `2. Check that you have the correct platform package installed\n` +
-      `3. File an issue at https://github.com/tari-project/tari-js-sdk/issues`
+      `3. File an issue at https://github.com/tari-project/tari-javascript-sdk/issues`
     );
   }
   
