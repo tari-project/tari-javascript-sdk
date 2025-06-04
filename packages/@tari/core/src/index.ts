@@ -1,6 +1,16 @@
+import { loadNativeBinding } from './loader';
+import { binding } from './bindings';
+
+export * from './bindings';
+export { loadNativeBinding };
+
 export const VERSION = '0.0.1';
 
-// Placeholder - will be populated with FFI bindings
-export interface TariCore {
-  initialize(): void;
+// Auto-load on import
+let loaded = false;
+if (!loaded) {
+  loadNativeBinding();
+  loaded = true;
 }
+
+export const core = binding;

@@ -7,7 +7,7 @@
   "files": ["dist", "native/index.node", "prebuilds"],
   "scripts": {
     "build": "npm run build:native && npm run build:ts",
-    "build:native": "neon build --release",
+    "build:native": "cd native && cargo build --release && cp target/release/libindex.dylib index.node",
     "build:ts": "tsc",
     "clean": "rm -rf dist native/target",
     "test": "jest"
@@ -17,8 +17,10 @@
     "prebuild-install": "^7.1.1"
   },
   "devDependencies": {
-    "@neon-rs/cli": "^0.1.0",
+    "@neon-rs/cli": "^0.1.73",
     "@types/node": "^20.0.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0"
   }
 }
