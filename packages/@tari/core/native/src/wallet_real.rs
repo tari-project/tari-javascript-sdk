@@ -5,6 +5,15 @@ use tokio::runtime::Runtime;
 use tari_crypto::keys::PublicKey;
 use tari_core::transactions::tari_amount::MicroMinotari;
 use tari_utilities::hex::Hex;
+use tari_common_types::types::PublicKey as CommsPublicKey;
+
+// Wallet and communication types
+use minotari_wallet::wallet::Wallet;
+use minotari_wallet::storage::sqlite_db::WalletSqliteDatabase;
+use minotari_wallet::transaction_service::storage::sqlite_db::TransactionServiceSqliteDatabase;
+use minotari_wallet::output_manager_service::storage::sqlite_db::OutputManagerSqliteDatabase;
+use minotari_wallet::contacts_service::storage::sqlite_db::ContactsServiceSqliteDatabase;
+use tari_key_manager::cipher_seed::CipherSeed;
 
 use crate::error::{TariError, TariResult};
 use crate::utils::{WalletConfig, Network};
@@ -16,8 +25,7 @@ pub struct RealWalletInstance {
     pub data_path: PathBuf,
     pub wallet_db_path: PathBuf,
     pub config: WalletConfig,
-    // TODO: Add actual wallet instance when dependencies are ready
-    // pub wallet: Arc<Wallet<...>>,
+    pub wallet: Option<Arc<Wallet<WalletSqliteDatabase, TransactionServiceSqliteDatabase, OutputManagerSqliteDatabase, ContactsServiceSqliteDatabase>>>,
 }
 
 impl RealWalletInstance {
@@ -62,6 +70,7 @@ impl RealWalletInstance {
             data_path,
             wallet_db_path,
             config,
+            wallet: None, // Will be initialized in initialize_wallet_components
         };
         
         // Initialize wallet database and services
@@ -217,17 +226,27 @@ impl RealWalletInstance {
     pub async fn get_peers(&self) -> TariResult<Vec<WalletPeer>> {
         log::debug!("Getting connected peers");
         
-        // TODO: Get actual peers from Tari wallet
-        // For now, return mock data
-        Ok(vec![
-            WalletPeer {
-                public_key: "test_public_key".to_string(),
-                address: "/ip4/127.0.0.1/tcp/18141".to_string(),
-                last_seen: std::time::SystemTime::now(),
-                banned: false,
-                connection_attempts: 1,
-            },
-        ])
+        match &self.wallet {
+            Some(wallet) => {
+                let peer_manager = wallet.comms().peer_manager();
+                let peers = peer_manager.all_peers().await
+                    .map_err(|e| TariError::NetworkError(format!("Failed to get peers: {}", e)))?;
+                
+                let wallet_peers = peers.into_iter().map(|peer| WalletPeer {
+                    public_key: peer.node_id.to_hex(),
+                    address: peer.addresses.best().unwrap_or_default().to_string(),
+                    last_seen: peer.last_seen.unwrap_or(std::time::SystemTime::UNIX_EPOCH),
+                    banned: peer.is_banned(),
+                    connection_attempts: peer.connection_attempts,
+                }).collect();
+                
+                Ok(wallet_peers)
+            }
+            None => {
+                log::warn!("Wallet not initialized, returning empty peer list");
+                Ok(vec![])
+            }
+        }
     }
     
     /// Add a peer to the wallet
