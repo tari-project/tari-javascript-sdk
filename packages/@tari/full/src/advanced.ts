@@ -1,4 +1,4 @@
-import { binding } from '@tari/core';
+import { binding } from '@tari-project/core';
 
 export interface Covenant {
   handle: number;

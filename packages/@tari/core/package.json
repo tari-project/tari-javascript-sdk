@@ -1,5 +1,5 @@
 {
-  "name": "@tari/core",
+  "name": "@tari-project/core",
   "version": "0.1.0",
   "description": "Core FFI bindings for Tari cryptocurrency",
   "keywords": ["tari", "cryptocurrency", "blockchain", "ffi", "neon"],

@@ -1,6 +1,6 @@
 import { WithdrawalProcessor } from '../withdrawal-processor';
 import { TariWallet } from '../../wallet';
-import { Network } from '@tari/core';
+import { Network } from '@tari-project/core';
 
 // Mock wallet
 const mockWallet = {

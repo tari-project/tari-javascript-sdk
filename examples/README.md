@@ -189,7 +189,7 @@ Error: Cannot find module 'tari_wallet_ffi.node'
 ```
 Solution: Rebuild native modules:
 ```bash
-npm rebuild @tari/wallet
+npm rebuild @tari-project/wallet
 ```
 
 **Permission Errors:**
@@ -210,7 +210,7 @@ LOG_LEVEL=debug npm start
 
 Or in code:
 ```javascript
-import { setLogLevel, LogLevel } from '@tari/wallet';
+import { setLogLevel, LogLevel } from '@tari-project/wallet';
 setLogLevel(LogLevel.Debug);
 ```
 
@@ -237,7 +237,7 @@ Want to add an example or improve existing ones?
 Use this template for new examples:
 
 ```javascript
-const { TariWallet, Network } = require('@tari/wallet');
+const { TariWallet, Network } = require('@tari-project/wallet');
 
 async function main() {
   console.log('🚀 Starting Your Example...');

@@ -1,5 +1,5 @@
 // Standalone client implementation to test structure without dependencies
-import { Network } from '@tari/core';
+import { Network } from '@tari-project/core';
 import { EventEmitter } from 'eventemitter3';
 
 export interface TariClientConfig {

@@ -17,7 +17,7 @@ try {
   }
 
   // Try to import the module
-  console.log('📦 Importing @tari/core...');
+  console.log('📦 Importing @tari-project/core...');
   const tari = require('./dist/index.js');
   
   console.log('✅ Module imported successfully');

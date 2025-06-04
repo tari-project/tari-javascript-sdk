@@ -62,9 +62,9 @@ pnpm test
 
 This project uses a monorepo structure with three main packages:
 
-- `@tari/core` - Low-level FFI bindings (Rust/Neon)
-- `@tari/wallet` - High-level wallet API for exchanges
-- `@tari/full` - Full protocol access including mining and P2P
+- `@tari-project/core` - Low-level FFI bindings (Rust/Neon)
+- `@tari-project/wallet` - High-level wallet API for exchanges
+- `@tari-project/full` - Full protocol access including mining and P2P
 
 When developing:
 
@@ -73,10 +73,10 @@ When developing:
 pnpm dev
 
 # Run tests for specific package
-pnpm --filter @tari/wallet test
+pnpm --filter @tari-project/wallet test
 
 # Build native module
-pnpm --filter @tari/core build:native
+pnpm --filter @tari-project/core build:native
 
 # Run linting
 pnpm lint
@@ -244,7 +244,7 @@ pnpm test:coverage
 pnpm test:watch
 
 # Test specific package
-pnpm --filter @tari/wallet test
+pnpm --filter @tari-project/wallet test
 ```
 
 ### Testing Standards
@@ -326,7 +326,7 @@ We follow semantic versioning and coordinate releases with the main Tari project
 
 ## Native Module Development
 
-When working on the Rust/Neon code in `@tari/core`:
+When working on the Rust/Neon code in `@tari-project/core`:
 
 ### Guidelines
 
@@ -339,10 +339,10 @@ When working on the Rust/Neon code in `@tari/core`:
 
 ```bash
 # Build for current platform
-pnpm --filter @tari/core build:native
+pnpm --filter @tari-project/core build:native
 
 # Build for all platforms (CI only)
-pnpm --filter @tari/core prebuild
+pnpm --filter @tari-project/core prebuild
 ```
 
 ### Debugging Native Code

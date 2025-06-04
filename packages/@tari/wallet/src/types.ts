@@ -1,4 +1,4 @@
-import { Network, TransactionStatus } from '@tari/core';
+import { Network, TransactionStatus } from '@tari-project/core';
 
 export interface WalletConfig {
   network: Network;

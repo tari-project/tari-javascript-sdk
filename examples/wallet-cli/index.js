@@ -1,4 +1,4 @@
-const { TariWallet, Network, formatTari, parseTari, validateAddress, generateSeedWords } = require('@tari/wallet');
+const { TariWallet, Network, formatTari, parseTari, validateAddress, generateSeedWords } = require('@tari-project/wallet');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const Table = require('cli-table3');
