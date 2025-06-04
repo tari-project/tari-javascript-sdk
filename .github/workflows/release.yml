@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies
+        run: |
+          npm install -g pnpm
+          pnpm install
+      
+      - name: Download prebuilds
+        run: |
+          # In real workflow, would download from previous build
+          echo "Downloading prebuilds..."
+      
+      - name: Build packages
+        run: pnpm build
+      
+      - name: Run tests
+        run: pnpm test
+      
+      - name: Publish to NPM
+        run: |
+          # Publish core first (dependency)
+          cd packages/@tari/core
+          npm publish --access public
+          cd ../..
+          
+          # Publish wallet
+          cd packages/@tari/wallet
+          npm publish --access public
+          cd ../..
+          
+          # Publish full
+          cd packages/@tari/full
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            packages/@tari/core/prebuilds.tar.gz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
