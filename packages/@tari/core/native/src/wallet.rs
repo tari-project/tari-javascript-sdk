@@ -1,101 +1,88 @@
 use neon::prelude::*;
-use crate::error::{safe_execute, TariError, TariResult};
+use crate::error::{TariError, TariResult};
 use crate::types::{WalletInstance, AddressInstance, create_wallet_handle, destroy_wallet_handle, WALLET_HANDLES, ADDRESS_HANDLES};
 use crate::utils::{parse_wallet_config, create_balance_object, create_address_object, create_utxo_object, parse_send_params};
+use crate::try_js;
 
 /// Create a new wallet instance
 pub fn wallet_create(mut cx: FunctionContext) -> JsResult<JsNumber> {
-    safe_execute(&mut cx, || {
-        let config_obj = cx.argument::<JsObject>(0)?;
-        let config = parse_wallet_config(&mut cx, config_obj)?;
-        
-        log::info!("Creating wallet with network: {:?}", config.network);
-        
-        // TODO: Replace with actual Tari wallet creation
-        let wallet = WalletInstance::new()?;
-        let handle = create_wallet_handle(wallet);
-        
-        log::debug!("Created wallet with handle: {}", handle);
-        Ok(cx.number(handle as f64))
-    })
+    let config_obj = cx.argument::<JsObject>(0)?;
+    let config = try_js!(&mut cx, parse_wallet_config(&mut cx, config_obj));
+    
+    log::info!("Creating wallet with network: {:?}", config.network);
+    
+    // TODO: Replace with actual Tari wallet creation
+    let wallet = try_js!(&mut cx, WalletInstance::new());
+    let handle = create_wallet_handle(wallet);
+    
+    log::debug!("Created wallet with handle: {}", handle);
+    Ok(cx.number(handle as f64))
 }
 
 /// Destroy a wallet instance
 pub fn wallet_destroy(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-    safe_execute(&mut cx, || {
-        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-        
-        match destroy_wallet_handle(handle) {
-            Ok(_) => {
-                log::debug!("Destroyed wallet handle: {}", handle);
-                Ok(cx.undefined())
-            }
-            Err(e) => Err(e),
-        }
-    })
+    let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+    
+    try_js!(&mut cx, destroy_wallet_handle(handle));
+    log::debug!("Destroyed wallet handle: {}", handle);
+    Ok(cx.undefined())
 }
 
 /// Get wallet seed words
 pub fn wallet_get_seed_words(mut cx: FunctionContext) -> JsResult<JsString> {
-    safe_execute(&mut cx, || {
-        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-        
-        let handles = WALLET_HANDLES.lock().unwrap();
-        if !handles.is_valid(handle) {
-            return Err(TariError::InvalidHandle(handle));
-        }
-        
-        // TODO: Return actual seed words from wallet
-        let seed_words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-        
-        log::debug!("Retrieved seed words for wallet: {}", handle);
-        Ok(cx.string(seed_words))
-    })
+    let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+    
+    let handles = WALLET_HANDLES.lock().unwrap();
+    if !handles.is_valid(handle) {
+        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
+    }
+    
+    // TODO: Return actual seed words from wallet
+    let seed_words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    
+    log::debug!("Retrieved seed words for wallet: {}", handle);
+    Ok(cx.string(seed_words))
 }
 
 /// Get wallet balance
 pub fn wallet_get_balance(mut cx: FunctionContext) -> JsResult<JsObject> {
-    safe_execute(&mut cx, || {
-        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-        
-        let handles = WALLET_HANDLES.lock().unwrap();
-        if !handles.is_valid(handle) {
-            return Err(TariError::InvalidHandle(handle));
-        }
-        
-        // TODO: Get actual balance from Tari wallet
-        let available = 1000000; // 1 Tari in microTari
-        let pending = 0;
-        let locked = 0;
-        
-        log::debug!("Retrieved balance for wallet: {}", handle);
-        create_balance_object(&mut cx, available, pending, locked)
-    })
+    let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+    
+    let handles = WALLET_HANDLES.lock().unwrap();
+    if !handles.is_valid(handle) {
+        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
+    }
+    
+    // TODO: Get actual balance from Tari wallet
+    let available = 1000000; // 1 Tari in microTari
+    let pending = 0;
+    let locked = 0;
+    
+    log::debug!("Retrieved balance for wallet: {}", handle);
+    create_balance_object(&mut cx, available, pending, locked)
 }
 
 /// Get wallet address  
 pub fn wallet_get_address(mut cx: FunctionContext) -> JsResult<JsObject> {
-    safe_execute(&mut cx, || {
-        let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-        
-        let handles = WALLET_HANDLES.lock().unwrap();
-        if !handles.is_valid(handle) {
-            return Err(TariError::InvalidHandle(handle));
-        }
-        
-        // TODO: Get actual address from Tari wallet and create address handle
-        let address = AddressInstance {
-            placeholder: format!("tari_address_{}", handle),
-            emoji_id: "🚀🌟💎🔥🎯🌈⚡🎪🦄🎨🌺🎭".to_string(),
-        };
-        
-        let mut address_handles = ADDRESS_HANDLES.lock().unwrap();
-        let address_handle = address_handles.create_handle(address.clone());
-        drop(address_handles);
-        
-        log::debug!("Retrieved address for wallet: {}", handle);
-        create_address_object(&mut cx, address_handle, address.emoji_id)
-    })
+    let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
+    
+    let handles = WALLET_HANDLES.lock().unwrap();
+    if !handles.is_valid(handle) {
+        return TariError::InvalidHandle(handle).to_js_error(&mut cx);
+    }
+    
+    // TODO: Get actual address from Tari wallet and create address handle
+    let address = AddressInstance {
+        placeholder: format!("tari_address_{}", handle),
+        emoji_id: "🚀🌟💎🔥🎯🌈⚡🎪🦄🎨🌺🎭".to_string(),
+    };
+    
+    let mut address_handles = ADDRESS_HANDLES.lock().unwrap();
+    let address_handle = address_handles.create_handle(address.clone());
+    drop(address_handles);
+    
+    log::debug!("Retrieved address for wallet: {}", handle);
+    create_address_object(&mut cx, address_handle, address.emoji_id)
 }
 
 /// Send a transaction

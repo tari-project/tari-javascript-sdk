@@ -83,6 +83,7 @@ pub struct PublicKeyInstance {
 }
 
 /// Address instance
+#[derive(Debug, Clone)]
 pub struct AddressInstance {
     // TODO: Replace with actual Tari address
     pub placeholder: String,

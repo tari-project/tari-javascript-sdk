@@ -5,7 +5,6 @@ mod wallet;
 mod crypto;
 
 use neon::prelude::*;
-use crate::error::safe_execute;
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
@@ -47,8 +46,6 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
 }
 
 fn initialize(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-    safe_execute(&mut cx, || {
-        log::info!("Tari Core Native module initialized successfully");
-        Ok(cx.undefined())
-    })
+    log::info!("Tari Core Native module initialized successfully");
+    Ok(cx.undefined())
 }

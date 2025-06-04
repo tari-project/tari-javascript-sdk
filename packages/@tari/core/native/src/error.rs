@@ -27,6 +27,9 @@ pub enum TariError {
     
     #[error("Not implemented: {0}")]
     NotImplemented(String),
+    
+    #[error("Neon error: {0}")]
+    NeonError(String),
 }
 
 impl TariError {
@@ -40,21 +43,6 @@ impl TariError {
 /// Result type for FFI operations
 pub type TariResult<T> = Result<T, TariError>;
 
-/// Safe execution wrapper for FFI functions
-pub fn safe_execute<'a, F, T>(
-    cx: &mut FunctionContext<'a>,
-    operation: F,
-) -> JsResult<'a, T>
-where
-    F: FnOnce() -> TariResult<T>,
-    T: neon::types::Value,
-{
-    match operation() {
-        Ok(result) => Ok(result),
-        Err(e) => e.to_js_error(cx),
-    }
-}
-
 /// Convert anyhow errors to TariError
 impl From<anyhow::Error> for TariError {
     fn from(err: anyhow::Error) -> Self {
@@ -67,4 +55,22 @@ impl From<tokio::task::JoinError> for TariError {
     fn from(err: tokio::task::JoinError) -> Self {
         TariError::RuntimeError(format!("Async task failed: {}", err))
     }
+}
+
+/// Convert neon Throw errors to TariError
+impl From<Throw> for TariError {
+    fn from(_: Throw) -> Self {
+        TariError::NeonError("JavaScript call failed".to_string())
+    }
+}
+
+/// Macro for safe execution that handles errors properly
+#[macro_export]
+macro_rules! try_js {
+    ($cx:expr, $expr:expr) => {
+        match $expr {
+            Ok(v) => v,
+            Err(e) => return e.to_js_error($cx),
+        }
+    };
 }
