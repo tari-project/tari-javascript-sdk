@@ -1,12 +1,15 @@
 import { NativeBinding, WalletHandle, AddressHandle } from '../bindings';
 
-type MockFunction<T extends (...args: any[]) => any> = jest.MockedFunction<T>;
+// Define mock types
+type MockedNativeBinding = {
+  [K in keyof NativeBinding]: jest.MockedFunction<NativeBinding[K]>;
+};
 
 let nextHandle = 1;
 const wallets = new Map<number, any>();
 const addresses = new Map<number, any>();
 
-export const mockBinding: NativeBinding = {
+export const mockBinding: MockedNativeBinding = {
   initialize: jest.fn(),
   
   walletCreate: jest.fn().mockImplementation((config) => {

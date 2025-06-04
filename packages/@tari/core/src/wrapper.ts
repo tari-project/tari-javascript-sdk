@@ -226,6 +226,11 @@ export class FFIWrapper {
   async sendTransaction(
     wallet: WalletHandle,
     destination: string,
+    amount: bigint
+  ): Promise<string>;
+  async sendTransaction(
+    wallet: WalletHandle,
+    destination: string,
     amount: bigint,
     feePerGram: bigint,
     message: string
@@ -266,14 +271,14 @@ export class FFIWrapper {
     // Validate parameters
     if (!params.destination || typeof params.destination !== 'string') {
       throw new TariFFIError(
-        'Invalid destination address',
+        'Destination address is required',
         TariErrorCode.InvalidArgument
       );
     }
 
     if (params.amount <= 0n) {
       throw new TariFFIError(
-        'Amount must be greater than zero',
+        'Amount must be greater than 0',
         TariErrorCode.InvalidArgument
       );
     }

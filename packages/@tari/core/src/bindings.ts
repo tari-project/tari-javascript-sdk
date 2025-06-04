@@ -13,7 +13,7 @@ export interface NativeBinding {
   initialize(): void;
   
   // Wallet operations
-  walletCreate(config: WalletCreateConfig): WalletHandle;
+  walletCreate(config: WalletCreateConfig): WalletHandle | null;
   walletDestroy(handle: WalletHandle): void;
   walletGetSeedWords(handle: WalletHandle): string;
   walletGetBalance(handle: WalletHandle): RawBalance;
