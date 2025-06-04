@@ -1,59 +1,31 @@
 # Testing Guide
 
+> 📖 This guide provides comprehensive testing documentation for the Tari JavaScript SDK. For general contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Overview
 
-The Tari JavaScript SDK includes a comprehensive testing suite with >90% code coverage across all packages.
+The Tari JavaScript SDK includes a comprehensive testing suite with >90% code coverage across all packages. This guide covers everything you need to know about testing in this project.
 
-## Test Structure
+## Quick Reference
 
-```
-├── jest.config.js              # Main Jest configuration
-├── jest.setup.js               # Global test setup
-├── packages/
-│   └── @tari/core/
-│       ├── src/__mocks__/      # Mock native bindings
-│       └── src/__tests__/      # Unit tests
-│   └── @tari/wallet/
-│       ├── src/__tests__/      # Unit tests
-│       └── src/exchange/__tests__/  # Exchange utility tests
-├── integration-tests/          # Integration test suites
-└── TESTING.md                  # This file
-```
-
-## Running Tests
-
-### All Tests
 ```bash
+# Run all tests
 pnpm test
-```
 
-### Unit Tests Only
-```bash
+# Unit tests only
 pnpm test:unit
-```
 
-### Integration Tests
-```bash
+# Integration tests
 pnpm test:integration
-```
 
-### Coverage Report
-```bash
+# Coverage report
 pnpm test:coverage
-```
 
-### Watch Mode (for development)
-```bash
+# Watch mode (development)
 pnpm test:watch
-```
 
-### Specific Package
-```bash
-# Test only @tari/core
-jest --selectProjects "@tari/core"
-
-# Test only @tari/wallet  
-jest --selectProjects "@tari/wallet"
+# Test specific package
+pnpm --filter @tari/wallet test
 ```
 
 ## Test Categories
@@ -377,6 +349,12 @@ open coverage/lcov-report/index.html
 - Index files (`index.ts`)
 - Mock implementations
 - Example applications
+
+## Related Documentation
+
+- [Contributing Guide](CONTRIBUTING.md) - General contribution guidelines
+- [API Reference](docs/api-reference.md) - Complete API documentation
+- [Examples](examples/) - Working code examples with tests
 
 ## Conclusion
 
