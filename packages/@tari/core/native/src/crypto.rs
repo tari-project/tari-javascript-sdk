@@ -1,10 +1,9 @@
 use neon::prelude::*;
-use crate::error::{TariError, TariResult};
+use crate::error::TariError;
 use crate::types::{
-    PrivateKeyInstance, PublicKeyInstance, AddressInstance,
+    PrivateKeyInstance, PublicKeyInstance,
     PRIVATE_KEY_HANDLES, PUBLIC_KEY_HANDLES, ADDRESS_HANDLES,
 };
-use crate::try_js;
 
 /// Generate a new private key
 pub fn private_key_generate(mut cx: FunctionContext) -> JsResult<JsNumber> {
