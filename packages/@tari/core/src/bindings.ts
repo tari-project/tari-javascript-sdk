@@ -5,6 +5,9 @@ import {
   WalletCreateConfig 
 } from './ffi-types';
 
+// Re-export handle types so they can be imported from bindings
+export { WalletHandle, AddressHandle, Network, WalletCreateConfig } from './ffi-types';
+
 export interface NativeBinding {
   // Core
   initialize(): void;
