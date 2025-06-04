@@ -3,6 +3,7 @@ import {
   WalletHandle, 
   AddressHandle, 
   Network, 
+  TransactionStatus,
   initialize as initCore,
   ffi 
 } from '@tari-project/core';
@@ -14,16 +15,17 @@ import {
   ConnectionStatus,
   WalletEvent,
   WalletEventMap,
+  ScanProgress,
 } from './types';
 
 export class TariWallet extends EventEmitter<WalletEventMap> {
   private handle?: WalletHandle;
   private addressHandle?: AddressHandle;
-  private config: Required<WalletConfig>;
+  private config: WalletConfig & { seedWords: string; passphrase: string; dbPath: string; dbName: string; };
   private connectionStatus: ConnectionStatus = { connected: false };
   private closed = false;
-  private balancePoller?: NodeJS.Timer;
-  private reconnectTimer?: NodeJS.Timer;
+  private balancePoller?: NodeJS.Timeout;
+  private reconnectTimer?: NodeJS.Timeout;
 
   constructor(config: WalletConfig) {
     super();
@@ -90,7 +92,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
       this.emit(WalletEvent.Connected, this.connectionStatus);
     } catch (error) {
       this.cleanup();
-      throw new Error(`Failed to connect wallet: ${error.message}`);
+      throw new Error(`Failed to connect wallet: ${(error as Error).message}`);
     }
   }
 

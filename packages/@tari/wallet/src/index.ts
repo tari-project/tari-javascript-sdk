@@ -4,7 +4,8 @@ export { WithdrawalProcessor } from './exchange/withdrawal-processor';
 export * from './types';
 
 import { Network } from '@tari-project/core';
-import { TariWallet, WalletConfig } from './wallet';
+import { TariWallet } from './wallet';
+import { WalletConfig } from './types';
 
 /**
  * Create a wallet configured for exchange use

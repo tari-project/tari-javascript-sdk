@@ -1,5 +1,6 @@
 import { TariWallet } from '../wallet';
 import { EventEmitter } from 'eventemitter3';
+import { WalletEvent } from '../types';
 
 export interface DepositAddress {
   userId: string;
@@ -28,11 +29,11 @@ export class DepositManager extends EventEmitter<{
     super();
     
     // Listen for incoming transactions
-    wallet.on('transaction-received', (tx) => {
+    wallet.on(WalletEvent.TransactionReceived, (tx) => {
       this.handleIncomingTransaction(tx);
     });
     
-    wallet.on('transaction-confirmed', (tx) => {
+    wallet.on(WalletEvent.TransactionConfirmed, (tx) => {
       this.handleConfirmedTransaction(tx);
     });
   }
