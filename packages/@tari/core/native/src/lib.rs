@@ -3,6 +3,8 @@ mod types;
 mod utils;
 mod wallet;
 mod crypto;
+mod advanced;
+mod callbacks;
 
 use neon::prelude::*;
 
@@ -35,12 +37,33 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     // Address management
     cx.export_function("addressDestroy", crypto::address_destroy)?;
     
-    // TODO: Implement remaining functions
-    // - Mining operations (walletCoinSplit, walletCoinJoin)
-    // - Recovery operations (walletStartRecovery, walletIsRecoveryInProgress)
-    // - P2P operations (walletGetPeers, walletAddPeer, walletBanPeer)
-    // - Advanced features (createCovenant, compileScript)
-    // - Callback management
+    // Mining operations  
+    cx.export_function("walletCoinSplit", wallet::wallet_coin_split)?;
+    cx.export_function("walletCoinJoin", wallet::wallet_coin_join)?;
+    
+    // Recovery operations
+    cx.export_function("walletStartRecovery", wallet::wallet_start_recovery)?;
+    cx.export_function("walletIsRecoveryInProgress", wallet::wallet_is_recovery_in_progress)?;
+    
+    // P2P operations
+    cx.export_function("walletGetPeers", wallet::wallet_get_peers)?;
+    cx.export_function("walletAddPeer", wallet::wallet_add_peer)?;
+    cx.export_function("walletBanPeer", wallet::wallet_ban_peer)?;
+    
+    // Advanced features
+    cx.export_function("createCovenant", advanced::create_covenant)?;
+    cx.export_function("covenantDestroy", advanced::covenant_destroy)?;
+    cx.export_function("compileScript", advanced::compile_script)?;
+    cx.export_function("scriptDestroy", advanced::script_destroy)?;
+    cx.export_function("executeScript", advanced::execute_script)?;
+    cx.export_function("getScriptInfo", advanced::get_script_info)?;
+    
+    // Callback management
+    cx.export_function("registerCallback", callbacks::register_callback)?;
+    cx.export_function("unregisterCallback", callbacks::unregister_callback)?;
+    cx.export_function("clearAllCallbacks", callbacks::clear_all_callbacks)?;
+    cx.export_function("getCallbackCount", callbacks::get_callback_count)?;
+    cx.export_function("testCallback", callbacks::test_callback)?;
     
     Ok(())
 }
