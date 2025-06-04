@@ -28,21 +28,21 @@ export interface NativeBinding {
   publicKeyDestroy(handle: number): void;
   
   // UTXO management
-  walletGetUtxos(wallet: number, page?: number, pageSize?: number): RawUtxo[];
-  walletImportUtxo(wallet: number, params: ImportUtxoParams): boolean;
+  walletGetUtxos(wallet: WalletHandle, page?: number, pageSize?: number): RawUtxo[];
+  walletImportUtxo(wallet: WalletHandle, params: ImportUtxoParams): boolean;
   
   // Mining
-  walletCoinSplit(wallet: number, params: CoinSplitParams): string;
-  walletCoinJoin(wallet: number, params: CoinJoinParams): string;
+  walletCoinSplit(wallet: WalletHandle, params: CoinSplitParams): string;
+  walletCoinJoin(wallet: WalletHandle, params: CoinJoinParams): string;
   
   // Recovery
-  walletStartRecovery(wallet: number, baseNodeKey: string, callback: (current: number, total: number) => void): boolean;
-  walletIsRecoveryInProgress(wallet: number): boolean;
+  walletStartRecovery(wallet: WalletHandle, baseNodeKey: string, callback: (current: number, total: number) => void): boolean;
+  walletIsRecoveryInProgress(wallet: WalletHandle): boolean;
   
   // P2P operations
-  walletGetPeers(wallet: number): RawPeer[];
-  walletAddPeer(wallet: number, publicKey: string, address: string): boolean;
-  walletBanPeer(wallet: number, publicKey: string, duration?: number): boolean;
+  walletGetPeers(wallet: WalletHandle): RawPeer[];
+  walletAddPeer(wallet: WalletHandle, publicKey: string, address: string): boolean;
+  walletBanPeer(wallet: WalletHandle, publicKey: string, duration?: number): boolean;
   
   // Advanced features
   createCovenant(data: Uint8Array): number;

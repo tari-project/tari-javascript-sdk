@@ -225,13 +225,42 @@ export class FFIWrapper {
    */
   async sendTransaction(
     wallet: WalletHandle,
+    destination: string,
+    amount: bigint,
+    feePerGram: bigint,
+    message: string
+  ): Promise<string>;
+  async sendTransaction(
+    wallet: WalletHandle,
     params: TransactionSendParams
+  ): Promise<string>;
+  async sendTransaction(
+    wallet: WalletHandle,
+    paramsOrDestination: TransactionSendParams | string,
+    amount?: bigint,
+    feePerGram?: bigint,
+    message?: string
   ): Promise<string> {
     if (!isWalletHandle(wallet)) {
       throw new TariFFIError(
         'Invalid wallet handle',
         TariErrorCode.InvalidArgument
       );
+    }
+
+    // Handle both parameter styles
+    let params: TransactionSendParams;
+    if (typeof paramsOrDestination === 'string') {
+      // Legacy parameter style
+      params = {
+        destination: paramsOrDestination,
+        amount: amount!,
+        feePerGram: feePerGram,
+        message: message,
+        oneSided: true,
+      };
+    } else {
+      params = paramsOrDestination;
     }
 
     // Validate parameters
@@ -374,6 +403,38 @@ export class FFIWrapper {
       throw new TariFFIError(
         `Failed to get callback count: ${error}`,
         TariErrorCode.ValidationError
+      );
+    }
+  }
+
+  /**
+   * Get UTXOs from wallet
+   * 
+   * @param handle Wallet handle
+   * @param page Optional page number for pagination
+   * @param pageSize Optional page size for pagination
+   * @returns Array of UTXO information
+   * @throws TariFFIError if operation fails
+   */
+  getUtxos(handle: WalletHandle, page?: number, pageSize?: number): any[] {
+    if (!isWalletHandle(handle)) {
+      throw new TariFFIError(
+        'Invalid wallet handle',
+        TariErrorCode.InvalidArgument
+      );
+    }
+
+    try {
+      const utxos = binding.walletGetUtxos(handle, page, pageSize);
+      return utxos || [];
+    } catch (error) {
+      if (error instanceof TariFFIError) {
+        throw error;
+      }
+      throw new TariFFIError(
+        `Failed to get UTXOs: ${error}`,
+        TariErrorCode.DatabaseError,
+        { handle, page, pageSize }
       );
     }
   }

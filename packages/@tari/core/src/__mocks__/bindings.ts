@@ -1,5 +1,7 @@
 import { NativeBinding, WalletHandle, AddressHandle } from '../bindings';
 
+type MockFunction<T extends (...args: any[]) => any> = jest.MockedFunction<T>;
+
 let nextHandle = 1;
 const wallets = new Map<number, any>();
 const addresses = new Map<number, any>();
@@ -7,7 +9,7 @@ const addresses = new Map<number, any>();
 export const mockBinding: NativeBinding = {
   initialize: jest.fn(),
   
-  walletCreate: jest.fn((config) => {
+  walletCreate: jest.fn().mockImplementation((config) => {
     const handle = nextHandle++ as WalletHandle;
     wallets.set(handle, {
       config,
@@ -22,16 +24,16 @@ export const mockBinding: NativeBinding = {
     return handle;
   }),
   
-  walletDestroy: jest.fn((handle) => {
+  walletDestroy: jest.fn().mockImplementation((handle) => {
     wallets.delete(handle);
   }),
   
-  walletGetSeedWords: jest.fn((handle) => {
+  walletGetSeedWords: jest.fn().mockImplementation((handle) => {
     const wallet = wallets.get(handle);
     return wallet?.seedWords || '';
   }),
   
-  walletGetBalance: jest.fn((handle) => {
+  walletGetBalance: jest.fn().mockImplementation((handle) => {
     const wallet = wallets.get(handle);
     return wallet?.balance || {
       available: '0',
@@ -41,7 +43,7 @@ export const mockBinding: NativeBinding = {
     };
   }),
   
-  walletGetAddress: jest.fn((handle) => {
+  walletGetAddress: jest.fn().mockImplementation((handle) => {
     const addressHandle = nextHandle++ as AddressHandle;
     addresses.set(addressHandle, {
       walletHandle: handle,
@@ -53,19 +55,19 @@ export const mockBinding: NativeBinding = {
     };
   }),
   
-  walletSendTransaction: jest.fn((handle, params) => {
+  walletSendTransaction: jest.fn().mockImplementation((handle, params) => {
     return `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }),
   
-  addressDestroy: jest.fn((handle) => {
+  addressDestroy: jest.fn().mockImplementation((handle) => {
     addresses.delete(handle);
   }),
   
   // Additional mocked functions
-  privateKeyGenerate: jest.fn(() => nextHandle++),
-  privateKeyFromHex: jest.fn(() => nextHandle++),
+  privateKeyGenerate: jest.fn().mockReturnValue(nextHandle++),
+  privateKeyFromHex: jest.fn().mockReturnValue(nextHandle++),
   privateKeyDestroy: jest.fn(),
-  walletGetUtxos: jest.fn(() => [
+  walletGetUtxos: jest.fn().mockReturnValue([
     {
       value: '1000000',
       commitment: 'commitment_1',
@@ -73,12 +75,31 @@ export const mockBinding: NativeBinding = {
       status: 0,
     },
   ]),
-  walletStartRecovery: jest.fn((handle, key, callback) => {
+  walletStartRecovery: jest.fn().mockImplementation((handle, key, callback) => {
     // Simulate recovery progress
     setTimeout(() => callback(50, 100), 100);
     setTimeout(() => callback(100, 100), 200);
     return true;
   }),
+  
+  // Additional missing methods
+  publicKeyFromPrivateKey: jest.fn().mockReturnValue(nextHandle++),
+  publicKeyDestroy: jest.fn(),
+  walletImportUtxo: jest.fn().mockReturnValue(true),
+  walletCoinSplit: jest.fn().mockReturnValue(`split_tx_${Date.now()}`),
+  walletCoinJoin: jest.fn().mockReturnValue(`join_tx_${Date.now()}`),
+  walletIsRecoveryInProgress: jest.fn().mockReturnValue(false),
+  walletGetPeers: jest.fn().mockReturnValue([]),
+  walletAddPeer: jest.fn().mockReturnValue(true),
+  walletBanPeer: jest.fn().mockReturnValue(true),
+  createCovenant: jest.fn().mockReturnValue(nextHandle++),
+  covenantDestroy: jest.fn(),
+  compileScript: jest.fn().mockReturnValue(nextHandle++),
+  scriptDestroy: jest.fn(),
+  registerCallback: jest.fn().mockReturnValue(nextHandle++),
+  unregisterCallback: jest.fn().mockReturnValue(true),
+  clearAllCallbacks: jest.fn(),
+  getCallbackCount: jest.fn().mockReturnValue(0),
 };
 
 export const binding = mockBinding;
