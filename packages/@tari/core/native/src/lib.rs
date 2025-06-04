@@ -10,6 +10,7 @@ mod performance;
 mod runtime_pool;
 mod config;
 mod health;
+mod resilience;
 
 use neon::prelude::*;
 
