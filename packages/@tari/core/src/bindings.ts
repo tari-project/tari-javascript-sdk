@@ -1,20 +1,50 @@
+import { 
+  WalletHandle, 
+  AddressHandle, 
+  Network, 
+  WalletCreateConfig 
+} from './ffi-types';
+
 export interface NativeBinding {
+  // Core
   initialize(): void;
-  walletCreate(config: WalletConfig): number;
-  walletDestroy(handle: number): void;
+  
+  // Wallet operations
+  walletCreate(config: WalletCreateConfig): WalletHandle;
+  walletDestroy(handle: WalletHandle): void;
+  walletGetSeedWords(handle: WalletHandle): string;
+  walletGetBalance(handle: WalletHandle): RawBalance;
+  walletGetAddress(handle: WalletHandle): RawAddress;
+  walletSendTransaction(handle: WalletHandle, params: SendParams): string;
+  
+  // Memory management helpers
+  addressDestroy(handle: AddressHandle): void;
+  
+  // Callback management
+  registerCallback(callback: Function): number;
+  unregisterCallback(id: number): boolean;
+  clearAllCallbacks(): void;
+  getCallbackCount(): number;
 }
 
-export interface WalletConfig {
-  seedWords: string;
-  network?: number;
-  dbPath?: string;
-  passphrase?: string;
+export interface RawBalance {
+  available: string;
+  pending: string;
+  locked: string;
+  total: string;
 }
 
-export enum Network {
-  Mainnet = 0,
-  Testnet = 1,
-  Nextnet = 2,
+export interface RawAddress {
+  handle: AddressHandle;
+  emojiId: string;
+}
+
+export interface SendParams {
+  destination: string;
+  amount: string;
+  feePerGram?: string;
+  message?: string;
+  oneSided?: boolean;
 }
 
 // This will be populated by the loader
