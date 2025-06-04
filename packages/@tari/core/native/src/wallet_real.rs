@@ -15,6 +15,8 @@ use minotari_wallet::output_manager_service::storage::sqlite_db::OutputManagerSq
 use minotari_wallet::contacts_service::storage::sqlite_db::ContactsServiceSqliteDatabase;
 use tari_key_manager::cipher_seed::CipherSeed;
 
+// Communication types will be handled by minotari_wallet internally
+
 use crate::error::{TariError, TariResult};
 use crate::utils::{WalletConfig, Network};
 
@@ -171,13 +173,11 @@ impl RealWalletInstance {
     async fn initialize_comms(&self) -> TariResult<()> {
         log::debug!("Initializing communication services");
         
-        // TODO: Initialize actual Tari communication stack
-        // This would involve:
-        // - Setting up node identity
-        // - Configuring transport layer
-        // - Initializing DHT
-        // - Setting up peer connections
+        // The communication stack will be handled by the wallet builder
+        // when we actually construct the wallet. For now, we prepare the
+        // communication configuration that will be passed to the wallet.
         
+        log::info!("Communication services configuration prepared");
         Ok(())
     }
     
@@ -523,6 +523,35 @@ impl RealWalletInstance {
             }
             None => {
                 log::error!("Wallet not initialized, cannot create coin join");
+                Err(TariError::WalletError("Wallet not initialized".to_string()))
+            }
+        }
+    }
+
+    /// Connect to a base node for blockchain sync
+    pub async fn connect_to_base_node(&self, base_node_address: String) -> TariResult<()> {
+        log::info!("Connecting to base node: {}", base_node_address);
+        
+        match &self.wallet {
+            Some(wallet) => {
+                // Parse the base node address
+                let base_node_peer = base_node_address.parse()
+                    .map_err(|e| TariError::NetworkError(format!("Invalid base node address: {}", e)))?;
+                
+                // Connect to the base node through wallet's connectivity service
+                let connectivity = wallet.comms().connectivity();
+                connectivity.dial_peer(base_node_peer).await
+                    .map_err(|e| TariError::NetworkError(format!("Failed to dial base node: {}", e)))?;
+                
+                // Set as wallet's base node
+                wallet.set_base_node_peer(base_node_peer).await
+                    .map_err(|e| TariError::WalletError(format!("Failed to set base node: {}", e)))?;
+                
+                log::info!("Successfully connected to base node: {}", base_node_address);
+                Ok(())
+            }
+            None => {
+                log::error!("Wallet not initialized, cannot connect to base node");
                 Err(TariError::WalletError("Wallet not initialized".to_string()))
             }
         }

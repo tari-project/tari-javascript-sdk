@@ -35,6 +35,8 @@ tari_utilities = { version = "0.8" }
 minotari_wallet = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
 tari_key_manager = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
 tari_storage = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
+tari_comms = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
+tari_p2p = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
 
 # Additional dependencies for production features
 lazy_static = "1.4"
