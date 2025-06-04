@@ -217,9 +217,34 @@ impl RealWalletInstance {
     pub async fn get_wallet_address(&self) -> TariResult<TariAddress> {
         log::debug!("Getting wallet address");
         
-        // TODO: Get actual address from Tari wallet
-        // For now, return mock address
-        Ok("tari_test_address_123".to_string())
+        match &self.wallet {
+            Some(wallet) => {
+                let address = wallet.get_tari_address().await
+                    .map_err(|e| TariError::WalletError(format!("Failed to get wallet address: {}", e)))?;
+                Ok(address.to_base58())
+            }
+            None => {
+                log::warn!("Wallet not initialized, returning mock address");
+                Ok("tari_test_address_123".to_string())
+            }
+        }
+    }
+
+    /// Get wallet emoji ID
+    pub async fn get_wallet_emoji_id(&self) -> TariResult<String> {
+        log::debug!("Getting wallet emoji ID");
+        
+        match &self.wallet {
+            Some(wallet) => {
+                let address = wallet.get_tari_address().await
+                    .map_err(|e| TariError::WalletError(format!("Failed to get wallet address: {}", e)))?;
+                Ok(address.to_emoji_string())
+            }
+            None => {
+                log::warn!("Wallet not initialized, returning mock emoji ID");
+                Ok("🚀🌟💎🔥🎯🌈⚡🎪🦄🎨🌺🎭".to_string())
+            }
+        }
     }
     
     /// Get connected peers

@@ -116,10 +116,22 @@ pub fn wallet_get_address(mut cx: FunctionContext) -> JsResult<JsObject> {
     
     let address_str = try_js!(&mut cx, address_str);
     
+    // Get actual emoji ID from real Tari wallet
+    let emoji_id = match &wallet.real_wallet {
+        Some(real_wallet) => {
+            wallet.runtime.block_on(async {
+                real_wallet.get_wallet_emoji_id().await
+            })
+        },
+        None => return TariError::WalletError("Real wallet not initialized".to_string()).to_js_error(&mut cx),
+    };
+    
+    let emoji_id = try_js!(&mut cx, emoji_id);
+    
     // Create address instance for handle management
     let address = AddressInstance {
         placeholder: address_str.clone(),
-        emoji_id: format!("🚀🌟💎🔥🎯🌈⚡🎪🦄🎨🌺🎭"), // TODO: Get real emoji ID from Tari
+        emoji_id,
     };
     
     let mut address_handles = ADDRESS_HANDLES.lock().unwrap();
