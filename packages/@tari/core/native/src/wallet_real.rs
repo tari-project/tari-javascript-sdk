@@ -253,8 +253,25 @@ impl RealWalletInstance {
     pub async fn add_peer(&self, public_key: String, address: String) -> TariResult<bool> {
         log::info!("Adding peer: {} at {}", public_key, address);
         
-        // TODO: Add actual peer through Tari wallet
-        Ok(true)
+        match &self.wallet {
+            Some(wallet) => {
+                let node_id = CommsPublicKey::from_hex(&public_key)
+                    .map_err(|e| TariError::InvalidInput(format!("Invalid public key: {}", e)))?;
+                let peer_address = address.parse()
+                    .map_err(|e| TariError::InvalidInput(format!("Invalid address: {}", e)))?;
+                
+                let peer_manager = wallet.comms().peer_manager();
+                peer_manager.add_peer(node_id.into(), vec![peer_address]).await
+                    .map_err(|e| TariError::NetworkError(format!("Failed to add peer: {}", e)))?;
+                
+                log::debug!("Successfully added peer: {}", public_key);
+                Ok(true)
+            }
+            None => {
+                log::error!("Wallet not initialized, cannot add peer");
+                Err(TariError::WalletError("Wallet not initialized".to_string()))
+            }
+        }
     }
     
     /// Ban a peer from the wallet
