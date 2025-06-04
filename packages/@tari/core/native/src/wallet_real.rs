@@ -278,8 +278,26 @@ impl RealWalletInstance {
     pub async fn ban_peer(&self, public_key: String, duration: Option<u64>) -> TariResult<bool> {
         log::info!("Banning peer: {} for {:?} seconds", public_key, duration);
         
-        // TODO: Ban actual peer through Tari wallet
-        Ok(true)
+        match &self.wallet {
+            Some(wallet) => {
+                let node_id = CommsPublicKey::from_hex(&public_key)
+                    .map_err(|e| TariError::InvalidInput(format!("Invalid public key: {}", e)))?;
+                
+                let connectivity = wallet.comms().connectivity();
+                let ban_duration = duration.map(std::time::Duration::from_secs)
+                    .unwrap_or(std::time::Duration::from_secs(3600)); // Default 1 hour
+                    
+                connectivity.ban_peer(node_id.into(), ban_duration, "Manual ban via SDK".to_string()).await
+                    .map_err(|e| TariError::NetworkError(format!("Failed to ban peer: {}", e)))?;
+                
+                log::debug!("Successfully banned peer: {} for {:?}", public_key, ban_duration);
+                Ok(true)
+            }
+            None => {
+                log::error!("Wallet not initialized, cannot ban peer");
+                Err(TariError::WalletError("Wallet not initialized".to_string()))
+            }
+        }
     }
     
     /// Start wallet recovery
