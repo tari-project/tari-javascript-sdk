@@ -36,6 +36,13 @@ minotari_wallet = { git = "https://github.com/tari-project/tari.git", tag = "v4.
 tari_key_manager = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
 tari_storage = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
 
+# Additional dependencies for production features
+lazy_static = "1.4"
+uuid = { version = "1.0", features = ["v4"] }
+toml = "0.8"
+tempfile = "3.0"
+num_cpus = "1.0"
+
 [build-dependencies]
 neon-build = "0.10"
 

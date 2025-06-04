@@ -2,9 +2,14 @@ mod error;
 mod types;
 mod utils;
 mod wallet;
+mod wallet_real;
 mod crypto;
 mod advanced;
 mod callbacks;
+mod performance;
+mod runtime_pool;
+mod config;
+mod health;
 
 use neon::prelude::*;
 
@@ -64,6 +69,10 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     cx.export_function("clearAllCallbacks", callbacks::clear_all_callbacks)?;
     cx.export_function("getCallbackCount", callbacks::get_callback_count)?;
     cx.export_function("testCallback", callbacks::test_callback)?;
+    
+    // Health monitoring
+    cx.export_function("getHealthStatus", health::get_health_status)?;
+    cx.export_function("getHealthCheck", health::get_health_check)?;
     
     Ok(())
 }
