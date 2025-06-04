@@ -1,35 +1,23 @@
-use neon::prelude::*;
-use once_cell::sync::OnceCell;
-
-mod error;
-mod types;
-mod utils;
 mod wallet;
-mod callbacks;
 
-// Global initialization state
-static INITIALIZED: OnceCell<()> = OnceCell::new();
+use neon::prelude::*;
 
-/// Initialize the Tari FFI library
-fn initialize(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-    INITIALIZED.get_or_init(|| {
-        // In real implementation, initialize FFI here
-        // For now, just mark as initialized
-    });
-    
-    Ok(cx.undefined())
-}
-
-/// Main module registration
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
+    // Basic initialization function
     cx.export_function("initialize", initialize)?;
     
-    // Export wallet functions
-    wallet::register(&mut cx)?;
-    
-    // Export callback functions
-    callbacks::register_callback_functions(&mut cx)?;
+    // Wallet API exports
+    cx.export_function("wallet_create", wallet::wallet_create)?;
+    cx.export_function("wallet_get_balance", wallet::wallet_get_balance)?;
+    cx.export_function("wallet_get_address", wallet::wallet_get_address)?;
+    cx.export_function("send_transaction", wallet::send_transaction)?;
+    cx.export_function("get_utxos", wallet::get_utxos)?;
     
     Ok(())
+}
+
+fn initialize(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+    println!("Tari Core Native module initialized successfully");
+    Ok(cx.undefined())
 }
