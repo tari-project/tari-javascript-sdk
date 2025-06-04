@@ -38,12 +38,10 @@ export const mockBinding: MockedNativeBinding = {
   
   walletGetBalance: jest.fn().mockImplementation((handle) => {
     const wallet = wallets.get(handle);
-    return wallet?.balance || {
-      available: '0',
-      pending: '0',
-      locked: '0',
-      total: '0',
-    };
+    if (!wallet) {
+      return null; // Return null for invalid handles
+    }
+    return wallet.balance;
   }),
   
   walletGetAddress: jest.fn().mockImplementation((handle) => {

@@ -42,6 +42,14 @@ export class FFIWrapper {
   createWallet(config: WalletCreateConfig): WalletHandle {
     this.initialize();
     
+    // Validate config
+    if (!config.seedWords || config.seedWords.trim() === '') {
+      throw new TariFFIError(
+        'Seed words are required',
+        TariErrorCode.InvalidArgument
+      );
+    }
+    
     try {
       const handle = binding.walletCreate(config);
       if (!handle || !isWalletHandle(handle)) {
@@ -142,8 +150,8 @@ export class FFIWrapper {
       const raw = binding.walletGetBalance(handle);
       if (!raw) {
         throw new TariFFIError(
-          'Failed to get balance: Empty response',
-          TariErrorCode.DatabaseError
+          'Invalid wallet handle',
+          TariErrorCode.InvalidArgument
         );
       }
 

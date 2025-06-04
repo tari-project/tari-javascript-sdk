@@ -145,11 +145,15 @@ export function formatTariAmount(microTari: bigint | string, decimals: number = 
  */
 export function formatTari(microTari: bigint | string, decimals: number = 6): string {
   const amount = typeof microTari === 'string' ? BigInt(microTari) : microTari;
-  const divisor = BigInt(10 ** decimals);
+  // microTari always uses 6 decimal places (1 Tari = 1,000,000 microTari)
+  const divisor = BigInt(10 ** 6);
   const wholePart = amount / divisor;
   const fractionalPart = amount % divisor;
   
-  const fractionalStr = fractionalPart.toString().padStart(decimals, '0');
+  // Convert fractional part to string with 6 digits, then truncate to desired decimals
+  const fullFractionalStr = fractionalPart.toString().padStart(6, '0');
+  const fractionalStr = fullFractionalStr.slice(0, decimals);
+  
   return `${wholePart}.${fractionalStr} XTR`;
 }
 

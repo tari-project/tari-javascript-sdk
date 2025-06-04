@@ -1,11 +1,12 @@
-import { FFIWrapper } from '../wrapper';
-import { mockBinding } from '../__mocks__/bindings';
 import { Network } from '../ffi-types';
 
 // Mock the bindings module
 jest.mock('../bindings', () => ({
-  binding: mockBinding,
+  binding: require('../__mocks__/bindings').mockBinding,
 }));
+
+import { FFIWrapper } from '../wrapper';
+import { mockBinding } from '../__mocks__/bindings';
 
 describe('FFIWrapper', () => {
   let wrapper: FFIWrapper;
@@ -71,12 +72,12 @@ describe('FFIWrapper', () => {
         available: '999999999999999999',
         pending: '1000000000',
         locked: '0',
-        total: '1000000999999999999',
+        total: '1000000000999999999',
       });
 
       const balance = wrapper.getBalance(handle);
 
-      expect(balance.total).toBe(1000000999999999999n);
+      expect(balance.total).toBe(1000000000999999999n);
     });
 
     it('should throw for invalid handle', () => {
