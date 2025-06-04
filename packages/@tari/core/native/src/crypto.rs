@@ -4,12 +4,19 @@ use crate::types::{
     PrivateKeyInstance, PublicKeyInstance,
     PRIVATE_KEY_HANDLES, PUBLIC_KEY_HANDLES, ADDRESS_HANDLES,
 };
+use tari_crypto::keys::{SecretKey, PublicKey};
+use tari_crypto::ristretto::{RistrettoSecretKey, RistrettoPublicKey};
+use rand::rngs::OsRng;
+use tari_crypto::tari_utilities::hex::from_hex;
+use tari_crypto::tari_utilities::ByteArray;
+use crate::try_js;
 
 /// Generate a new private key
 pub fn private_key_generate(mut cx: FunctionContext) -> JsResult<JsNumber> {
-    // TODO: Replace with actual Tari private key generation
+    // Generate real Tari private key
+    let mut rng = OsRng;
     let private_key = PrivateKeyInstance {
-        placeholder: format!("private_key_{}", rand::random::<u64>()),
+        key: RistrettoSecretKey::random(&mut rng),
     };
     
     let mut handles = PRIVATE_KEY_HANDLES.lock().unwrap();
@@ -23,16 +30,20 @@ pub fn private_key_generate(mut cx: FunctionContext) -> JsResult<JsNumber> {
 pub fn private_key_from_hex(mut cx: FunctionContext) -> JsResult<JsNumber> {
     let hex_str = cx.argument::<JsString>(0)?.value(&mut cx);
     
-    // TODO: Validate hex string and create actual Tari private key
-    if hex_str.len() != 64 {
+    // Parse hex string into actual Tari private key
+    let key_bytes = try_js!(&mut cx, from_hex(&hex_str)
+        .map_err(|e| TariError::InvalidArgument(format!("Invalid hex string: {}", e))));
+    
+    if key_bytes.len() != 32 {
         return TariError::InvalidArgument(
-            "Private key hex must be 64 characters".to_string()
+            "Private key must be 32 bytes (64 hex characters)".to_string()
         ).to_js_error(&mut cx);
     }
     
-    let private_key = PrivateKeyInstance {
-        placeholder: format!("private_key_from_hex_{}", hex_str),
-    };
+    let key = try_js!(&mut cx, RistrettoSecretKey::from_canonical_bytes(&key_bytes)
+        .map_err(|e| TariError::CryptoError(format!("Invalid private key: {}", e))));
+    
+    let private_key = PrivateKeyInstance { key };
     
     let mut handles = PRIVATE_KEY_HANDLES.lock().unwrap();
     let handle = handles.create_handle(private_key);
@@ -59,17 +70,15 @@ pub fn private_key_destroy(mut cx: FunctionContext) -> JsResult<JsUndefined> {
 pub fn public_key_from_private_key(mut cx: FunctionContext) -> JsResult<JsNumber> {
     let private_key_handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
     
-    // Verify private key handle exists
+    // Get the private key and generate public key
     let private_handles = PRIVATE_KEY_HANDLES.lock().unwrap();
-    if !private_handles.is_valid(private_key_handle) {
-        return TariError::InvalidHandle(private_key_handle).to_js_error(&mut cx);
-    }
-    drop(private_handles);
+    let private_key = try_js!(&mut cx, private_handles.get_handle(private_key_handle)
+        .ok_or(TariError::InvalidHandle(private_key_handle)));
     
-    // TODO: Generate actual public key from private key
     let public_key = PublicKeyInstance {
-        placeholder: format!("public_key_from_private_{}", private_key_handle),
+        key: PublicKey::from_secret_key(&private_key.key),
     };
+    drop(private_handles);
     
     let mut public_handles = PUBLIC_KEY_HANDLES.lock().unwrap();
     let handle = public_handles.create_handle(public_key);
@@ -83,16 +92,20 @@ pub fn public_key_from_private_key(mut cx: FunctionContext) -> JsResult<JsNumber
 pub fn public_key_from_hex(mut cx: FunctionContext) -> JsResult<JsNumber> {
     let hex_str = cx.argument::<JsString>(0)?.value(&mut cx);
     
-    // TODO: Validate hex string and create actual Tari public key
-    if hex_str.len() != 64 {
+    // Parse hex string into actual Tari public key
+    let key_bytes = try_js!(&mut cx, from_hex(&hex_str)
+        .map_err(|e| TariError::InvalidArgument(format!("Invalid hex string: {}", e))));
+    
+    if key_bytes.len() != 32 {
         return TariError::InvalidArgument(
-            "Public key hex must be 64 characters".to_string()
+            "Public key must be 32 bytes (64 hex characters)".to_string()
         ).to_js_error(&mut cx);
     }
     
-    let public_key = PublicKeyInstance {
-        placeholder: format!("public_key_from_hex_{}", hex_str),
-    };
+    let key = try_js!(&mut cx, RistrettoPublicKey::from_canonical_bytes(&key_bytes)
+        .map_err(|e| TariError::CryptoError(format!("Invalid public key: {}", e))));
+    
+    let public_key = PublicKeyInstance { key };
     
     let mut handles = PUBLIC_KEY_HANDLES.lock().unwrap();
     let handle = handles.create_handle(public_key);

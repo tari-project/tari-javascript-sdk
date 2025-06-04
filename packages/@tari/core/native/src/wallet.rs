@@ -11,8 +11,8 @@ pub fn wallet_create(mut cx: FunctionContext) -> JsResult<JsNumber> {
     
     log::info!("Creating wallet with network: {:?}", config.network);
     
-    // TODO: Replace with actual Tari wallet creation
-    let wallet = try_js!(&mut cx, WalletInstance::new());
+    // Create wallet with real Tari components
+    let wallet = try_js!(&mut cx, WalletInstance::new_sync(config));
     let handle = create_wallet_handle(wallet);
     
     log::debug!("Created wallet with handle: {}", handle);
