@@ -9,18 +9,13 @@ license = "BSD-3-Clause"
 crate-type = ["cdylib"]
 
 [dependencies]
-neon = { version = "1.0", features = ["napi-6"] }
+neon = { version = "0.10", default-features = false, features = ["napi-6"] }
 once_cell = "1.19"
 libc = "0.2"
 rand = "0.8"  # Added for mock data
 
-[dependencies.neon]
-version = "1.0"
-default-features = false
-features = ["napi-6", "promise-api", "task-api"]
-
 [build-dependencies]
-neon-build = "1.0"
+neon-build = "0.10"
 
 [profile.release]
 opt-level = 3
