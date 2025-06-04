@@ -5,6 +5,7 @@ mod error;
 mod types;
 mod utils;
 mod wallet;
+mod callbacks;
 
 // Global initialization state
 static INITIALIZED: OnceCell<()> = OnceCell::new();
@@ -26,6 +27,9 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     
     // Export wallet functions
     wallet::register(&mut cx)?;
+    
+    // Export callback functions
+    callbacks::register_callback_functions(&mut cx)?;
     
     Ok(())
 }
