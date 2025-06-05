@@ -148,6 +148,7 @@ For exchanges and services that need to handle user deposits:
 import { DepositManager } from '@tari-project/wallet';
 
 const deposits = new DepositManager(wallet);
+deposits.initialize();
 
 // Generate unique addresses for users
 async function onboardUser(userId: string) {
@@ -321,6 +322,26 @@ setInterval(() => {
 }, 10000);
 ```
 
+## Lifecycle Management
+
+Classes that manage event listeners or resources (like `DepositManager`) require proper initialization and cleanup:
+
+```typescript
+import { DepositManager } from '@tari-project/wallet';
+
+// Create and initialize
+const deposits = new DepositManager(wallet);
+deposits.initialize(); // Required before use
+
+// Use the manager
+await deposits.generateAddress('user1');
+
+// Clean up when done
+deposits.teardown(); // Required to prevent memory leaks
+```
+
+**Important:** Always call `teardown()` or the legacy `destroy()` method before discarding instances to prevent memory leaks.
+
 ## Error Handling Best Practices
 
 ### Comprehensive Error Handling
@@ -397,6 +418,7 @@ class WalletService {
     await this.wallet.connect();
     
     this.deposits = new DepositManager(this.wallet);
+    this.deposits.initialize();
     this.processor = new WithdrawalProcessor(this.wallet);
     this.processor.start();
     
@@ -414,7 +436,7 @@ class WalletService {
     }
     
     if (this.deposits) {
-      this.deposits.destroy();
+      this.deposits.teardown();
       console.log('✓ Deposit manager cleaned up');
     }
     
