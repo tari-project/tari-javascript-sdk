@@ -1,4 +1,4 @@
-import { TariWallet, WalletBuilder } from '../wallet';
+import { TariWallet } from '../wallet';
 import { Network } from '@tari-project/core';
 import { WalletEvent } from '../types';
 

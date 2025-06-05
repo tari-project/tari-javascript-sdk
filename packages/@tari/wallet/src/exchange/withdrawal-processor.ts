@@ -1,5 +1,4 @@
 import { TariWallet } from '../wallet';
-import { Transaction } from '../types';
 import pLimit from 'p-limit';
 
 export interface WithdrawalRequest {
@@ -85,7 +84,7 @@ export class WithdrawalProcessor {
    * Process a batch of withdrawals
    */
   private async processBatch(batch: WithdrawalRequest[]): Promise<void> {
-    const results = await Promise.allSettled(
+    await Promise.allSettled(
       batch.map(request => 
         this.limit(() => this.processWithdrawal(request))
       )

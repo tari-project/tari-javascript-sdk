@@ -45,8 +45,8 @@ export class DepositManager extends EventEmitter<{
    */
   initialize(): void {
     // Store bound functions for later cleanup
-    const transactionReceivedHandler = (tx: any) => this.handleIncomingTransaction(tx);
-    const transactionConfirmedHandler = (tx: any) => this.handleConfirmedTransaction(tx);
+    const transactionReceivedHandler = (tx: unknown) => this.handleIncomingTransaction(tx);
+    const transactionConfirmedHandler = (tx: unknown) => this.handleConfirmedTransaction(tx);
     
     // Attach listeners
     this.wallet.on(WalletEvent.TransactionReceived, transactionReceivedHandler);
@@ -143,7 +143,10 @@ export class DepositManager extends EventEmitter<{
   /**
    * Handle incoming transaction
    */
-  private handleIncomingTransaction(tx: any): void {
+  private handleIncomingTransaction(tx: unknown): void {
+    // Type guard for transaction object
+    if (!this.isValidTransaction(tx)) return;
+
     // Check if transaction is to one of our addresses
     const userId = this.addressToUser.get(tx.destination);
     if (!userId) return;
@@ -168,7 +171,10 @@ export class DepositManager extends EventEmitter<{
   /**
    * Handle confirmed transaction
    */
-  private handleConfirmedTransaction(tx: any): void {
+  private handleConfirmedTransaction(tx: unknown): void {
+    // Type guard for transaction object
+    if (!this.isValidTransaction(tx)) return;
+
     const userId = this.addressToUser.get(tx.destination);
     if (!userId) return;
     
@@ -179,5 +185,28 @@ export class DepositManager extends EventEmitter<{
       txId: tx.id,
       confirmations: tx.confirmations,
     });
+  }
+
+  /**
+   * Type guard to check if object is a valid transaction
+   */
+  private isValidTransaction(tx: unknown): tx is {
+    destination: string;
+    amount: bigint;
+    id: string;
+    confirmations: number;
+  } {
+    return (
+      typeof tx === 'object' &&
+      tx !== null &&
+      'destination' in tx &&
+      'amount' in tx &&
+      'id' in tx &&
+      'confirmations' in tx &&
+      typeof (tx as any).destination === 'string' &&
+      typeof (tx as any).amount === 'bigint' &&
+      typeof (tx as any).id === 'string' &&
+      typeof (tx as any).confirmations === 'number'
+    );
   }
 }

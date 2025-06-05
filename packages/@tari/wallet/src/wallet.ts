@@ -99,7 +99,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
   /**
    * Connect to a base node
    */
-  private async connectToBaseNode(address: string, publicKey: string): Promise<void> {
+  private async connectToBaseNode(address: string, _publicKey: string): Promise<void> {
     // In real implementation, this would call FFI setBaseNodePeer
     console.log(`Connecting to base node: ${address}`);
     
