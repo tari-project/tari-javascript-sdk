@@ -342,6 +342,10 @@ deposits.teardown(); // Required to prevent memory leaks
 
 **Important:** Always call `teardown()` or the legacy `destroy()` method before discarding instances to prevent memory leaks.
 
+**Idempotent Operations:** Both `initialize()` and `teardown()` are idempotent:
+- `initialize()` can be called multiple times safely - only the first call has effect
+- `teardown()` can be called multiple times or before `initialize()` safely
+
 ## Error Handling Best Practices
 
 ### Comprehensive Error Handling

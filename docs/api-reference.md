@@ -247,7 +247,7 @@ Initializes the deposit manager and starts event listening.
 deposits.initialize(): void
 ```
 
-**Note:** Must be called after construction before using any other methods.
+**Note:** Must be called after construction before using any other methods. This method is idempotent - safe to call multiple times.
 
 ##### teardown()
 Cleans up all event listeners and resources.
@@ -256,7 +256,7 @@ Cleans up all event listeners and resources.
 deposits.teardown(): void
 ```
 
-**Note:** Should be called before discarding the instance to prevent memory leaks.
+**Note:** Should be called before discarding the instance to prevent memory leaks. This method is idempotent - safe to call multiple times or before initialize().
 
 ##### generateAddress()
 Creates a deposit address for a user.
