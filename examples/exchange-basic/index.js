@@ -1,4 +1,10 @@
-const { TariWallet, DepositManager, formatTari, parseTari, WalletEvent } = require('@tari-project/wallet');
+const {
+  TariWallet,
+  DepositManager,
+  formatTari,
+  parseTari,
+  WalletEvent,
+} = require('@tari-project/wallet');
 const { Network } = require('@tari-project/core');
 require('dotenv').config();
 
@@ -36,11 +42,11 @@ async function main() {
 
     // Set up deposit management
     const deposits = new DepositManager(wallet);
-    
+
     // Simulate user onboarding
     console.log('👥 Creating deposit addresses for users...');
     const users = ['alice', 'bob', 'charlie', 'diana'];
-    
+
     for (const user of users) {
       const addr = await deposits.generateAddress(user);
       console.log(`   ${user.padEnd(8)}: ${addr.substring(0, 25)}...`);
@@ -54,16 +60,18 @@ async function main() {
     // Start periodic balance reporting
     const balanceInterval = setInterval(async () => {
       if (isShuttingDown) return;
-      
+
       try {
         const currentBalance = await wallet.getBalance();
         const timestamp = new Date().toISOString();
         console.log(`[${timestamp}] 💼 Current Balance: ${formatTari(currentBalance.available)}`);
-        
+
         // Show deposit statistics
         const stats = deposits.getStatistics();
         if (stats.totalDeposits > 0) {
-          console.log(`[${timestamp}] 📊 Deposits: ${stats.totalDeposits} users, ${formatTari(stats.totalVolume)} total volume`);
+          console.log(
+            `[${timestamp}] 📊 Deposits: ${stats.totalDeposits} users, ${formatTari(stats.totalVolume)} total volume`
+          );
         }
       } catch (error) {
         console.error('Error checking balance:', error.message);
@@ -83,17 +91,17 @@ async function main() {
     const shutdown = async () => {
       if (isShuttingDown) return;
       isShuttingDown = true;
-      
+
       console.log('\n🛑 Shutting down exchange...');
       clearInterval(balanceInterval);
-      
+
       try {
         deposits.destroy();
         console.log('✅ Deposit manager cleaned up');
-        
+
         await wallet.close();
         console.log('✅ Wallet disconnected');
-        
+
         console.log('👋 Exchange shutdown complete');
         process.exit(0);
       } catch (error) {
@@ -104,7 +112,6 @@ async function main() {
 
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
-
   } catch (error) {
     console.error('❌ Error starting exchange:', error.message);
     if (error.code) {
@@ -149,7 +156,7 @@ function setupDepositEvents(deposits) {
     console.log(`   Amount: ${formatTari(event.amount)}`);
     console.log(`   TX ID: ${event.txId}`);
     console.log(`   Confirmations: ${event.confirmations}`);
-    
+
     if (event.confirmations >= 6) {
       console.log('   ✅ Fully confirmed - can credit user account');
     } else {
@@ -168,14 +175,14 @@ function setupDepositEvents(deposits) {
 
 async function simulateTestActivity(wallet, deposits) {
   console.log('🎭 Simulating some test activity...\n');
-  
+
   try {
     // Show how to check if we have funds to send
     const balance = await wallet.getBalance();
     if (balance.available > parseTari('0.1')) {
       console.log('💸 Would send test transaction, but this is demo mode');
       console.log('   (Uncomment sendTransaction code to actually send)');
-      
+
       // Uncomment to actually send a transaction:
       /*
       const tx = await wallet.sendTransaction({
@@ -193,10 +200,9 @@ async function simulateTestActivity(wallet, deposits) {
     // Show deposit address lookup
     console.log('\n📋 Current deposit addresses:');
     const allAddresses = deposits.getAllAddresses();
-    allAddresses.forEach(deposit => {
+    allAddresses.forEach((deposit) => {
       console.log(`   ${deposit.userId}: ${formatTari(deposit.totalReceived)} received`);
     });
-
   } catch (error) {
     console.error('Error in test simulation:', error.message);
   }
@@ -205,16 +211,36 @@ async function simulateTestActivity(wallet, deposits) {
 function generateTestSeedWords() {
   // Generate deterministic test seed words for demo
   const words = [
-    'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
-    'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
-    'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
-    'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'art'
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'abandon',
+    'art',
   ];
   return words.join(' ');
 }
 
 // Run the example
-main().catch(error => {
+main().catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

@@ -1,27 +1,32 @@
-import { EventEmitter } from 'eventemitter3';
-import { 
-  WalletHandle, 
-  AddressHandle, 
-  Network, 
+import {
+  AddressHandle,
+  Network,
   TransactionStatus,
+  WalletHandle,
+  ffi,
   initialize as initCore,
-  ffi 
 } from '@tari-project/core';
+import { EventEmitter } from 'eventemitter3';
 import pRetry from 'p-retry';
 import {
-  WalletConfig,
   Balance,
-  Transaction,
   ConnectionStatus,
+  ScanProgress,
+  Transaction,
+  WalletConfig,
   WalletEvent,
   WalletEventMap,
-  ScanProgress,
 } from './types';
 
 export class TariWallet extends EventEmitter<WalletEventMap> {
   private handle?: WalletHandle;
   private addressHandle?: AddressHandle;
-  private config: WalletConfig & { seedWords: string; passphrase: string; dbPath: string; dbName: string; };
+  private config: WalletConfig & {
+    seedWords: string;
+    passphrase: string;
+    dbPath: string;
+    dbName: string;
+  };
   private connectionStatus: ConnectionStatus = { connected: false };
   private closed = false;
   private balancePoller?: NodeJS.Timeout;
@@ -29,10 +34,9 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
 
   constructor(config: WalletConfig) {
     super();
-    
     // Ensure core is initialized
     initCore();
-    
+
     // Set defaults
     this.config = {
       network: config.network,
@@ -54,19 +58,30 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
 
     try {
       // Create wallet
-      this.handle = await pRetry(() => 
-        ffi.createWallet({
-          seedWords: this.config.seedWords,
-          network: this.config.network,
-          dbPath: this.config.dbPath,
-          dbName: this.config.dbName,
-          passphrase: this.config.passphrase,
-        }), 
+      this.handle = ffi.createWallet({
+        seedWords: this.config.seedWords,
+        network: this.config.network,
+        dbPath: this.config.dbPath,
+        dbName: this.config.dbName,
+        passphrase: this.config.passphrase,
+      });
+
+      this.handle = await pRetry(
+        () => {
+          console.log('before ffi create');
+          return ffi.createWallet({
+            seedWords: this.config.seedWords,
+            network: this.config.network,
+            dbPath: this.config.dbPath,
+            dbName: this.config.dbName,
+            passphrase: this.config.passphrase,
+          });
+        },
         {
           retries: 3,
           onFailedAttempt: (error) => {
             console.warn(`Wallet creation attempt ${error.attemptNumber} failed:`, error.message);
-          }
+          },
         }
       );
 
@@ -83,12 +98,12 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
       this.startMonitoring();
 
       // Update status
-      this.connectionStatus = { 
+      this.connectionStatus = {
         connected: true,
         baseNode: this.config.baseNode?.address,
         lastSeen: new Date(),
       };
-      
+
       this.emit(WalletEvent.Connected, this.connectionStatus);
     } catch (error) {
       this.cleanup();
@@ -102,9 +117,9 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
   private async connectToBaseNode(address: string, publicKey: string): Promise<void> {
     // In real implementation, this would call FFI setBaseNodePeer
     console.log(`Connecting to base node: ${address}`);
-    
+
     // Mock connection delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
   /**
@@ -112,15 +127,15 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
    */
   getReceiveAddress(): string {
     this.ensureConnected();
-    
+
     const address = ffi.getAddress(this.handle!);
     const emojiId = address.emojiId;
-    
+
     // Clean up temporary handle
     if (address.handle !== this.addressHandle) {
       ffi.destroyAddress(address.handle);
     }
-    
+
     return emojiId;
   }
 
@@ -129,12 +144,12 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
    */
   async getBalance(): Promise<Balance> {
     this.ensureConnected();
-    
+
     const balance = ffi.getBalance(this.handle!);
-    
+
     // Emit balance update event
     this.emit(WalletEvent.BalanceUpdated, balance);
-    
+
     return balance;
   }
 
@@ -148,33 +163,27 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
     message?: string;
   }): Promise<Transaction> {
     this.ensureConnected();
-    
+
     const { destination, amount, feePerGram = 5n, message = '' } = params;
-    
+
     // Validate inputs
     if (!destination) {
       throw new Error('Destination address required');
     }
-    
+
     if (amount <= 0n) {
       throw new Error('Amount must be greater than 0');
     }
-    
+
     // Check balance
     const balance = await this.getBalance();
-    if (balance.available < amount + (feePerGram * 1000n)) {
+    if (balance.available < amount + feePerGram * 1000n) {
       throw new Error('Insufficient balance');
     }
-    
+
     // Send transaction
-    const txId = await ffi.sendTransaction(
-      this.handle!,
-      destination,
-      amount,
-      feePerGram,
-      message
-    );
-    
+    const txId = await ffi.sendTransaction(this.handle!, destination, amount, feePerGram, message);
+
     // Create transaction object
     const transaction: Transaction = {
       id: txId,
@@ -187,20 +196,17 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
       confirmations: 0,
       isOutbound: true,
     };
-    
+
     // Emit event
     this.emit(WalletEvent.TransactionSent, transaction);
-    
+
     return transaction;
   }
 
   /**
    * Monitor a transaction for confirmations
    */
-  watchTransaction(
-    txId: string, 
-    callback: (tx: Transaction) => void
-  ): () => void {
+  watchTransaction(txId: string, callback: (tx: Transaction) => void): () => void {
     const interval = setInterval(async () => {
       try {
         // In real implementation, would check transaction status via FFI
@@ -215,9 +221,9 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
           confirmations: Math.floor(Math.random() * 10),
           isOutbound: true,
         };
-        
+
         callback(mockTx);
-        
+
         if (mockTx.confirmations >= 3) {
           clearInterval(interval);
           this.emit(WalletEvent.TransactionConfirmed, mockTx);
@@ -226,7 +232,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
         console.error('Error watching transaction:', error);
       }
     }, 30000); // Check every 30 seconds
-    
+
     // Return cleanup function
     return () => clearInterval(interval);
   }
@@ -234,11 +240,9 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
   /**
    * Scan for UTXOs
    */
-  async scanForUtxos(
-    onProgress?: (progress: ScanProgress) => void
-  ): Promise<void> {
+  async scanForUtxos(onProgress?: (progress: ScanProgress) => void): Promise<void> {
     this.ensureConnected();
-    
+
     // Mock scanning process
     const total = 100;
     for (let i = 0; i <= total; i += 10) {
@@ -247,16 +251,16 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
         total,
         percentage: (i / total) * 100,
       };
-      
+
       if (onProgress) {
         onProgress(progress);
       }
-      
+
       this.emit(WalletEvent.ScanProgress, progress);
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    
+
     // Update balance after scan
     await this.getBalance();
   }
@@ -274,11 +278,11 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
    */
   async close(): Promise<void> {
     if (this.closed) return;
-    
+
     this.closed = true;
     this.stopMonitoring();
     this.cleanup();
-    
+
     this.connectionStatus = { connected: false };
     this.emit(WalletEvent.Disconnected, { reason: 'User requested' });
   }
@@ -305,7 +309,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
       clearInterval(this.balancePoller);
       this.balancePoller = undefined;
     }
-    
+
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = undefined;
@@ -320,7 +324,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
       ffi.destroyAddress(this.addressHandle);
       this.addressHandle = undefined;
     }
-    
+
     if (this.handle) {
       ffi.destroyWallet(this.handle);
       this.handle = undefined;
@@ -391,7 +395,7 @@ export class WalletBuilder {
     if (!this.config.network) {
       throw new Error('Network is required');
     }
-    
+
     return new TariWallet(this.config as WalletConfig);
   }
 }

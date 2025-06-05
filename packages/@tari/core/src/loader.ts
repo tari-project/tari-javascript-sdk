@@ -1,15 +1,15 @@
-import { NativeBinding, setBinding } from './bindings';
-import { join } from 'path';
 import { existsSync } from 'fs';
+import { join } from 'path';
+import { NativeBinding, setBinding } from './bindings';
 
 export function loadNativeBinding(): NativeBinding {
   const platform = process.platform;
   const arch = process.arch;
-  
+
   // Try loading from multiple locations
   const possiblePaths = [
     // 1. Prebuild location
-    join(__dirname, '..', 'prebuilds', `${platform}-${arch}`, 'index.node'),
+    join(__dirname, '..', 'prebuilds', `${platform}-${arch}`, `${platform}-${arch}-napi-v6.node`),
     // 2. Local build
     join(__dirname, '..', 'native', 'index.node'),
     // 3. Node modules (for npm install)
@@ -42,15 +42,15 @@ export function loadNativeBinding(): NativeBinding {
   if (!nativeModule) {
     throw new Error(
       `Failed to load native binding for ${platform}-${arch}.\n` +
-      `Tried paths:\n${possiblePaths.map(p => `  - ${p}`).join('\n')}\n` +
-      `Last error: ${lastError?.message || 'No binding found'}\n\n` +
-      `To fix this, try:\n` +
-      `1. Run 'npm run build:native' to build locally\n` +
-      `2. Check that you have the correct platform package installed\n` +
-      `3. File an issue at https://github.com/tari-project/tari-javascript-sdk/issues`
+        `Tried paths:\n${possiblePaths.map((p) => `  - ${p}`).join('\n')}\n` +
+        `Last error: ${lastError?.message || 'No binding found'}\n\n` +
+        `To fix this, try:\n` +
+        `1. Run 'npm run build:native' to build locally\n` +
+        `2. Check that you have the correct platform package installed\n` +
+        `3. File an issue at https://github.com/tari-project/tari-javascript-sdk/issues`
     );
   }
-  
+
   try {
     setBinding(nativeModule);
     nativeModule.initialize();

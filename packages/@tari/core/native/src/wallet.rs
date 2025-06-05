@@ -6,17 +6,23 @@ use crate::try_js;
 
 /// Create a new wallet instance
 pub fn wallet_create(mut cx: FunctionContext) -> JsResult<JsNumber> {
+    log::info!("Creating new wallet instance");
     let config_obj = cx.argument::<JsObject>(0)?;
-    let config = try_js!(&mut cx, parse_wallet_config(&mut cx, config_obj));
-    
-    log::info!("Creating wallet with network: {:?}", config.network);
-    
-    // Create wallet with real Tari components
+
+    let config = match parse_wallet_config(&mut cx, config_obj) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            println!("Error parsing wallet config: {}", e);
+            return cx.throw_error(format!("Config error: {}", e));
+        },
+    };
+
+    log::info!("Creating wallet with network: {}", config.network);
+
     let wallet = try_js!(&mut cx, WalletInstance::new_sync(config));
     let handle = create_wallet_handle(wallet);
-    
-    log::debug!("Created wallet with handle: {}", handle);
     Ok(cx.number(handle as f64))
+
 }
 
 /// Destroy a wallet instance

@@ -16,8 +16,7 @@ use neon::prelude::*;
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    // Initialize logging
-    env_logger::init();
+     env_logger::init();
     
     // Core functions
     cx.export_function("initialize", initialize)?;

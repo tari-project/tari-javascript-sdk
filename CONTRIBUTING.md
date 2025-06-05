@@ -38,7 +38,9 @@ Ensure you have the following installed:
 
 - Node.js 16+ (we recommend using [nvm](https://github.com/nvm-sh/nvm))
 - [pnpm](https://pnpm.io/) 8+ for package management
-- Rust toolchain (for native module development)
+- Rust toolchain (for native module development) // cmake and protobuf-compiler
+- CMake (build tool required by some Rust crates)
+- protobuf-compiler (`protoc`, required by some Rust crates)
 - C++ build tools for your platform
 
 ### Initial Setup
@@ -92,6 +94,7 @@ pnpm lint:fix
 #### 1. PRs Do One Thing
 
 Each PR should address a single concern:
+
 - ✅ Fix a specific bug
 - ✅ Add a single feature
 - ✅ Refactor one module
@@ -103,6 +106,7 @@ If your PR does multiple things, please split it into separate PRs.
 #### 2. Keep PRs Small
 
 Aim for PRs under 400 lines of code (excluding tests and documentation):
+
 - Easier to review thoroughly
 - Faster to get merged
 - Less likely to introduce bugs
@@ -125,6 +129,7 @@ in poor network conditions.
 ```
 
 Bad example:
+
 ```
 fix stuff
 ```
@@ -140,16 +145,19 @@ fix stuff
 ### Submitting Your PR
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feat/my-awesome-feature
    ```
 
 2. **Make your changes**
+
    - Follow our coding standards
    - Add comprehensive tests
    - Update documentation
 
 3. **Run quality checks**
+
    ```bash
    pnpm lint
    pnpm test
@@ -185,6 +193,7 @@ When reviewing PRs:
 5. **Check documentation** - All public APIs need JSDoc
 
 Use these labels when reviewing:
+
 - `needs-changes` - Requires updates before merging
 - `security` - Has security implications
 - `breaking-change` - Changes public API
@@ -203,10 +212,10 @@ describe('TariWallet', () => {
     it('should send transaction successfully', async () => {
       // Arrange
       const wallet = createTestWallet();
-      
+
       // Act
       const tx = await wallet.sendTransaction({...});
-      
+
       // Assert
       expect(tx.id).toBeDefined();
     });
@@ -261,21 +270,21 @@ pnpm --filter @tari-project/wallet test
 
 All public APIs must have JSDoc comments:
 
-```typescript
+````typescript
 /**
  * Sends a transaction to the specified address
- * 
+ *
  * @param params - Transaction parameters
  * @param params.destination - Recipient's Tari address
  * @param params.amount - Amount to send in microTari
  * @param params.feePerGram - Fee per gram (optional, defaults to 5)
  * @param params.message - Optional message to include
- * 
+ *
  * @returns Promise resolving to the transaction object
- * 
+ *
  * @throws {InsufficientBalanceError} If wallet balance is too low
  * @throws {InvalidAddressError} If destination address is invalid
- * 
+ *
  * @example
  * ```typescript
  * const tx = await wallet.sendTransaction({
@@ -288,11 +297,12 @@ All public APIs must have JSDoc comments:
 async sendTransaction(params: SendTransactionParams): Promise<Transaction> {
   // Implementation
 }
-```
+````
 
 ### Documentation Updates
 
 When adding features, update:
+
 1. API documentation in code
 2. README.md if adding user-facing features
 3. Examples if demonstrating new functionality
@@ -376,6 +386,7 @@ We are committed to providing a welcoming and inclusive environment. Please:
 ## Recognition
 
 Contributors who make significant improvements will be:
+
 - Added to the AUTHORS file
 - Mentioned in release notes
 - Given credit in relevant documentation

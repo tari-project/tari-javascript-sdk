@@ -1,6 +1,6 @@
 // Re-export all types and interfaces
-export * from './ffi-types';
 export * from './bindings';
+export * from './ffi-types';
 export * from './wrapper';
 
 // Export the native loader
@@ -17,7 +17,7 @@ let initialized = false;
 
 /**
  * Initialize the Tari FFI library
- * 
+ *
  * This function loads the native binding and initializes the FFI wrapper.
  * It's safe to call multiple times.
  */
@@ -44,10 +44,10 @@ export default ffi;
 
 // Named exports for specific functionality
 export {
-  ffi,
   createDefaultWallet,
   createMainnetWallet,
   createTestnetWallet,
+  ffi,
   safeDestroyWallet,
 } from './wrapper';
 

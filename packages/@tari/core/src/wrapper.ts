@@ -1,20 +1,20 @@
 import { binding } from './bindings';
-import { 
-  WalletHandle, 
-  AddressHandle, 
-  TariBalance,
-  WalletCreateConfig,
+import {
+  AddressHandle,
   Network,
-  TariFFIError,
+  TariBalance,
   TariErrorCode,
+  TariFFIError,
   TransactionSendParams,
+  WalletCreateConfig,
+  WalletHandle,
+  isAddressHandle,
   isWalletHandle,
-  isAddressHandle
 } from './ffi-types';
 
 /**
  * Type-safe wrapper around native FFI functions
- * 
+ *
  * This class provides a clean, type-safe interface to the underlying
  * native Tari wallet functionality while handling error cases and
  * memory management.
@@ -34,22 +34,19 @@ export class FFIWrapper {
 
   /**
    * Create a new wallet
-   * 
+   *
    * @param config Wallet configuration including seed words and network
    * @returns Handle to the created wallet
    * @throws TariFFIError if wallet creation fails
    */
   createWallet(config: WalletCreateConfig): WalletHandle {
     this.initialize();
-    
+
     // Validate config
     if (!config.seedWords || config.seedWords.trim() === '') {
-      throw new TariFFIError(
-        'Seed words are required',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Seed words are required', TariErrorCode.InvalidArgument);
     }
-    
+
     try {
       const handle = binding.walletCreate(config);
       if (!handle || !isWalletHandle(handle)) {
@@ -63,96 +60,76 @@ export class FFIWrapper {
       if (error instanceof TariFFIError) {
         throw error;
       }
-      throw new TariFFIError(
-        `Failed to create wallet: ${error}`,
-        TariErrorCode.DatabaseError,
-        { originalError: error, config }
-      );
+      throw new TariFFIError(`Failed to create wallet: ${error}`, TariErrorCode.DatabaseError, {
+        originalError: error,
+        config,
+      });
     }
   }
-  
+
   /**
    * Destroy a wallet and free resources
-   * 
+   *
    * @param handle Wallet handle to destroy
    */
   destroyWallet(handle: WalletHandle): void {
     if (!isWalletHandle(handle)) {
-      throw new TariFFIError(
-        'Invalid wallet handle',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Invalid wallet handle', TariErrorCode.InvalidArgument);
     }
 
     try {
       binding.walletDestroy(handle);
     } catch (error) {
-      throw new TariFFIError(
-        `Failed to destroy wallet: ${error}`,
-        TariErrorCode.DatabaseError,
-        { handle }
-      );
+      throw new TariFFIError(`Failed to destroy wallet: ${error}`, TariErrorCode.DatabaseError, {
+        handle,
+      });
     }
   }
-  
+
   /**
    * Get seed words from wallet
-   * 
+   *
    * @param handle Wallet handle
    * @returns Seed words as a string
    * @throws TariFFIError if operation fails
    */
   getSeedWords(handle: WalletHandle): string {
     if (!isWalletHandle(handle)) {
-      throw new TariFFIError(
-        'Invalid wallet handle',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Invalid wallet handle', TariErrorCode.InvalidArgument);
     }
 
     try {
       const words = binding.walletGetSeedWords(handle);
       if (!words || typeof words !== 'string') {
-        throw new TariFFIError(
-          'Failed to get seed words: Empty response',
-          TariErrorCode.KeyError
-        );
+        throw new TariFFIError('Failed to get seed words: Empty response', TariErrorCode.KeyError);
       }
       return words;
     } catch (error) {
       if (error instanceof TariFFIError) {
         throw error;
       }
-      throw new TariFFIError(
-        `Failed to get seed words: ${error}`,
-        TariErrorCode.KeyError,
-        { handle }
-      );
+      throw new TariFFIError(`Failed to get seed words: ${error}`, TariErrorCode.KeyError, {
+        handle,
+      });
     }
   }
-  
+
   /**
    * Get wallet balance
-   * 
+   *
    * @param handle Wallet handle
    * @returns Balance information with BigInt amounts
    * @throws TariFFIError if operation fails
    */
   getBalance(handle: WalletHandle): TariBalance {
     if (!isWalletHandle(handle)) {
-      throw new TariFFIError(
-        'Invalid wallet handle',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Invalid wallet handle', TariErrorCode.InvalidArgument);
     }
 
     try {
       const raw = binding.walletGetBalance(handle);
       if (!raw) {
-        throw new TariFFIError(
-          'Invalid wallet handle',
-          TariErrorCode.InvalidArgument
-        );
+        throw new TariFFIError('Invalid wallet handle', TariErrorCode.InvalidArgument);
       }
 
       // Convert string amounts to BigInt
@@ -175,27 +152,22 @@ export class FFIWrapper {
       if (error instanceof TariFFIError) {
         throw error;
       }
-      throw new TariFFIError(
-        `Failed to get balance: ${error}`,
-        TariErrorCode.DatabaseError,
-        { handle }
-      );
+      throw new TariFFIError(`Failed to get balance: ${error}`, TariErrorCode.DatabaseError, {
+        handle,
+      });
     }
   }
-  
+
   /**
    * Get wallet address
-   * 
+   *
    * @param handle Wallet handle
    * @returns Address handle and emoji ID
    * @throws TariFFIError if operation fails
    */
   getAddress(handle: WalletHandle): { handle: AddressHandle; emojiId: string } {
     if (!isWalletHandle(handle)) {
-      throw new TariFFIError(
-        'Invalid wallet handle',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Invalid wallet handle', TariErrorCode.InvalidArgument);
     }
 
     try {
@@ -215,27 +187,21 @@ export class FFIWrapper {
       if (error instanceof TariFFIError) {
         throw error;
       }
-      throw new TariFFIError(
-        `Failed to get address: ${error}`,
-        TariErrorCode.AddressError,
-        { handle }
-      );
+      throw new TariFFIError(`Failed to get address: ${error}`, TariErrorCode.AddressError, {
+        handle,
+      });
     }
   }
-  
+
   /**
    * Send transaction
-   * 
+   *
    * @param wallet Wallet handle
    * @param params Transaction parameters
    * @returns Transaction ID
    * @throws TariFFIError if operation fails
    */
-  async sendTransaction(
-    wallet: WalletHandle,
-    destination: string,
-    amount: bigint
-  ): Promise<string>;
+  async sendTransaction(wallet: WalletHandle, destination: string, amount: bigint): Promise<string>;
   async sendTransaction(
     wallet: WalletHandle,
     destination: string,
@@ -243,10 +209,7 @@ export class FFIWrapper {
     feePerGram: bigint,
     message: string
   ): Promise<string>;
-  async sendTransaction(
-    wallet: WalletHandle,
-    params: TransactionSendParams
-  ): Promise<string>;
+  async sendTransaction(wallet: WalletHandle, params: TransactionSendParams): Promise<string>;
   async sendTransaction(
     wallet: WalletHandle,
     paramsOrDestination: TransactionSendParams | string,
@@ -255,10 +218,7 @@ export class FFIWrapper {
     message?: string
   ): Promise<string> {
     if (!isWalletHandle(wallet)) {
-      throw new TariFFIError(
-        'Invalid wallet handle',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Invalid wallet handle', TariErrorCode.InvalidArgument);
     }
 
     // Handle both parameter styles
@@ -278,17 +238,11 @@ export class FFIWrapper {
 
     // Validate parameters
     if (!params.destination || typeof params.destination !== 'string') {
-      throw new TariFFIError(
-        'Destination address is required',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Destination address is required', TariErrorCode.InvalidArgument);
     }
 
     if (params.amount <= 0n) {
-      throw new TariFFIError(
-        'Amount must be greater than 0',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Amount must be greater than 0', TariErrorCode.InvalidArgument);
     }
 
     try {
@@ -320,34 +274,29 @@ export class FFIWrapper {
       );
     }
   }
-  
+
   /**
    * Clean up address handle
-   * 
+   *
    * @param handle Address handle to destroy
    */
   destroyAddress(handle: AddressHandle): void {
     if (!isAddressHandle(handle)) {
-      throw new TariFFIError(
-        'Invalid address handle',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Invalid address handle', TariErrorCode.InvalidArgument);
     }
 
     try {
       binding.addressDestroy(handle);
     } catch (error) {
-      throw new TariFFIError(
-        `Failed to destroy address: ${error}`,
-        TariErrorCode.AddressError,
-        { handle }
-      );
+      throw new TariFFIError(`Failed to destroy address: ${error}`, TariErrorCode.AddressError, {
+        handle,
+      });
     }
   }
 
   /**
    * Register a callback function
-   * 
+   *
    * @param callback Function to call when events occur
    * @returns Callback ID for later unregistration
    */
@@ -374,7 +323,7 @@ export class FFIWrapper {
 
   /**
    * Unregister a callback function
-   * 
+   *
    * @param id Callback ID to unregister
    * @returns True if callback was found and removed
    */
@@ -397,16 +346,13 @@ export class FFIWrapper {
     try {
       binding.clearAllCallbacks();
     } catch (error) {
-      throw new TariFFIError(
-        `Failed to clear callbacks: ${error}`,
-        TariErrorCode.ValidationError
-      );
+      throw new TariFFIError(`Failed to clear callbacks: ${error}`, TariErrorCode.ValidationError);
     }
   }
 
   /**
    * Get the number of currently registered callbacks
-   * 
+   *
    * @returns Number of registered callbacks
    */
   getCallbackCount(): number {
@@ -422,7 +368,7 @@ export class FFIWrapper {
 
   /**
    * Get UTXOs from wallet
-   * 
+   *
    * @param handle Wallet handle
    * @param page Optional page number for pagination
    * @param pageSize Optional page size for pagination
@@ -431,10 +377,7 @@ export class FFIWrapper {
    */
   getUtxos(handle: WalletHandle, page?: number, pageSize?: number): any[] {
     if (!isWalletHandle(handle)) {
-      throw new TariFFIError(
-        'Invalid wallet handle',
-        TariErrorCode.InvalidArgument
-      );
+      throw new TariFFIError('Invalid wallet handle', TariErrorCode.InvalidArgument);
     }
 
     try {
@@ -444,11 +387,11 @@ export class FFIWrapper {
       if (error instanceof TariFFIError) {
         throw error;
       }
-      throw new TariFFIError(
-        `Failed to get UTXOs: ${error}`,
-        TariErrorCode.DatabaseError,
-        { handle, page, pageSize }
-      );
+      throw new TariFFIError(`Failed to get UTXOs: ${error}`, TariErrorCode.DatabaseError, {
+        handle,
+        page,
+        pageSize,
+      });
     }
   }
 
@@ -464,13 +407,13 @@ export class FFIWrapper {
 
 /**
  * Create a wallet with default configuration
- * 
+ *
  * @param seedWords Seed words for wallet generation
  * @param network Network to use (defaults to Testnet)
  * @returns Wallet handle
  */
 export function createDefaultWallet(
-  seedWords: string, 
+  seedWords: string,
   network: Network = Network.Testnet
 ): WalletHandle {
   const config: WalletCreateConfig = {
@@ -479,13 +422,13 @@ export function createDefaultWallet(
     dbPath: './tari-wallet-db',
     dbName: 'tari_wallet',
   };
-  
+
   return ffi.createWallet(config);
 }
 
 /**
  * Create a mainnet wallet
- * 
+ *
  * @param seedWords Seed words for wallet generation
  * @returns Wallet handle
  */
@@ -495,7 +438,7 @@ export function createMainnetWallet(seedWords: string): WalletHandle {
 
 /**
  * Create a testnet wallet
- * 
+ *
  * @param seedWords Seed words for wallet generation
  * @returns Wallet handle
  */
@@ -505,7 +448,7 @@ export function createTestnetWallet(seedWords: string): WalletHandle {
 
 /**
  * Safely destroy wallet with error handling
- * 
+ *
  * @param handle Wallet handle to destroy
  */
 export function safeDestroyWallet(handle: WalletHandle): void {

@@ -1,5 +1,6 @@
 use neon::prelude::*;
 use crate::error::{TariError, TariResult};
+use std::fmt;
 
 /// Convert JavaScript string to Rust string
 pub fn js_string_to_rust(cx: &mut FunctionContext, js_str: Handle<JsString>) -> String {
@@ -13,29 +14,10 @@ pub fn rust_string_to_js<'a>(cx: &'a mut FunctionContext<'a>, rust_str: String) 
 
 /// Parse a JavaScript object as a wallet configuration
 pub fn parse_wallet_config(cx: &mut FunctionContext, config_obj: Handle<JsObject>) -> TariResult<WalletConfig> {
-    // Extract seed_words (required)
-    let seed_words = config_obj
-        .get_opt::<JsString, _, _>(cx, "seedWords")?
-        .map(|s| js_string_to_rust(cx, s))
-        .unwrap_or_default();
 
-    // Extract network (optional, default to mainnet)
-    let network_str = config_obj
-        .get_opt::<JsString, _, _>(cx, "network")?
-        .map(|s| js_string_to_rust(cx, s))
-        .unwrap_or_else(|| "mainnet".to_string());
-
-    let network = match network_str.as_str() {
-        "mainnet" => Network::Mainnet,
-        "testnet" => Network::Testnet,
-        "localnet" => Network::Localnet,
-        _ => return Err(TariError::InvalidArgument(format!("Invalid network: {}", network_str))),
-    };
-
-    // Extract optional database settings
     let db_path = config_obj
         .get_opt::<JsString, _, _>(cx, "dbPath")?
-        .map(|s| js_string_to_rust(cx, s));
+        .map(|js_str| js_string_to_rust(cx, js_str));
 
     let db_name = config_obj
         .get_opt::<JsString, _, _>(cx, "dbName")?
@@ -45,13 +27,64 @@ pub fn parse_wallet_config(cx: &mut FunctionContext, config_obj: Handle<JsObject
         .get_opt::<JsString, _, _>(cx, "passphrase")?
         .map(|s| js_string_to_rust(cx, s));
 
+    // Extract seed_words (required)
+    let seed_words = config_obj
+        .get_opt::<JsString, _, _>(cx, "seedWords")?
+        .map(|s| js_string_to_rust(cx, s))
+        .unwrap_or_default();
+
+
+    //  let network_str = if let Ok(Some(js_str)) = config_obj.get_opt::<JsString, _, _>(cx, "network") {
+    //     js_string_to_rust(cx, js_str).to_lowercase()
+    // } else if let Ok(Some(js_num)) = config_obj.get_opt::<JsNumber, _, _>(cx, "network") {
+    //     match js_num.value(cx) as i32 {
+    //         0 => "mainnet".to_string(),
+    //         1 => "testnet".to_string(),
+    //         3 => "localnet".to_string(),
+    //         n => format!("unknown({})", n),
+    //     }
+    // } else {
+    //     "mainnet".to_string()
+    // };
+
+    // let network = if let Ok(Some(js_str)) = config_obj.get_opt::<JsString, _, _>(cx, "network") {
+    //     match js_string_to_rust(cx, js_str).to_lowercase().as_str() {
+    //         "mainnet" => Network::Mainnet,
+    //         "testnet" => Network::Testnet,
+    //         "localnet" => Network::Localnet,
+    //         other => return Err(TariError::InvalidArgument(format!("Invalid network string: {}", other))),
+    //     }
+    // } else if let Ok(Some(js_num)) = config_obj.get_opt::<JsNumber, _, _>(cx, "network") {
+    //     match js_num.value(cx) as i32 {
+    //         0 => Network::Mainnet,
+    //         1 => Network::Testnet,
+    //         3 => Network::Localnet,
+    //         n => return Err(TariError::InvalidArgument(format!("Invalid network number: {}", n))),
+    //     }
+    // } else {
+    //     Network::Mainnet // Default
+    // };
+
+
+
     Ok(WalletConfig {
         seed_words,
-        network,
+        network: Network::Testnet,
         db_path,
         db_name,
         passphrase,
     })
+}
+
+impl fmt::Display for Network {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Network::Mainnet => "mainnet",
+            Network::Testnet => "testnet",
+            Network::Localnet => "localnet",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 /// Wallet configuration struct
@@ -70,6 +103,16 @@ pub enum Network {
     Mainnet,
     Testnet,
     Localnet,
+}
+
+impl Network {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Network::Mainnet => "mainnet",
+            Network::Testnet => "testnet",
+            Network::Localnet => "localnet",
+        }
+    }
 }
 
 /// Create a balance object for JavaScript
