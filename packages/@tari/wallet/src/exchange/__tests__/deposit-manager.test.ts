@@ -15,7 +15,12 @@ describe('DepositManager', () => {
 
   beforeEach(() => {
     manager = new DepositManager(mockWallet);
+    manager.initialize();
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    manager.teardown();
   });
 
   describe('generateAddress', () => {
@@ -65,7 +70,7 @@ describe('DepositManager', () => {
   });
 
   describe('deposit handling', () => {
-    it('should register wallet event listeners', () => {
+    it('should register wallet event listeners after initialization', () => {
       expect(mockWallet.on).toHaveBeenCalledWith(
         'transaction-received',
         expect.any(Function)
@@ -200,8 +205,24 @@ describe('DepositManager', () => {
     });
   });
 
-  describe('cleanup', () => {
-    it('should clean up event listeners', () => {
+  describe('lifecycle management', () => {
+    it('should clean up event listeners with teardown', () => {
+      manager.teardown();
+      
+      expect(mockWallet.off).toHaveBeenCalledWith(
+        'transaction-received',
+        expect.any(Function)
+      );
+      expect(mockWallet.off).toHaveBeenCalledWith(
+        'transaction-confirmed',
+        expect.any(Function)
+      );
+    });
+
+    it('should clean up event listeners with legacy destroy method', () => {
+      // Reset mocks to track only this call
+      jest.clearAllMocks();
+      
       manager.destroy();
       
       expect(mockWallet.off).toHaveBeenCalledWith(
@@ -209,6 +230,22 @@ describe('DepositManager', () => {
         expect.any(Function)
       );
       expect(mockWallet.off).toHaveBeenCalledWith(
+        'transaction-confirmed',
+        expect.any(Function)
+      );
+    });
+
+    it('should allow multiple initialize/teardown cycles', () => {
+      manager.teardown();
+      jest.clearAllMocks();
+      
+      manager.initialize();
+      
+      expect(mockWallet.on).toHaveBeenCalledWith(
+        'transaction-received',
+        expect.any(Function)
+      );
+      expect(mockWallet.on).toHaveBeenCalledWith(
         'transaction-confirmed',
         expect.any(Function)
       );

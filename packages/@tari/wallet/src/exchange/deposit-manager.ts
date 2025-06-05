@@ -81,6 +81,16 @@ export class DepositManager extends EventEmitter<{
    * Generate a new deposit address for a user
    */
   async generateAddress(userId: string): Promise<string> {
+    if (!userId || userId.trim().length === 0) {
+      throw new Error('User ID is required');
+    }
+
+    // Check if address already exists for this user
+    const existing = this.addresses.get(userId);
+    if (existing) {
+      return existing.address;
+    }
+
     // For one-sided payments, we can reuse the same address
     // In production, might want to generate unique addresses
     const address = this.wallet.getReceiveAddress();
