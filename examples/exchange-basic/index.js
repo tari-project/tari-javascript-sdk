@@ -181,17 +181,15 @@ async function simulateTestActivity(wallet, deposits) {
     const balance = await wallet.getBalance();
     if (balance.available > parseTari('0.1')) {
       console.log('💸 Would send test transaction, but this is demo mode');
-      console.log('   (Uncomment sendTransaction code to actually send)');
-
+      // console.log('   (Uncomment sendTransaction code to actually send)');
       // Uncomment to actually send a transaction:
-      /*
+
       const tx = await wallet.sendTransaction({
         destination: 'recipient_emoji_address_here',
         amount: parseTari('0.01'),
-        message: 'Test transaction from exchange'
+        message: 'Test transaction from exchange',
       });
       console.log(`📤 Test transaction sent: ${tx.id}`);
-      */
     } else {
       console.log('ℹ️  No funds available for test transactions');
       console.log('   Send some testnet Tari to this wallet to see transaction handling');

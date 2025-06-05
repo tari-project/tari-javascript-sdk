@@ -1,6 +1,6 @@
-import { TariWallet } from '../wallet';
 import { EventEmitter } from 'eventemitter3';
 import { WalletEvent } from '../types';
+import { TariWallet } from '../wallet';
 
 export interface DepositAddress {
   userId: string;
@@ -27,12 +27,12 @@ export class DepositManager extends EventEmitter<{
 
   constructor(private wallet: TariWallet) {
     super();
-    
+
     // Listen for incoming transactions
     wallet.on(WalletEvent.TransactionReceived, (tx) => {
       this.handleIncomingTransaction(tx);
     });
-    
+
     wallet.on(WalletEvent.TransactionConfirmed, (tx) => {
       this.handleConfirmedTransaction(tx);
     });
@@ -45,17 +45,17 @@ export class DepositManager extends EventEmitter<{
     // For one-sided payments, we can reuse the same address
     // In production, might want to generate unique addresses
     const address = this.wallet.getReceiveAddress();
-    
+
     const deposit: DepositAddress = {
       userId,
       address,
       created: new Date(),
       totalReceived: 0n,
     };
-    
+
     this.addresses.set(userId, deposit);
     this.addressToUser.set(address, userId);
-    
+
     return address;
   }
 
@@ -80,14 +80,14 @@ export class DepositManager extends EventEmitter<{
     // Check if transaction is to one of our addresses
     const userId = this.addressToUser.get(tx.destination);
     if (!userId) return;
-    
+
     const deposit = this.addresses.get(userId);
     if (!deposit) return;
-    
+
     // Update deposit info
     deposit.lastSeen = new Date();
     deposit.totalReceived += tx.amount;
-    
+
     // Emit deposit event
     this.emit('deposit', {
       userId,
@@ -104,7 +104,7 @@ export class DepositManager extends EventEmitter<{
   private handleConfirmedTransaction(tx: any): void {
     const userId = this.addressToUser.get(tx.destination);
     if (!userId) return;
-    
+
     this.emit('confirmed', {
       userId,
       address: tx.destination,
@@ -112,5 +112,22 @@ export class DepositManager extends EventEmitter<{
       txId: tx.id,
       confirmations: tx.confirmations,
     });
+  }
+
+  getStatistics() {
+    let totalDeposits = 0;
+    let totalVolume = 0n;
+
+    for (const deposit of this.addresses.values()) {
+      if (deposit.totalReceived > 0n) {
+        totalDeposits += 1;
+        totalVolume += deposit.totalReceived;
+      }
+    }
+
+    return {
+      totalDeposits,
+      totalVolume,
+    };
   }
 }
