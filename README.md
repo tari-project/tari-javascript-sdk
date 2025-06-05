@@ -115,7 +115,7 @@ For development setup and contribution guidelines, see our [Contributing Guide](
 ```bash
 # Quick start for contributors
 git clone https://github.com/tari-project/tari-javascript-sdk.git
-cd tari-js-sdk
+cd tari-javascript-sdk
 pnpm install
 pnpm build
 pnpm test

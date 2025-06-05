@@ -45,8 +45,8 @@ Ensure you have the following installed:
 
 ```bash
 # Fork and clone the repository
-git clone https://github.com/YOUR_USERNAME/tari-js-sdk.git
-cd tari-js-sdk
+git clone https://github.com/YOUR_USERNAME/tari-javascript-sdk.git
+cd tari-javascript-sdk
 
 # Install dependencies
 pnpm install
