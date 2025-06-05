@@ -36,6 +36,7 @@ async function main() {
 
     // Set up deposit management
     const deposits = new DepositManager(wallet);
+    deposits.initialize();
     
     // Simulate user onboarding
     console.log('👥 Creating deposit addresses for users...');
@@ -88,7 +89,7 @@ async function main() {
       clearInterval(balanceInterval);
       
       try {
-        deposits.destroy();
+        deposits.teardown();
         console.log('✅ Deposit manager cleaned up');
         
         await wallet.close();
