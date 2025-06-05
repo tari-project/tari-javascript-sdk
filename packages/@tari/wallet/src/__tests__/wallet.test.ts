@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { TariWallet } from '../wallet';
 import { Network } from '@tari-project/core';
 import { WalletEvent } from '../types';

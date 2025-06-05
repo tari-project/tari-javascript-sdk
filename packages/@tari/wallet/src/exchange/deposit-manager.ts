@@ -196,17 +196,21 @@ export class DepositManager extends EventEmitter<{
     id: string;
     confirmations: number;
   } {
+    if (typeof tx !== 'object' || tx === null) {
+      return false;
+    }
+
+    const transaction = tx as Record<string, unknown>;
+    
     return (
-      typeof tx === 'object' &&
-      tx !== null &&
-      'destination' in tx &&
-      'amount' in tx &&
-      'id' in tx &&
-      'confirmations' in tx &&
-      typeof (tx as any).destination === 'string' &&
-      typeof (tx as any).amount === 'bigint' &&
-      typeof (tx as any).id === 'string' &&
-      typeof (tx as any).confirmations === 'number'
+      'destination' in transaction &&
+      'amount' in transaction &&
+      'id' in transaction &&
+      'confirmations' in transaction &&
+      typeof transaction.destination === 'string' &&
+      typeof transaction.amount === 'bigint' &&
+      typeof transaction.id === 'string' &&
+      typeof transaction.confirmations === 'number'
     );
   }
 }
