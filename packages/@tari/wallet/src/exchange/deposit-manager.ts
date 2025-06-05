@@ -33,6 +33,7 @@ export class DepositManager extends EventEmitter<{
   private addresses = new Map<string, DepositAddress>();
   private addressToUser = new Map<string, string>();
   private cleanupFunctions: Array<() => void> = [];
+  private isInitialized = false;
 
   constructor(private wallet: TariWallet) {
     super();
@@ -42,8 +43,14 @@ export class DepositManager extends EventEmitter<{
   /**
    * Initialize the deposit manager and start listening for events.
    * Must be called after construction before using the manager.
+   * This method is idempotent - safe to call multiple times.
    */
   initialize(): void {
+    // Return early if already initialized (idempotent)
+    if (this.isInitialized) {
+      return;
+    }
+
     // Store bound functions for later cleanup
     const transactionReceivedHandler = (tx: unknown) => this.handleIncomingTransaction(tx);
     const transactionConfirmedHandler = (tx: unknown) => this.handleConfirmedTransaction(tx);
@@ -57,16 +64,25 @@ export class DepositManager extends EventEmitter<{
       () => this.wallet.off(WalletEvent.TransactionReceived, transactionReceivedHandler),
       () => this.wallet.off(WalletEvent.TransactionConfirmed, transactionConfirmedHandler)
     );
+
+    this.isInitialized = true;
   }
 
   /**
    * Clean up all event listeners and resources.
    * Should be called before discarding the manager instance.
+   * This method is idempotent - safe to call multiple times or before initialize().
    */
   teardown(): void {
+    // Safe to call even if not initialized (idempotent)
+    if (!this.isInitialized) {
+      return;
+    }
+
     // Clean up all listeners
     this.cleanupFunctions.forEach(cleanup => cleanup());
     this.cleanupFunctions = [];
+    this.isInitialized = false;
   }
 
   /**

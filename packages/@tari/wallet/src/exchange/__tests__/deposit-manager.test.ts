@@ -250,4 +250,69 @@ describe('DepositManager', () => {
       );
     });
   });
+
+  describe('idempotent behavior', () => {
+    it('should be safe to call initialize() multiple times', () => {
+      // Reset and start fresh
+      manager.teardown();
+      jest.clearAllMocks();
+      
+      // Call initialize multiple times
+      manager.initialize();
+      manager.initialize();
+      manager.initialize();
+      
+      // Should only set up listeners once
+      expect(mockWallet.on).toHaveBeenCalledTimes(2); // 2 event types
+    });
+
+    it('should be safe to call teardown() before initialize()', () => {
+      // Create fresh manager that hasn't been initialized
+      const freshManager = new DepositManager(mockWallet);
+      
+      // Should not throw when called before initialize
+      expect(() => freshManager.teardown()).not.toThrow();
+    });
+
+    it('should be safe to call teardown() multiple times', () => {
+      jest.clearAllMocks();
+      
+      // Call teardown multiple times
+      manager.teardown();
+      manager.teardown();
+      manager.teardown();
+      
+      // Should only clean up once
+      expect(mockWallet.off).toHaveBeenCalledTimes(2); // 2 event types
+    });
+
+    it('should handle initialize() after teardown() correctly', () => {
+      // Teardown first
+      manager.teardown();
+      jest.clearAllMocks();
+      
+      // Then initialize again
+      manager.initialize();
+      
+      // Should set up listeners again
+      expect(mockWallet.on).toHaveBeenCalledWith(
+        'transaction-received',
+        expect.any(Function)
+      );
+      expect(mockWallet.on).toHaveBeenCalledWith(
+        'transaction-confirmed',
+        expect.any(Function)
+      );
+    });
+
+    it('should not double-register listeners on multiple initialize() calls', () => {
+      jest.clearAllMocks();
+      
+      // Call initialize when already initialized
+      manager.initialize();
+      
+      // Should not add more listeners
+      expect(mockWallet.on).not.toHaveBeenCalled();
+    });
+  });
 });
