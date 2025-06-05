@@ -32,7 +32,7 @@ export class DepositManager extends EventEmitter<{
 }> implements Lifecycle {
   private addresses = new Map<string, DepositAddress>();
   private addressToUser = new Map<string, string>();
-  private listeners: Array<() => void> = [];
+  private cleanupFunctions: Array<() => void> = [];
 
   constructor(private wallet: TariWallet) {
     super();
@@ -53,7 +53,7 @@ export class DepositManager extends EventEmitter<{
     this.wallet.on(WalletEvent.TransactionConfirmed, transactionConfirmedHandler);
     
     // Store cleanup functions
-    this.listeners.push(
+    this.cleanupFunctions.push(
       () => this.wallet.off(WalletEvent.TransactionReceived, transactionReceivedHandler),
       () => this.wallet.off(WalletEvent.TransactionConfirmed, transactionConfirmedHandler)
     );
@@ -65,8 +65,8 @@ export class DepositManager extends EventEmitter<{
    */
   teardown(): void {
     // Clean up all listeners
-    this.listeners.forEach(cleanup => cleanup());
-    this.listeners = [];
+    this.cleanupFunctions.forEach(cleanup => cleanup());
+    this.cleanupFunctions = [];
   }
 
   /**
