@@ -370,3 +370,9 @@ export function isTransactionHandle(value: number): value is TransactionHandle {
 
 // Utility types for optional parameters
 export type OptionalWalletConfig = Partial<WalletCreateConfig> & Pick<WalletCreateConfig, 'seedWords' | 'network'>;
+
+// Lifecycle management interface
+export interface Lifecycle {
+  initialize(): void | Promise<void>;
+  teardown(): void | Promise<void>;
+}
