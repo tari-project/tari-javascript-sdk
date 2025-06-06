@@ -1,6 +1,5 @@
 import { TariWallet } from '../../wallet';
 import { DepositManager } from '../deposit-manager';
-import { Network } from '@tari-project/core';
 
 // Mock wallet
 const mockWallet = {
@@ -15,7 +14,12 @@ describe('DepositManager', () => {
 
   beforeEach(() => {
     manager = new DepositManager(mockWallet);
+    manager.initialize();
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    manager.teardown();
   });
 
   describe('generateAddress', () => {
@@ -65,7 +69,7 @@ describe('DepositManager', () => {
   });
 
   describe('deposit handling', () => {
-    it('should register wallet event listeners', () => {
+    it('should register wallet event listeners after initialization', () => {
       expect(mockWallet.on).toHaveBeenCalledWith(
         'transaction-received',
         expect.any(Function)
@@ -200,8 +204,24 @@ describe('DepositManager', () => {
     });
   });
 
-  describe('cleanup', () => {
-    it('should clean up event listeners', () => {
+  describe('lifecycle management', () => {
+    it('should clean up event listeners with teardown', () => {
+      manager.teardown();
+      
+      expect(mockWallet.off).toHaveBeenCalledWith(
+        'transaction-received',
+        expect.any(Function)
+      );
+      expect(mockWallet.off).toHaveBeenCalledWith(
+        'transaction-confirmed',
+        expect.any(Function)
+      );
+    });
+
+    it('should clean up event listeners with legacy destroy method', () => {
+      // Reset mocks to track only this call
+      jest.clearAllMocks();
+      
       manager.destroy();
       
       expect(mockWallet.off).toHaveBeenCalledWith(
@@ -212,6 +232,87 @@ describe('DepositManager', () => {
         'transaction-confirmed',
         expect.any(Function)
       );
+    });
+
+    it('should allow multiple initialize/teardown cycles', () => {
+      manager.teardown();
+      jest.clearAllMocks();
+      
+      manager.initialize();
+      
+      expect(mockWallet.on).toHaveBeenCalledWith(
+        'transaction-received',
+        expect.any(Function)
+      );
+      expect(mockWallet.on).toHaveBeenCalledWith(
+        'transaction-confirmed',
+        expect.any(Function)
+      );
+    });
+  });
+
+  describe('idempotent behavior', () => {
+    it('should be safe to call initialize() multiple times', () => {
+      // Reset and start fresh
+      manager.teardown();
+      jest.clearAllMocks();
+      
+      // Call initialize multiple times
+      manager.initialize();
+      manager.initialize();
+      manager.initialize();
+      
+      // Should only set up listeners once
+      expect(mockWallet.on).toHaveBeenCalledTimes(2); // 2 event types
+    });
+
+    it('should be safe to call teardown() before initialize()', () => {
+      // Create fresh manager that hasn't been initialized
+      const freshManager = new DepositManager(mockWallet);
+      
+      // Should not throw when called before initialize
+      expect(() => freshManager.teardown()).not.toThrow();
+    });
+
+    it('should be safe to call teardown() multiple times', () => {
+      jest.clearAllMocks();
+      
+      // Call teardown multiple times
+      manager.teardown();
+      manager.teardown();
+      manager.teardown();
+      
+      // Should only clean up once
+      expect(mockWallet.off).toHaveBeenCalledTimes(2); // 2 event types
+    });
+
+    it('should handle initialize() after teardown() correctly', () => {
+      // Teardown first
+      manager.teardown();
+      jest.clearAllMocks();
+      
+      // Then initialize again
+      manager.initialize();
+      
+      // Should set up listeners again
+      expect(mockWallet.on).toHaveBeenCalledWith(
+        'transaction-received',
+        expect.any(Function)
+      );
+      expect(mockWallet.on).toHaveBeenCalledWith(
+        'transaction-confirmed',
+        expect.any(Function)
+      );
+    });
+
+    it('should not double-register listeners on multiple initialize() calls', () => {
+      jest.clearAllMocks();
+      
+      // Call initialize when already initialized
+      manager.initialize();
+      
+      // Should not add more listeners
+      expect(mockWallet.on).not.toHaveBeenCalled();
     });
   });
 });

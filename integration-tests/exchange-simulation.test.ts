@@ -77,6 +77,7 @@ describe('Exchange Integration Simulation', () => {
     });
 
     depositManager = new DepositManager(wallet);
+    depositManager.initialize();
     withdrawalProcessor = new WithdrawalProcessor(wallet, {
       batchSize: 5,
       batchDelayMs: 1000,
@@ -86,6 +87,9 @@ describe('Exchange Integration Simulation', () => {
   afterAll(async () => {
     if (withdrawalProcessor) {
       withdrawalProcessor.stop();
+    }
+    if (depositManager) {
+      depositManager.teardown();
     }
     if (wallet) {
       await wallet.close();

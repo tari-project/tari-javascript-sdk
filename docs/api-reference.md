@@ -236,7 +236,27 @@ Manages deposit addresses for exchange users.
 const deposits = new DepositManager(wallet: TariWallet);
 ```
 
+**Note:** After construction, you must call `initialize()` before using the manager and `teardown()` for cleanup.
+
 #### Methods
+
+##### initialize()
+Initializes the deposit manager and starts event listening.
+
+```typescript
+deposits.initialize(): void
+```
+
+**Note:** Must be called after construction before using any other methods. This method is idempotent - safe to call multiple times.
+
+##### teardown()
+Cleans up all event listeners and resources.
+
+```typescript
+deposits.teardown(): void
+```
+
+**Note:** Should be called before discarding the instance to prevent memory leaks. This method is idempotent - safe to call multiple times or before initialize().
 
 ##### generateAddress()
 Creates a deposit address for a user.
