@@ -38,7 +38,7 @@ Ensure you have the following installed:
 
 - Node.js 16+ (we recommend using [nvm](https://github.com/nvm-sh/nvm))
 - [pnpm](https://pnpm.io/) 8+ for package management
-- Rust toolchain (for native module development) // cmake and protobuf-compiler
+- Rust toolchain (includes Cargo, for native module development)
 - CMake (build tool required by some Rust crates)
 - protobuf-compiler (`protoc`, required by some Rust crates)
 - C++ build tools for your platform

@@ -57,18 +57,8 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
     }
 
     try {
-      // Create wallet
-      this.handle = ffi.createWallet({
-        seedWords: this.config.seedWords,
-        network: this.config.network,
-        dbPath: this.config.dbPath,
-        dbName: this.config.dbName,
-        passphrase: this.config.passphrase,
-      });
-
       this.handle = await pRetry(
         () => {
-          console.log('before ffi create');
           return ffi.createWallet({
             seedWords: this.config.seedWords,
             network: this.config.network,
@@ -162,6 +152,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
     feePerGram?: bigint;
     message?: string;
   }): Promise<Transaction> {
+    console.log('Sending transaction with params:', params);
     this.ensureConnected();
 
     const { destination, amount, feePerGram = 5n, message = '' } = params;
@@ -177,10 +168,13 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
 
     // Check balance
     const balance = await this.getBalance();
+    console.log('check balance:', balance);
+
     if (balance.available < amount + feePerGram * 1000n) {
       throw new Error('Insufficient balance');
     }
 
+    // console.log('check balance:', balance);
     // Send transaction
     const txId = await ffi.sendTransaction(this.handle!, destination, amount, feePerGram, message);
 

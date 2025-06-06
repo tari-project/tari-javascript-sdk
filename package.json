@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "build:dev": "turbo run build:dev",
     "test": "turbo run test",
     "test:unit": "jest --projects packages",
     "test:integration": "jest integration-tests",
