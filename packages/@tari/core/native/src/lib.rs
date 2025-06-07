@@ -16,8 +16,18 @@ use neon::prelude::*;
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    // Initialize logging
+    // Initialize logging based on LOG_LEVEL environment variable
+    if std::env::var("RUST_LOG").is_err() {
+        let log_level = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
+        std::env::set_var("RUST_LOG", format!("tari_core_native={}", log_level));
+    }
+    
     env_logger::init();
+    
+    // Set RUST_BACKTRACE for debug logging
+    if std::env::var("LOG_LEVEL").unwrap_or_default() == "debug" {
+        std::env::set_var("RUST_BACKTRACE", "1");
+    }
     
     // Core functions
     cx.export_function("initialize", initialize)?;
