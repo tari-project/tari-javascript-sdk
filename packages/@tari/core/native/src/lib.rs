@@ -11,6 +11,7 @@ mod runtime_pool;
 mod config;
 mod health;
 mod resilience;
+mod network_config;
 
 use neon::prelude::*;
 
