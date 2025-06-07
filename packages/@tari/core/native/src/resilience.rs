@@ -111,6 +111,7 @@ impl ResilienceManager {
             TariError::TransactionError(_) => true, // Could be temporary
             TariError::CryptoError(_) => false,
             TariError::InvalidArgument(_) => false,
+            TariError::KeyManagerError(_) => false,
             TariError::NotImplemented(_) => false,
             TariError::NeonError(_) => false,
         }

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tari_common::configuration::Network;
 use tari_core::consensus::{ConsensusManager, ConsensusManagerBuilder};
 
@@ -102,11 +101,12 @@ impl NetworkConfig {
         }
     }
 
-    pub fn get_consensus_manager(&self) -> ConsensusManager {
+    pub fn get_consensus_manager(&self) -> Result<ConsensusManager, String> {
         ConsensusManagerBuilder::new(self.network).build()
+            .map_err(|e| format!("Failed to build consensus manager: {}", e))
     }
 
-    pub fn resolve_dns_seeds(&self) -> Result<Vec<String>, anyhow::Error> {
+    pub async fn resolve_dns_seeds(&self) -> Result<Vec<String>, anyhow::Error> {
         let mut resolved_addresses = Vec::new();
         
         for seed in &self.dns_seeds {
@@ -150,6 +150,8 @@ pub fn get_network_config(network: Network) -> NetworkConfig {
         Network::StageNet => NetworkConfig::stagenet(), 
         Network::NextNet => NetworkConfig::nextnet(),
         Network::LocalNet => NetworkConfig::testnet(),
+        Network::Igor => NetworkConfig::testnet(), // Use testnet config for Igor
+        Network::Esmeralda => NetworkConfig::testnet(), // Use testnet config for Esmeralda
     }
 }
 
