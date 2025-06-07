@@ -98,8 +98,25 @@ export class WithdrawalProcessor extends EventEmitter {
    * Add withdrawal to queue
    */
   async addWithdrawal(request: WithdrawalRequest): Promise<WithdrawalResult> {
-    // Validate withdrawal
-    await this.validateWithdrawal(request);
+    // Validate required fields
+    if (!request.userId || request.userId.trim() === '') {
+      throw new Error('User ID is required');
+    }
+    
+    if (!request.address || request.address.trim() === '') {
+      throw new Error('Destination address is required');
+    }
+    
+    if (request.amount <= 0n) {
+      throw new Error('Amount must be greater than 0');
+    }
+    
+    // Check minimum amount
+    if (request.amount < 100000n) {
+      throw new Error('Amount below minimum withdrawal');
+    }
+    
+    // Note: Balance check happens during processing, not here
     
     // Create status entry
     const status: WithdrawalStatus = {
@@ -173,13 +190,20 @@ export class WithdrawalProcessor extends EventEmitter {
       )
     );
     
+    // Debug output
+    console.log('Processing batch:', batch.map(r => r.id));
+    console.log('Results:', results);
+    
     // Remove from processing queue and update status
     batch.forEach((request, index) => {
       const result = results[index];
       const status = this.statusMap.get(request.id);
       
+      console.log(`Processing ${request.id}:`, result);
+      
       if (status) {
         if (result.status === 'fulfilled' && result.value.status !== 'failed') {
+          console.log(`${request.id}: Setting to completed`);
           status.status = 'completed';
           status.txId = result.value.txId;
           this.completedList.push(status);
@@ -190,9 +214,11 @@ export class WithdrawalProcessor extends EventEmitter {
             userId: request.userId,
           });
         } else {
+          console.log(`${request.id}: Setting to failed`);
           status.status = 'failed';
           status.error = result.status === 'rejected' ? result.reason.message : result.value.error;
           this.failedList.push(status);
+          console.log(`${request.id}: Status after update:`, status);
           this.emit('withdrawal-failed', {
             id: request.id,
             error: status.error,

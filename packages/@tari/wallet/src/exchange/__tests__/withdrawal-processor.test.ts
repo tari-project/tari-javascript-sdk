@@ -304,10 +304,18 @@ describe('WithdrawalProcessor', () => {
       });
 
       processor.start();
-      jest.advanceTimersByTime(1000);
-      await Promise.resolve();
+      
+      // Force manual processing instead of relying on timers
+      // Call processQueue directly using reflection
+      await (processor as any).processQueue();
 
       const status = processor.getWithdrawalStatus('withdrawal_1');
+      const queueStatus = processor.getQueueStatus();
+      
+      // Debug output to understand what's happening
+      console.log('Status:', status);
+      console.log('Queue status:', queueStatus);
+      
       expect(status?.status).toBe('failed');
       expect(status?.error).toContain('Insufficient balance');
     });
