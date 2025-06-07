@@ -6,6 +6,12 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "build:platform": "turbo run build:platform",
+    "build:darwin-x64": "PLATFORM=darwin ARCH=x64 turbo run build:platform",
+    "build:darwin-arm64": "PLATFORM=darwin ARCH=arm64 turbo run build:platform",
+    "build:linux-x64": "PLATFORM=linux ARCH=x64 turbo run build:platform",
+    "build:linux-arm64": "PLATFORM=linux ARCH=arm64 turbo run build:platform",
+    "build:win32-x64": "PLATFORM=win32 ARCH=x64 turbo run build:platform",
     "test": "turbo run test",
     "test:unit": "jest --projects packages",
     "test:integration": "jest integration-tests",

@@ -3,8 +3,16 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const platform = process.platform;
-const arch = process.arch;
+// Support platform override for single platform builds
+let platform = process.platform;
+let arch = process.arch;
+
+// Check for platform override from environment or command line
+if (process.argv.includes('--platform') && process.env.PLATFORM && process.env.ARCH) {
+  platform = process.env.PLATFORM;
+  arch = process.env.ARCH;
+  console.log(`Building for overridden platform: ${platform}-${arch}`);
+}
 
 console.log(`Building native module for ${platform}-${arch}`);
 
