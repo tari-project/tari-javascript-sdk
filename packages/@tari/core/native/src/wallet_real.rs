@@ -4,13 +4,17 @@ use tokio::runtime::Runtime;
 use tari_utilities::ByteArray;
 
 use tari_core::transactions::tari_amount::MicroMinotari;
+use tari_common_types::transaction::TxId as TariTxId;
 use tari_core::consensus::{ConsensusManager, ConsensusManagerBuilder};
 use tari_common::configuration::Network as TariNetwork;
 
 // Wallet and communication types
 use minotari_wallet::wallet::Wallet;
 use minotari_wallet::storage::sqlite_db::wallet::WalletSqliteDatabase;
-use minotari_wallet::transaction_service::storage::sqlite_db::TransactionServiceSqliteDatabase;
+use minotari_wallet::transaction_service::{
+    storage::sqlite_db::TransactionServiceSqliteDatabase,
+    handle::TransactionServiceHandle,
+};
 use minotari_wallet::output_manager_service::{
     storage::sqlite_db::OutputManagerSqliteDatabase,
 };
@@ -337,41 +341,45 @@ impl RealWalletInstance {
             return Err(TariError::InvalidInput("Destination address cannot be empty".to_string()));
         }
         
-        // Check if wallet is available
-        if self.wallet.is_none() {
+        // Check if wallet is available and get it
+        if let Some(wallet) = &self.wallet {
+            log::debug!("Using actual wallet transaction service");
+            
+            // Validate balance first
+            let current_balance = self.get_real_balance().await?;
+            let total_needed = amount + fee_per_gram; // Simplified fee calculation
+            
+            if current_balance.available < total_needed {
+                return Err(TariError::TransactionError(
+                    format!("Insufficient funds: need {}, have {}", total_needed, current_balance.available)
+                ));
+            }
+            
+            // Access the transaction service
+            let _transaction_service = wallet.transaction_service.clone();
+            
+            // TODO: Implement proper transaction creation with Tari's transaction service
+            // The actual send_transaction method requires more complex parameters:
+            // - destination: TariAddress (need to parse from string)
+            // - amount: MicroMinotari  
+            // - selection_criteria: UtxoSelectionCriteria
+            // - output_features: OutputFeatures
+            // - fee_per_gram: MicroMinotari
+            // - payment_id: PaymentId
+            
+            log::warn!("Transaction service integration not yet fully implemented");
+            log::info!("Would send transaction: {} to {} with fee {} and message '{}'", 
+                       amount, destination, fee_per_gram, message);
+            
+            // For now, return a mock transaction ID to show structure works
+            // In real implementation, this would come from the actual transaction service
+            let mock_tx_id = TxId::new_random();
+            log::info!("Mock transaction created with ID: {}", mock_tx_id);
+            
+            Ok(mock_tx_id)
+        } else {
             return Err(TariError::WalletError("Wallet not initialized".to_string()));
         }
-        
-        // For real implementation, this would:
-        // 1. Parse destination address to TariAddress
-        // 2. Check wallet balance to ensure sufficient funds
-        // 3. Create transaction with proper inputs/outputs
-        // 4. Sign transaction with wallet keys
-        // 5. Broadcast to Tari network
-        
-        // Simulate transaction validation
-        let current_balance = self.get_real_balance().await?;
-        let total_needed = amount + fee_per_gram; // Simplified fee calculation
-        
-        if current_balance.available < total_needed {
-            return Err(TariError::TransactionError(
-                format!("Insufficient funds: need {}, have {}", total_needed, current_balance.available)
-            ));
-        }
-        
-        // Generate transaction ID (in real implementation, this would come from created transaction)
-        let tx_id = rand::random::<u64>();
-        log::info!("Transaction created with ID: {} (amount: {}, fee: {}, message: '{}')", 
-                   tx_id, amount, fee_per_gram, message);
-        
-        // TODO: Implement actual transaction creation and broadcasting
-        // This requires:
-        // - Transaction builder with proper inputs/outputs
-        // - Cryptographic signing with wallet keys  
-        // - Network broadcasting through base node
-        // - Transaction status tracking
-        
-        Ok(tx_id)
     }
     
     /// Get UTXOs from actual wallet
@@ -594,7 +602,7 @@ impl RealWalletInstance {
             return Err(TariError::InvalidInput("Count cannot be zero".to_string()));
         }
         
-        let tx_id = rand::random::<u64>();
+        let tx_id = TxId::new_random();
         log::debug!("Generated coin split transaction ID: {}", tx_id);
         Ok(tx_id)
     }
@@ -614,7 +622,7 @@ impl RealWalletInstance {
             return Err(TariError::InvalidInput("Commitments cannot be empty".to_string()));
         }
         
-        let tx_id = rand::random::<u64>();
+        let tx_id = TxId::new_random();
         log::debug!("Generated coin join transaction ID: {}", tx_id);
         Ok(tx_id)
     }
@@ -717,8 +725,8 @@ pub struct WalletPeer {
 }
 
 // Type aliases for Tari types
-pub type TariAddress = String; // Simplified for now
-pub type TxId = u64; // Simplified for now
+pub type TariAddress = String; // Simplified for now - should be CoreTariAddress
+pub type TxId = TariTxId; // Use actual Tari TxId
 
 /// Convert SDK network type to Tari network type
 fn convert_network(network: &Network) -> TariNetwork {
