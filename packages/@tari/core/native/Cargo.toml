@@ -44,6 +44,7 @@ uuid = { version = "1.0", features = ["v4"] }
 toml = "0.8"
 tempfile = "3.0"
 num_cpus = "1.0"
+hex = "0.4"
 
 [build-dependencies]
 neon-build = "0.10"
