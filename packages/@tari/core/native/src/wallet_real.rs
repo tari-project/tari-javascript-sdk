@@ -148,7 +148,7 @@ impl RealWalletInstance {
         log::debug!("Cipher seed created successfully with {} entropy bits", seed.entropy().len() * 8);
         
         // Test basic cryptographic operations
-        use tari_crypto::keys::PublicKey;
+        use tari_crypto::keys::{PublicKey, SecretKey};
         use tari_crypto::ristretto::{RistrettoSecretKey, RistrettoPublicKey};
         
         // Create a test key pair to validate crypto operations work
@@ -182,7 +182,8 @@ impl RealWalletInstance {
         let tcp_config = tari_p2p::TcpTransportConfig {
             listener_address: format!("0.0.0.0:{}", network_config.default_port).parse()
                 .map_err(|e| TariError::NetworkError(format!("Invalid port: {}", e)))?,
-            tor_socks_config: None,
+            tor_socks_address: None,
+            tor_socks_auth: tari_p2p::SocksAuthentication::None,
         };
         
         let _transport_config = tari_p2p::TransportConfig::new_tcp(tcp_config);
@@ -236,7 +237,7 @@ impl RealWalletInstance {
         // Prepare output manager service configuration  
         let output_manager_config = minotari_wallet::output_manager_service::config::OutputManagerServiceConfig {
             prevent_fee_gt_amount: true,
-            dust_ignore_value: tari_core::transactions::tari_amount::MicroMinotari::from(1000),
+            dust_ignore_value: 1000,
             ..Default::default()
         };
         
