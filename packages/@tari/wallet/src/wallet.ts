@@ -74,13 +74,13 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
     try {
       // Create wallet
       this.handle = await retry(() => 
-        ffi.createWallet({
+        Promise.resolve(ffi.createWallet({
           seedWords: this.config.seedWords,
           network: this.config.network,
           dbPath: this.config.dbPath,
           dbName: this.config.dbName,
           passphrase: this.config.passphrase,
-        }), 
+        })), 
         { retries: 3, delay: 1000 }
       );
 
