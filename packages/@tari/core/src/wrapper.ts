@@ -155,12 +155,12 @@ export class FFIWrapper {
         );
       }
 
-      // Convert string amounts to BigInt
+      // Convert numeric amounts to BigInt for precision
       const balance: TariBalance = {
-        available: BigInt(raw.available),
-        pending: BigInt(raw.pending),
-        locked: BigInt(raw.locked),
-        total: BigInt(raw.total),
+        available: BigInt(Math.round(raw.available)),
+        pending: BigInt(Math.round(raw.pending)),
+        locked: BigInt(Math.round(raw.locked)),
+        total: BigInt(Math.round(raw.total)),
       };
 
       // Validate balance consistency

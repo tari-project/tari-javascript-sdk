@@ -89,16 +89,17 @@ pub fn create_balance_object<'a>(
     locked: u64,
 ) -> JsResult<'a, JsObject> {
     let obj = cx.empty_object();
+    let total = available + pending + locked;
     
-    let available_str = cx.string(available.to_string());
-    let pending_str = cx.string(pending.to_string());
-    let locked_str = cx.string(locked.to_string());
-    let total_str = cx.string((available + pending + locked).to_string());
+    let available_num = cx.number(available as f64);
+    let pending_num = cx.number(pending as f64);
+    let locked_num = cx.number(locked as f64);
+    let total_num = cx.number(total as f64);
     
-    obj.set(cx, "available", available_str)?;
-    obj.set(cx, "pending", pending_str)?;
-    obj.set(cx, "locked", locked_str)?;
-    obj.set(cx, "total", total_str)?;
+    obj.set(cx, "available", available_num)?;
+    obj.set(cx, "pending", pending_num)?;
+    obj.set(cx, "locked", locked_num)?;
+    obj.set(cx, "total", total_num)?;
     
     Ok(obj)
 }

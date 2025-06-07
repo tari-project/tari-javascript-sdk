@@ -62,10 +62,10 @@ export interface NativeBinding {
 }
 
 export interface RawBalance {
-  available: string;
-  pending: string;
-  locked: string;
-  total: string;
+  available: number;
+  pending: number;
+  locked: number;
+  total: number;
 }
 
 export interface RawAddress {

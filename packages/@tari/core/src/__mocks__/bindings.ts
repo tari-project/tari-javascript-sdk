@@ -17,10 +17,10 @@ export const mockBinding: MockedNativeBinding = {
     wallets.set(handle, {
       config,
       balance: {
-        available: '1000000000',
-        pending: '0',
-        locked: '0',
-        total: '1000000000',
+        available: 1000000000,
+        pending: 0,
+        locked: 0,
+        total: 1000000000,
       },
       seedWords: config.seedWords || 'mock seed words for testing purposes only',
     });

@@ -80,16 +80,20 @@ pub fn wallet_get_balance(mut cx: FunctionContext) -> JsResult<JsObject> {
     log::debug!("Retrieved balance for wallet: {} - available: {}", handle, balance.available);
     
     let obj = cx.empty_object();
-    let available_str = cx.string(balance.available.to_string());
-    let pending_str = cx.string(balance.pending_incoming.to_string());
-    let locked_str = cx.string(balance.timelocked.to_string());
-    let total = balance.available + balance.pending_incoming + balance.timelocked;
-    let total_str = cx.string(total.to_string());
+    let available = balance.available.as_u64();
+    let pending = balance.pending_incoming.as_u64();
+    let locked = balance.timelocked.as_u64();
+    let total = available + pending + locked;
     
-    obj.set(&mut cx, "available", available_str)?;
-    obj.set(&mut cx, "pending", pending_str)?;
-    obj.set(&mut cx, "locked", locked_str)?;
-    obj.set(&mut cx, "total", total_str)?;
+    let available_num = cx.number(available as f64);
+    let pending_num = cx.number(pending as f64);
+    let locked_num = cx.number(locked as f64);
+    let total_num = cx.number(total as f64);
+    
+    obj.set(&mut cx, "available", available_num)?;
+    obj.set(&mut cx, "pending", pending_num)?;
+    obj.set(&mut cx, "locked", locked_num)?;
+    obj.set(&mut cx, "total", total_num)?;
     
     Ok(obj)
 }
