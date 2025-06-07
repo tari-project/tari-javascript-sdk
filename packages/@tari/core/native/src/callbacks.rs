@@ -107,7 +107,7 @@ pub fn get_callback_count(mut cx: FunctionContext) -> JsResult<JsNumber> {
 pub fn trigger_callback(id: u64, params: Vec<String>) -> Result<(), String> {
     let manager = CALLBACK_MANAGER.lock().unwrap();
     
-    if let Some(callback_info) = manager.get(id) {
+    if let Some(_callback_info) = manager.get(id) {
         // TODO: Implement actual callback triggering
         // This would require a channel to communicate with the JS thread
         log::debug!("Would trigger callback {} with params: {:?}", id, params);
@@ -124,7 +124,7 @@ pub fn test_callback(mut cx: FunctionContext) -> JsResult<JsUndefined> {
     
     let manager = CALLBACK_MANAGER.lock().unwrap();
     
-    if let Some(callback_info) = manager.get(id) {
+    if let Some(_callback_info) = manager.get(id) {
         // Create test parameters
         let test_params = vec![test_message];
         

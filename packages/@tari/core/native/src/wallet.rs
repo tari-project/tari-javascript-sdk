@@ -456,7 +456,7 @@ pub fn wallet_coin_join(mut cx: FunctionContext) -> JsResult<JsString> {
 pub fn wallet_start_recovery(mut cx: FunctionContext) -> JsResult<JsBoolean> {
     let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
     let base_node_key = cx.argument::<JsString>(1)?.value(&mut cx);
-    let callback = cx.argument::<JsFunction>(2)?;
+    let _callback = cx.argument::<JsFunction>(2)?;
     
     let handles = WALLET_HANDLES.lock().unwrap();
     if !handles.is_valid(handle) {

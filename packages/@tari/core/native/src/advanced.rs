@@ -99,10 +99,10 @@ pub fn script_destroy(mut cx: FunctionContext) -> JsResult<JsUndefined> {
 /// Execute a compiled script with given parameters
 pub fn execute_script(mut cx: FunctionContext) -> JsResult<JsObject> {
     let handle = cx.argument::<JsNumber>(0)?.value(&mut cx) as u64;
-    let params_obj = cx.argument::<JsObject>(1)?;
+    let _params_obj = cx.argument::<JsObject>(1)?;
     
     let handles = SCRIPT_HANDLES.lock().unwrap();
-    let script = try_js!(&mut cx, handles.get_handle(handle)
+    let _script = try_js!(&mut cx, handles.get_handle(handle)
         .ok_or(TariError::InvalidHandle(handle)));
     
     log::debug!("Executing script with handle: {}", handle);

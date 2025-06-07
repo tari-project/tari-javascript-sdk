@@ -204,7 +204,7 @@ impl ConfigManager {
                 .map_err(|e| ConfigError::ParseError(format!("Invalid TOML: {}", e)))?
         };
         
-        let mut manager = Self {
+        let manager = Self {
             config,
             config_path: Some(path),
         };
@@ -237,7 +237,7 @@ impl ConfigManager {
                 .map_err(|_| ConfigError::ParseError("Invalid TARI_ENABLE_METRICS".to_string()))?;
         }
         
-        let mut manager = Self {
+        let manager = Self {
             config,
             config_path: None,
         };
@@ -290,7 +290,7 @@ impl ConfigManager {
     
     /// Update configuration
     pub fn update_config(&mut self, config: ProductionConfig) -> Result<(), ConfigError> {
-        let mut temp = Self {
+        let temp = Self {
             config,
             config_path: self.config_path.clone(),
         };
