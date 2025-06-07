@@ -102,13 +102,39 @@ impl RealWalletInstance {
     async fn initialize_database(&self) -> TariResult<()> {
         log::debug!("Initializing wallet database at: {:?}", self.wallet_db_path);
         
-        // For now, just ensure the database directory exists
-        // The actual database initialization will be handled by the wallet builder
-        // when we create the real wallet instance
+        // Ensure the database directory exists
         std::fs::create_dir_all(self.data_path.parent().unwrap_or(&self.data_path))
             .map_err(|e| TariError::DatabaseError(format!("Failed to create database directory: {}", e)))?;
         
-        log::info!("Database directory prepared");
+        // Initialize SQLite database with proper schema
+        let connection_string = self.wallet_db_path.to_string_lossy().to_string();
+        log::debug!("Database connection string: {}", connection_string);
+        
+        // Create the database connection and run migrations
+        // This will create the wallet.db file with the correct schema
+        let _db = WalletSqliteDatabase::new(connection_string.clone(), None)
+            .map_err(|e| TariError::DatabaseError(format!("Failed to initialize wallet database: {}", e)))?;
+        
+        log::info!("Wallet database initialized successfully");
+        
+        // Also prepare transaction service database
+        let tx_db_path = self.data_path.join("transaction_service.db");
+        let tx_connection_string = tx_db_path.to_string_lossy().to_string();
+        
+        let _tx_db = TransactionServiceSqliteDatabase::new(tx_connection_string, None)
+            .map_err(|e| TariError::DatabaseError(format!("Failed to initialize transaction database: {}", e)))?;
+        
+        log::info!("Transaction service database initialized successfully");
+        
+        // Prepare output manager database
+        let output_db_path = self.data_path.join("output_manager.db");
+        let output_connection_string = output_db_path.to_string_lossy().to_string();
+        
+        let _output_db = OutputManagerSqliteDatabase::new(output_connection_string, None)
+            .map_err(|e| TariError::DatabaseError(format!("Failed to initialize output manager database: {}", e)))?;
+        
+        log::info!("Output manager database initialized successfully");
+        
         Ok(())
     }
     
