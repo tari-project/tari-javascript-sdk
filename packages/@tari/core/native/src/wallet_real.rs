@@ -1,9 +1,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use tari_utilities::ByteArray;
 
 use tari_core::transactions::tari_amount::MicroMinotari;
+use tari_core::consensus::{ConsensusManager, ConsensusManagerBuilder};
+use tari_common::configuration::Network as TariNetwork;
 
 // Wallet and communication types
 use minotari_wallet::wallet::Wallet;
@@ -11,7 +12,9 @@ use minotari_wallet::storage::sqlite_db::wallet::WalletSqliteDatabase;
 use minotari_wallet::transaction_service::storage::sqlite_db::TransactionServiceSqliteDatabase;
 use minotari_wallet::output_manager_service::storage::sqlite_db::OutputManagerSqliteDatabase;
 use tari_key_manager::cipher_seed::CipherSeed;
-use tari_key_manager::mnemonic::MnemonicLanguage;
+use tari_comms::peer_manager::{NodeIdentity, PeerFeatures};
+use tari_crypto::keys::SecretKey;
+use tari_crypto::ristretto::RistrettoSecretKey;
 
 // Communication types will be handled by minotari_wallet internally
 
@@ -21,11 +24,14 @@ use crate::utils::{WalletConfig, Network};
 /// Real Tari wallet instance using actual wallet components
 pub struct RealWalletInstance {
     pub runtime: Arc<Runtime>,
-    pub network: Network,
+    pub network: crate::utils::Network,
+    pub tari_network: TariNetwork,
     pub data_path: PathBuf,
     pub wallet_db_path: PathBuf,
     pub config: WalletConfig,
     pub wallet: Option<Arc<Wallet<WalletSqliteDatabase, TransactionServiceSqliteDatabase, OutputManagerSqliteDatabase, (), ()>>>,
+    pub node_identity: Option<Arc<NodeIdentity>>,
+    pub consensus_manager: Option<ConsensusManager>,
 }
 
 impl RealWalletInstance {
@@ -64,13 +70,18 @@ impl RealWalletInstance {
         // - Output manager setup
         // - Contacts service setup
         
-        let instance = Self {
+        let tari_network = convert_network(&config.network);
+        
+        let mut instance = Self {
             runtime,
             network: config.network.clone(),
+            tari_network,
             data_path,
             wallet_db_path,
             config,
             wallet: None, // Will be initialized in initialize_wallet_components
+            node_identity: None,
+            consensus_manager: None,
         };
         
         // Initialize wallet database and services
@@ -80,22 +91,47 @@ impl RealWalletInstance {
     }
     
     /// Initialize wallet components and databases
-    async fn initialize_wallet_components(&self) -> TariResult<()> {
+    async fn initialize_wallet_components(&mut self) -> TariResult<()> {
         log::info!("Initializing wallet components for network: {:?}", self.network);
         
-        // TODO: Initialize wallet database
+        // Initialize consensus manager
+        self.consensus_manager = Some(
+            ConsensusManagerBuilder::new(self.tari_network).build()
+                .map_err(|e| TariError::WalletError(format!("Failed to build consensus manager: {}", e)))?
+        );
+        
+        // Initialize node identity
+        self.initialize_node_identity().await?;
+        
+        // Initialize wallet database
         self.initialize_database().await?;
         
-        // TODO: Initialize key manager
+        // Initialize key manager
         self.initialize_key_manager().await?;
         
-        // TODO: Initialize communication services
+        // Initialize communication services
         self.initialize_comms().await?;
         
-        // TODO: Initialize wallet services
+        // Initialize wallet services
         self.initialize_services().await?;
         
         log::info!("Wallet components initialized successfully");
+        Ok(())
+    }
+    
+    /// Initialize node identity
+    async fn initialize_node_identity(&mut self) -> TariResult<()> {
+        log::debug!("Initializing node identity");
+        
+        // Generate or load node identity
+        let secret_key = RistrettoSecretKey::random(&mut rand::thread_rng());
+        let public_addresses = vec![];  // Empty for now
+        let features = PeerFeatures::COMMUNICATION_NODE;
+        let node_identity = NodeIdentity::new(secret_key, public_addresses, features);
+        
+        self.node_identity = Some(Arc::new(node_identity));
+        
+        log::info!("Node identity initialized successfully");
         Ok(())
     }
     
@@ -164,9 +200,7 @@ impl RealWalletInstance {
         log::debug!("Initializing communication services");
         
         // Get network configuration
-        let network_config = crate::network_config::get_network_config(
-            convert_network(&self.network)
-        );
+        let network_config = crate::network_config::get_network_config(self.tari_network);
         
         // Validate network configuration
         network_config.validate()
@@ -209,51 +243,27 @@ impl RealWalletInstance {
     }
     
     /// Initialize wallet services
-    async fn initialize_services(&self) -> TariResult<()> {
+    async fn initialize_services(&mut self) -> TariResult<()> {
         log::debug!("Initializing wallet services");
         
-        // Initialize transaction service configuration
-        let network_config = crate::network_config::get_network_config(
-            convert_network(&self.network)
-        );
+        // For now, we'll prepare the configurations that would be used 
+        // to build an actual wallet. The full wallet builder integration
+        // requires more complex setup with comms and database connections.
         
-        // Prepare transaction service configuration
-        let tx_service_config = minotari_wallet::transaction_service::config::TransactionServiceConfig {
-            broadcast_monitoring_timeout: std::time::Duration::from_secs(300),
-            chain_monitoring_timeout: std::time::Duration::from_secs(600),
-            direct_send_timeout: std::time::Duration::from_secs(30),
-            broadcast_send_timeout: std::time::Duration::from_secs(60),
-            low_power_polling_timeout: std::time::Duration::from_secs(300),
-            transaction_resend_period: std::time::Duration::from_secs(1800),
-            resend_response_cooldown: std::time::Duration::from_secs(300),
-            pending_transaction_cancellation_timeout: std::time::Duration::from_secs(86400),
-            max_tx_query_batch_size: 1000,
-            ..Default::default()
-        };
+        let network_config = crate::network_config::get_network_config(self.tari_network);
         
-        log::debug!("Transaction service config prepared with {}s broadcast timeout", 
-                    tx_service_config.broadcast_monitoring_timeout.as_secs());
+        // TODO: Implement actual WalletBuilder pattern here
+        // This would involve:
+        // 1. Setting up database connections
+        // 2. Configuring comms stack  
+        // 3. Building wallet with all services
+        // 4. Storing wallet instance in self.wallet
         
-        // Prepare output manager service configuration  
-        let output_manager_config = minotari_wallet::output_manager_service::config::OutputManagerServiceConfig {
-            prevent_fee_gt_amount: true,
-            dust_ignore_value: 1000,
-            ..Default::default()
-        };
+        log::info!("Wallet services prepared for network: {:?}", network_config.network);
         
-        log::debug!("Output manager config prepared with dust ignore value: {}",
-                    output_manager_config.dust_ignore_value);
-        
-        // Note: Contacts service configuration would be prepared here
-        // but the contacts_service module is not available in the current API
-        log::debug!("Service configurations prepared");
-        
-        // The actual wallet services will be initialized by the wallet builder
-        // when we create the full wallet instance. This preparation ensures
-        // all configurations are ready for the services.
-        
-        log::info!("Wallet services configuration completed for network: {:?}", 
-                   network_config.network);
+        // For now, we don't create the actual wallet instance due to complexity
+        // of setting up all the required components. This will be implemented
+        // in the next phase.
         
         Ok(())
     }
@@ -262,14 +272,28 @@ impl RealWalletInstance {
     pub async fn get_real_balance(&self) -> TariResult<WalletBalance> {
         log::debug!("Getting real wallet balance");
         
-        // TODO: Get actual balance from Tari wallet services
-        // For now, return mock data
-        Ok(WalletBalance {
-            available: MicroMinotari::from(1000000), // 1 XTR
-            pending_incoming: MicroMinotari::from(0),
-            pending_outgoing: MicroMinotari::from(0),
-            timelocked: MicroMinotari::from(0),
-        })
+        if let Some(_wallet) = &self.wallet {
+            // TODO: Use actual wallet to get balance once wallet is properly initialized
+            // For now, wallet creation is complex and requires full infrastructure setup
+            log::warn!("Wallet exists but balance query not yet implemented");
+            
+            // Return test balance to show the infrastructure is working
+            Ok(WalletBalance {
+                available: MicroMinotari::from(100000), // 0.1 XTR for testing
+                pending_incoming: MicroMinotari::from(0),
+                pending_outgoing: MicroMinotari::from(0),
+                timelocked: MicroMinotari::from(0),
+            })
+        } else {
+            log::warn!("Wallet not initialized, returning zero balance");
+            // Return zero balance if wallet is not initialized
+            Ok(WalletBalance {
+                available: MicroMinotari::from(0),
+                pending_incoming: MicroMinotari::from(0),
+                pending_outgoing: MicroMinotari::from(0),
+                timelocked: MicroMinotari::from(0),
+            })
+        }
     }
     
     /// Send a real transaction through Tari wallet
@@ -545,24 +569,24 @@ pub type TariAddress = String; // Simplified for now
 pub type TxId = u64; // Simplified for now
 
 /// Convert SDK network type to Tari network type
-fn convert_network(network: &Network) -> tari_common::configuration::Network {
+fn convert_network(network: &Network) -> TariNetwork {
     match network {
-        Network::Mainnet => tari_common::configuration::Network::MainNet,
-        Network::Testnet => tari_common::configuration::Network::NextNet,
-        Network::Localnet => tari_common::configuration::Network::LocalNet,
+        Network::Mainnet => TariNetwork::MainNet,
+        Network::Testnet => TariNetwork::NextNet,
+        Network::Localnet => TariNetwork::LocalNet,
     }
 }
 
 /// Get default wallet path for a network
-fn default_wallet_path(network: &tari_common::configuration::Network) -> PathBuf {
+fn default_wallet_path(network: &TariNetwork) -> PathBuf {
     let mut path = dirs_next::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join(".tari");
     
     match network {
-        tari_common::configuration::Network::MainNet => path.push("mainnet"),
-        tari_common::configuration::Network::NextNet => path.push("nextnet"),
-        tari_common::configuration::Network::LocalNet => path.push("localnet"),
+        TariNetwork::MainNet => path.push("mainnet"),
+        TariNetwork::NextNet => path.push("nextnet"),
+        TariNetwork::LocalNet => path.push("localnet"),
         _ => path.push("unknown"),
     }
     
@@ -587,7 +611,7 @@ mod tests {
         assert!(wallet.is_ok(), "Failed to create real wallet: {:?}", wallet.err());
         
         let wallet = wallet.unwrap();
-        assert_eq!(wallet.network, tari_common::configuration::Network::LocalNet);
+        assert_eq!(wallet.tari_network, TariNetwork::LocalNet);
         assert!(wallet.data_path.exists());
     }
     
