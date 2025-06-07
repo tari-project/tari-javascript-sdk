@@ -23,20 +23,18 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 futures = "0.3"
 dirs-next = "1.0"
-# Real Tari dependencies from v4.3.1 stable release  
-tari_common = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_core = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_crypto = { version = "0.22.0" }
-tari_common_types = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_script = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_utilities = { version = "0.8" }
-
-# Minotari wallet dependencies  
-minotari_wallet = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_key_manager = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_storage = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_comms = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
-tari_p2p = { git = "https://github.com/tari-project/tari.git", tag = "v4.3.1" }
+# Real Tari dependencies from development branch
+tari_wallet = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_core = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_common = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_comms = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_crypto = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_key_manager = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_storage = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_common_types = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_script = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_utilities = { git = "https://github.com/tari-project/tari.git", branch = "development" }
+tari_p2p = { git = "https://github.com/tari-project/tari.git", branch = "development" }
 
 # Additional dependencies for production features
 lazy_static = "1.4"
