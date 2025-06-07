@@ -190,20 +190,13 @@ export class WithdrawalProcessor extends EventEmitter {
       )
     );
     
-    // Debug output
-    console.log('Processing batch:', batch.map(r => r.id));
-    console.log('Results:', results);
-    
     // Remove from processing queue and update status
     batch.forEach((request, index) => {
       const result = results[index];
       const status = this.statusMap.get(request.id);
       
-      console.log(`Processing ${request.id}:`, result);
-      
       if (status) {
         if (result.status === 'fulfilled' && result.value.status !== 'failed') {
-          console.log(`${request.id}: Setting to completed`);
           status.status = 'completed';
           status.txId = result.value.txId;
           this.completedList.push(status);
@@ -214,11 +207,9 @@ export class WithdrawalProcessor extends EventEmitter {
             userId: request.userId,
           });
         } else {
-          console.log(`${request.id}: Setting to failed`);
           status.status = 'failed';
           status.error = result.status === 'rejected' ? result.reason.message : result.value.error;
           this.failedList.push(status);
-          console.log(`${request.id}: Status after update:`, status);
           this.emit('withdrawal-failed', {
             id: request.id,
             error: status.error,
