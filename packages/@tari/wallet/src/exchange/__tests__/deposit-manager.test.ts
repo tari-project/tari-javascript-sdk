@@ -177,11 +177,13 @@ describe('DepositManager', () => {
         destination: '🎉🎨🎭🎪🎯🎲🎸🎺', 
         amount: 1000000n,
         id: 'tx_1',
+        confirmations: 6,
       });
       txHandler({ 
         destination: '🎉🎨🎭🎪🎯🎲🎸🎺', 
         amount: 2000000n,
         id: 'tx_2',
+        confirmations: 6,
       });
 
       const stats = manager.getStatistics();

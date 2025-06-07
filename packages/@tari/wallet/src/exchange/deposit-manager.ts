@@ -34,6 +34,7 @@ export class DepositManager extends EventEmitter<{
   private addressToUser = new Map<string, string>();
   private cleanupFunctions: Array<() => void> = [];
   private isInitialized = false;
+  private totalTransactionCount = 0;
 
   constructor(private wallet: TariWallet) {
     super();
@@ -145,7 +146,7 @@ export class DepositManager extends EventEmitter<{
     const addresses = Array.from(this.addresses.values());
     const totalVolume = addresses.reduce((sum, addr) => sum + addr.totalReceived, 0n);
     const totalUsers = addresses.length;
-    const totalDeposits = addresses.filter(addr => addr.totalReceived > 0n).length;
+    const totalDeposits = this.totalTransactionCount;
     const averageDeposit = totalDeposits > 0 ? totalVolume / BigInt(totalDeposits) : 0n;
 
     return {
@@ -173,6 +174,7 @@ export class DepositManager extends EventEmitter<{
     // Update deposit info
     deposit.lastSeen = new Date();
     deposit.totalReceived += tx.amount;
+    this.totalTransactionCount++;
     
     // Emit deposit event
     this.emit('deposit', {
