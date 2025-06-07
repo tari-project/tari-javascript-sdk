@@ -20,6 +20,9 @@ module.exports = {
   moduleNameMapper: {
     '^@tari-project/core$': '<rootDir>/../core/src',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(p-limit|p-retry|yocto-queue)/)',
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

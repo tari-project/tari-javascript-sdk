@@ -7,7 +7,26 @@ import {
   initialize as initCore,
   ffi 
 } from '@tari-project/core';
-import pRetry from 'p-retry';
+// Simple retry implementation to avoid ESM issues
+async function retry<T>(
+  fn: () => Promise<T>, 
+  options: { retries: number; delay?: number } = { retries: 3, delay: 1000 }
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let i = 0; i <= options.retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      if (i < options.retries) {
+        await new Promise(resolve => setTimeout(resolve, options.delay || 1000));
+      }
+    }
+  }
+  
+  throw lastError!;
+}
 import {
   WalletConfig,
   Balance,
@@ -54,7 +73,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
 
     try {
       // Create wallet
-      this.handle = await pRetry(() => 
+      this.handle = await retry(() => 
         ffi.createWallet({
           seedWords: this.config.seedWords,
           network: this.config.network,
@@ -62,12 +81,7 @@ export class TariWallet extends EventEmitter<WalletEventMap> {
           dbName: this.config.dbName,
           passphrase: this.config.passphrase,
         }), 
-        {
-          retries: 3,
-          onFailedAttempt: (error) => {
-            console.warn(`Wallet creation attempt ${error.attemptNumber} failed:`, error.message);
-          }
-        }
+        { retries: 3, delay: 1000 }
       );
 
       // Get wallet address

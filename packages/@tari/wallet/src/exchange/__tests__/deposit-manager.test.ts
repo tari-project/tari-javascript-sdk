@@ -13,9 +13,9 @@ describe('DepositManager', () => {
   let manager: DepositManager;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     manager = new DepositManager(mockWallet);
     manager.initialize();
-    jest.clearAllMocks();
   });
 
   afterEach(() => {
