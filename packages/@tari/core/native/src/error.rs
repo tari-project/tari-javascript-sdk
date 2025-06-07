@@ -32,6 +32,9 @@ pub enum TariError {
     #[error("Runtime error: {0}")]
     RuntimeError(String),
     
+    #[error("Key manager error: {0}")]
+    KeyManagerError(String),
+    
     #[error("Not implemented: {0}")]
     NotImplemented(String),
     
