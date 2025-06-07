@@ -69,10 +69,10 @@ describe('FFIWrapper', () => {
       });
 
       mockBinding.walletGetBalance.mockReturnValueOnce({
-        available: '999999999999999999',
-        pending: '1000000000',
-        locked: '0',
-        total: '1000000000999999999',
+        available: 999999999999999999,
+        pending: 1000000000,
+        locked: 0,
+        total: 1000000000999999999,
       });
 
       const balance = wrapper.getBalance(handle);
