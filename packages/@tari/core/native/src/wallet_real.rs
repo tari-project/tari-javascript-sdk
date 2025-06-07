@@ -181,11 +181,46 @@ impl RealWalletInstance {
     async fn initialize_comms(&self) -> TariResult<()> {
         log::debug!("Initializing communication services");
         
-        // The communication stack will be handled by the wallet builder
-        // when we actually construct the wallet. For now, we prepare the
-        // communication configuration that will be passed to the wallet.
+        // Get network configuration
+        let network_config = crate::network_config::get_network_config(
+            convert_network(&self.network)
+        );
         
-        log::info!("Communication services configuration prepared");
+        // Validate network configuration
+        network_config.validate()
+            .map_err(|e| TariError::NetworkError(format!("Invalid network config: {}", e)))?;
+        
+        // Prepare P2P configuration for wallet
+        log::debug!("Using {} base node addresses", network_config.base_node_addresses.len());
+        for addr in &network_config.base_node_addresses {
+            log::debug!("  Base node: {}", addr);
+        }
+        
+        // Setup comms configuration
+        let comms_config = tari_p2p::P2pConfig {
+            transport: tari_p2p::TransportConfig::new_tcp_with_tor_socks_no_change(
+                format!("0.0.0.0:{}", network_config.default_port).parse()
+                    .map_err(|e| TariError::NetworkError(format!("Invalid port: {}", e)))?,
+                None,
+            ),
+            datastore_path: self.data_path.join("peer_db"),
+            peer_database_name: "peers".to_string(),
+            max_concurrent_inbound_tasks: network_config.p2p_config.max_connections,
+            max_concurrent_outbound_tasks: network_config.p2p_config.max_connections,
+            dht: Default::default(),
+            network: convert_network(&self.network),
+            node_identity: None, // Will be set by wallet
+            user_agent: "/tari/javascript-sdk/0.1.0".to_string(),
+        };
+        
+        log::debug!("P2P configuration created with {} max connections", 
+                    comms_config.max_concurrent_inbound_tasks);
+        
+        // Prepare the communication stack configuration
+        // The actual CommsNode will be created by the wallet builder
+        log::info!("Communication services configuration prepared for network: {:?}", 
+                   network_config.network);
+        
         Ok(())
     }
     
