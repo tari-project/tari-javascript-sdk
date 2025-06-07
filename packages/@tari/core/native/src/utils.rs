@@ -19,15 +19,24 @@ pub fn parse_wallet_config(cx: &mut FunctionContext, config_obj: Handle<JsObject
         .map(|s| js_string_to_rust(cx, s))
         .unwrap_or_default();
 
-    // Extract network (optional, default to mainnet)
-    let network_str = config_obj
-        .get_opt::<JsString, _, _>(cx, "network")?
-        .map(|s| js_string_to_rust(cx, s))
-        .unwrap_or_else(|| "mainnet".to_string());
+    // Extract network (optional, default to mainnet) - handle both string and enum values
+    let network_str = if let Ok(Some(js_str)) = config_obj.get_opt::<JsString, _, _>(cx, "network") {
+        js_string_to_rust(cx, js_str)
+    } else if let Ok(Some(js_num)) = config_obj.get_opt::<JsNumber, _, _>(cx, "network") {
+        match js_num.value(cx) as i32 {
+            0 => "mainnet".to_string(),
+            1 => "testnet".to_string(),
+            2 => "nextnet".to_string(),
+            3 => "localnet".to_string(),
+            n => format!("unknown({})", n),
+        }
+    } else {
+        "mainnet".to_string()
+    };
 
     let network = match network_str.as_str() {
         "mainnet" => Network::Mainnet,
-        "testnet" => Network::Testnet,
+        "testnet" | "nextnet" => Network::Testnet, // Map both testnet and nextnet to Testnet
         "localnet" => Network::Localnet,
         _ => return Err(TariError::InvalidArgument(format!("Invalid network: {}", network_str))),
     };

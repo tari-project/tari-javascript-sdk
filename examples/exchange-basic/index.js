@@ -2,23 +2,62 @@ const { TariWallet, DepositManager, formatTari, parseTari, WalletEvent } = requi
 const { Network } = require('@tari-project/core');
 require('dotenv').config();
 
+// Configure logging based on environment
+const logLevel = process.env.LOG_LEVEL || 'info';
+const shouldLog = (level) => {
+  const levels = { debug: 0, info: 1, warn: 2, error: 3 };
+  return levels[level] >= levels[logLevel];
+};
+
+function log(level, ...args) {
+  if (shouldLog(level)) {
+    console.log(...args);
+  }
+}
+
+// Set Rust backtrace for debugging
+if (logLevel === 'debug') {
+  process.env.RUST_BACKTRACE = '1';
+}
+
 async function main() {
   console.log('🏪 Starting Tari Basic Exchange Example...\n');
 
+  // Parse network from environment
+  const networkName = process.env.TARI_NETWORK || 'testnet';
+  let network;
+  switch (networkName.toLowerCase()) {
+    case 'mainnet':
+      network = Network.Mainnet;
+      break;
+    case 'testnet':
+      network = Network.Testnet;
+      break;
+    case 'nextnet':
+      network = Network.Nextnet;
+      break;
+    case 'localnet':
+      network = Network.Localnet;
+      break;
+    default:
+      console.warn(`Unknown network '${networkName}', defaulting to testnet`);
+      network = Network.Testnet;
+  }
+
   // Create hot wallet for the exchange
   const wallet = TariWallet.builder()
-    .network(Network.Testnet)
+    .network(network)
     .seedWords(process.env.SEED_WORDS || generateTestSeedWords())
-    .dataDirectory('./exchange-data')
+    .dataDirectory(process.env.DATA_DIRECTORY || './exchange-data')
     .build();
 
   let isShuttingDown = false;
 
   try {
     // Connect to network
-    console.log('📡 Connecting to Tari network...');
+    console.log(`📡 Connecting to Tari ${networkName}...`);
     await wallet.connect();
-    console.log('✅ Connected to Tari testnet\n');
+    console.log(`✅ Connected to Tari ${networkName}\n`);
 
     // Show wallet info
     const address = wallet.getReceiveAddress();
