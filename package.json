@@ -6,7 +6,6 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "build:dev": "turbo run build:dev",
     "build:platform": "turbo run build:platform",
     "build:darwin-x64": "PLATFORM=darwin ARCH=x64 turbo run build:platform",
     "build:darwin-arm64": "PLATFORM=darwin ARCH=arm64 turbo run build:platform",
