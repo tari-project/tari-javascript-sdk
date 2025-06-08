@@ -5,15 +5,14 @@ use crate::utils::{parse_wallet_config, parse_send_params};
 use crate::try_js;
 
 // Peer management imports
-use tari_comms::peer_manager::{PeerManager, Peer};
-use tari_comms::types::CommsPublicKey;
-use tari_common_types::types::PublicKey;
+use tari_crypto::keys::PublicKey as CryptoPublicKey;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
+use once_cell::sync::Lazy;
 
-// Recovery service imports
-use minotari_wallet::recovery::{RecoveryConfig, RecoveryValidation};
-use tari_core::transactions::tari_amount::MicroMinotari;
+// Recovery service imports - simplified for compatibility
+// use minotari_wallet::recovery::{RecoveryConfig, RecoveryValidation};
+// use tari_core::transactions::tari_amount::MicroMinotari;
 
 /// Create a new wallet instance
 pub fn wallet_create(mut cx: FunctionContext) -> JsResult<JsNumber> {
@@ -480,8 +479,8 @@ pub fn wallet_start_recovery(mut cx: FunctionContext) -> JsResult<JsBoolean> {
     
     // Validate base node key format
     match validate_peer_public_key(&base_node_key) {
-        Ok(base_node_public_key) => {
-            log::debug!("Base node public key validated: {:?}", base_node_public_key);
+        Ok(base_node_key_bytes) => {
+            log::debug!("Base node public key validated: {} bytes", base_node_key_bytes.len());
         }
         Err(e) => {
             log::warn!("Invalid base node public key: {}", e);
@@ -668,7 +667,7 @@ pub fn wallet_add_peer(mut cx: FunctionContext) -> JsResult<JsBoolean> {
                public_key, address, handle);
     
     // Validate peer public key format
-    let comms_public_key = try_js!(&mut cx, validate_peer_public_key(&public_key));
+    let peer_key_bytes = try_js!(&mut cx, validate_peer_public_key(&public_key));
     
     // Test peer connectivity
     match test_peer_connectivity(&address) {
@@ -694,7 +693,7 @@ pub fn wallet_add_peer(mut cx: FunctionContext) -> JsResult<JsBoolean> {
     log::info!("Peer {} successfully validated and would be added to peer manager", public_key);
     
     // Update peer reputation with initial score
-    if let Err(e) = update_peer_reputation(&comms_public_key, 10) {
+    if let Err(e) = update_peer_reputation(&peer_key_bytes, 10) {
         log::warn!("Failed to update peer reputation: {}", e);
     }
     
@@ -720,7 +719,7 @@ pub fn wallet_ban_peer(mut cx: FunctionContext) -> JsResult<JsBoolean> {
                public_key, handle, duration);
     
     // Validate peer public key format
-    let comms_public_key = try_js!(&mut cx, validate_peer_public_key(&public_key));
+    let peer_key_bytes = try_js!(&mut cx, validate_peer_public_key(&public_key));
     
     // Calculate ban expiry time
     let ban_duration = duration.unwrap_or(3600); // Default to 1 hour
@@ -741,7 +740,7 @@ pub fn wallet_ban_peer(mut cx: FunctionContext) -> JsResult<JsBoolean> {
     // 5. Update peer reputation with negative score
     
     // Update peer reputation with penalty
-    if let Err(e) = update_peer_reputation(&comms_public_key, -50) {
+    if let Err(e) = update_peer_reputation(&peer_key_bytes, -50) {
         log::warn!("Failed to update peer reputation: {}", e);
     }
     
@@ -754,7 +753,7 @@ pub fn wallet_ban_peer(mut cx: FunctionContext) -> JsResult<JsBoolean> {
 use hex;
 
 /// Validate peer public key format (hex string, 64 characters)
-fn validate_peer_public_key(public_key: &str) -> Result<CommsPublicKey, TariError> {
+fn validate_peer_public_key(public_key: &str) -> Result<Vec<u8>, TariError> {
     // Check if the string is exactly 64 characters (32 bytes hex encoded)
     if public_key.len() != 64 {
         return Err(TariError::WalletError(format!(
@@ -767,9 +766,12 @@ fn validate_peer_public_key(public_key: &str) -> Result<CommsPublicKey, TariErro
     let key_bytes = hex::decode(public_key)
         .map_err(|e| TariError::WalletError(format!("Invalid hex public key: {}", e)))?;
     
-    // Convert to CommsPublicKey
-    CommsPublicKey::from_bytes(&key_bytes)
-        .map_err(|e| TariError::WalletError(format!("Invalid public key format: {}", e)))
+    // Validate it's 32 bytes
+    if key_bytes.len() != 32 {
+        return Err(TariError::WalletError("Public key must be exactly 32 bytes".to_string()));
+    }
+    
+    Ok(key_bytes)
 }
 
 /// Test peer connectivity (simplified implementation)
@@ -785,14 +787,14 @@ fn test_peer_connectivity(address: &str) -> Result<bool, TariError> {
 }
 
 /// Update peer reputation score (placeholder implementation)
-fn update_peer_reputation(peer_id: &CommsPublicKey, score_delta: i32) -> Result<(), TariError> {
-    log::debug!("Updating peer reputation for {:?} by {}", peer_id, score_delta);
+fn update_peer_reputation(peer_key_bytes: &[u8], score_delta: i32) -> Result<(), TariError> {
+    log::debug!("Updating peer reputation for {} bytes key by {}", peer_key_bytes.len(), score_delta);
     // In a real implementation, this would update the peer manager's reputation system
     Ok(())
 }
 
 /// Store for banned peers (in a real implementation, this would be persistent)
-static BANNED_PEERS: std::sync::Mutex<HashMap<String, SystemTime>> = std::sync::Mutex::new(HashMap::new());
+static BANNED_PEERS: Lazy<std::sync::Mutex<HashMap<String, SystemTime>>> = Lazy::new(|| std::sync::Mutex::new(HashMap::new()));
 
 /// Recovery progress tracking
 #[derive(Debug, Clone)]
@@ -807,7 +809,7 @@ struct RecoveryProgress {
 }
 
 /// Store for wallet recovery progress
-static RECOVERY_PROGRESS: std::sync::Mutex<HashMap<u64, RecoveryProgress>> = std::sync::Mutex::new(HashMap::new());
+static RECOVERY_PROGRESS: Lazy<std::sync::Mutex<HashMap<u64, RecoveryProgress>>> = Lazy::new(|| std::sync::Mutex::new(HashMap::new()));
 
 /// Simple recovery configuration structure
 struct SimpleRecoveryConfig {

@@ -4,10 +4,10 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
 
-// Wallet event imports
-use minotari_wallet::output_manager_service::handle::OutputManagerEvent;
-use minotari_wallet::transaction_service::handle::TransactionEvent;
-use tokio::sync::broadcast;
+// Wallet event imports (simplified for compatibility)
+// use minotari_wallet::output_manager_service::handle::OutputManagerEvent;
+// use minotari_wallet::transaction_service::handle::TransactionEvent;
+// use tokio::sync::broadcast;
 use std::sync::mpsc;
 
 /// Callback information storage
@@ -215,44 +215,44 @@ pub enum WalletEvent {
     RecoveryProgress { percentage: f64, blocks_scanned: u64 },
 }
 
-/// Process transaction events
-pub async fn process_transaction_event(event: TransactionEvent) -> Result<(), String> {
-    match event {
-        TransactionEvent::ReceivedTransaction(tx_id) => {
-            log::info!("Processing received transaction event: {:?}", tx_id);
+/// Process transaction events (simplified implementation)
+pub async fn process_transaction_event(event_type: &str, tx_id: &str) -> Result<(), String> {
+    match event_type {
+        "received" => {
+            log::info!("Processing received transaction event: {}", tx_id);
             // In a real implementation, this would:
             // 1. Extract transaction details
             // 2. Trigger registered transaction callbacks
             // 3. Update wallet balance
             Ok(())
         }
-        TransactionEvent::TransactionSendResult { tx_id, result } => {
-            log::info!("Processing transaction send result: {:?} -> {:?}", tx_id, result);
+        "sent" => {
+            log::info!("Processing transaction send result: {}", tx_id);
             // Handle transaction send completion
             Ok(())
         }
         _ => {
-            log::debug!("Unhandled transaction event: {:?}", event);
+            log::debug!("Unhandled transaction event: {}", event_type);
             Ok(())
         }
     }
 }
 
-/// Process output manager events
-pub async fn process_output_manager_event(event: OutputManagerEvent) -> Result<(), String> {
-    match event {
-        OutputManagerEvent::TxoValidationSuccess(_) => {
-            log::info!("Processing TXO validation success event");
+/// Process output manager events (simplified implementation)
+pub async fn process_output_manager_event(event_type: &str, event_data: &str) -> Result<(), String> {
+    match event_type {
+        "validation_success" => {
+            log::info!("Processing TXO validation success event: {}", event_data);
             // Handle successful output validation
             Ok(())
         }
-        OutputManagerEvent::TxoValidationFailure { .. } => {
-            log::warn!("Processing TXO validation failure event");
+        "validation_failure" => {
+            log::warn!("Processing TXO validation failure event: {}", event_data);
             // Handle failed output validation
             Ok(())
         }
         _ => {
-            log::debug!("Unhandled output manager event: {:?}", event);
+            log::debug!("Unhandled output manager event: {}", event_type);
             Ok(())
         }
     }
