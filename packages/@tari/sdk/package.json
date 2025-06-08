@@ -1,7 +1,7 @@
 {
-  "name": "@tari-project/core",
+  "name": "@tari/sdk",
   "version": "0.1.0",
-  "description": "Core FFI bindings for Tari cryptocurrency",
+  "description": "Simple FFI-based SDK for Tari cryptocurrency",
   "keywords": ["tari", "cryptocurrency", "blockchain", "ffi", "neon"],
   "homepage": "https://github.com/tari-project/tari-javascript-sdk",
   "bugs": {
@@ -10,7 +10,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tari-project/tari-javascript-sdk.git",
-    "directory": "packages/@tari/core"
+    "directory": "packages/@tari/sdk"
   },
   "license": "BSD-3-Clause",
   "author": "Tari Development Team",
