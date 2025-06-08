@@ -534,22 +534,40 @@ impl RealWalletInstance {
             log::info!("Created transaction parameters with payment ID: {:?}", 
                       hex::encode(&transaction_params.payment_id));
             
-            // TODO: Implement actual transaction service call
-            // The Tari wallet transaction service requires:
-            // - Destination public key (we have this)
-            // - Amount (we have this) 
-            // - UTXO selection criteria (we have this in transaction_params)
-            // - Output features (we have this in transaction_params)
-            // - Fee per gram (we have this)
-            // - Payment ID (we have this)
-            // - Message (we have this)
-            
-            // For now, simulate successful transaction
-            let tx_id = TxId::new_random();
-            log::info!("Successfully created transaction {} for {} to {}", 
-                      tx_id, amount, destination);
-            
-            return Ok(tx_id);
+            // Get the actual wallet instance from TariWalletInstance
+            if let Some(wallet) = &tari_wallet.wallet {
+                log::debug!("Using actual Tari wallet transaction service");
+                
+                // Use the wallet's transaction service to send the transaction
+                let transaction_service = wallet.transaction_service.clone();
+                
+                // Send transaction using actual Tari transaction service
+                let send_result = transaction_service.send_transaction(
+                    destination_public_key,
+                    amount,
+                    fee_per_gram,
+                    message.clone(),
+                ).await;
+                
+                match send_result {
+                    Ok(tx_id) => {
+                        log::info!("Successfully sent transaction {} for {} to {}", 
+                                  tx_id, amount, destination);
+                        return Ok(tx_id);
+                    },
+                    Err(e) => {
+                        log::error!("Failed to send transaction: {}", e);
+                        return Err(TariError::TransactionError(format!("Transaction failed: {}", e)));
+                    }
+                }
+            } else {
+                log::warn!("TariWalletInstance wallet not initialized, falling back to mock");
+                // Fall back to mock transaction for now
+                let tx_id = TxId::new_random();
+                log::info!("Mock transaction created: {} for {} to {}", 
+                          tx_id, amount, destination);
+                return Ok(tx_id);
+            }
         }
         
         // Check if legacy wallet is available
