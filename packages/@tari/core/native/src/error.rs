@@ -66,6 +66,22 @@ impl TariError {
         let error_msg = format!("TariError: {}", self);
         cx.throw_error(error_msg)
     }
+
+    /// Check if this error indicates a recoverable state
+    pub fn is_recoverable(&self) -> bool {
+        match self {
+            TariError::NodeConnectionError(_) => true,
+            TariError::NetworkError(_) => true,
+            TariError::SyncError(_) => true,
+            TariError::ConnectivityError(_) => true,
+            TariError::TimeoutError(_) => true,
+            TariError::DatabaseError(_) => false, // Usually not recoverable
+            TariError::CryptoError(_) => false,
+            TariError::ValidationError(_) => false,
+            TariError::ConfigError(_) => false,
+            _ => false,
+        }
+    }
 }
 
 /// Result type for FFI operations
@@ -225,4 +241,25 @@ macro_rules! try_js {
             Err(e) => return e.to_js_error($cx),
         }
     };
+}
+
+/// Convert from standard IO errors
+impl From<std::io::Error> for TariError {
+    fn from(err: std::io::Error) -> Self {
+        TariError::RuntimeError(format!("IO error: {}", err))
+    }
+}
+
+/// Convert from parse errors
+impl From<std::num::ParseIntError> for TariError {
+    fn from(err: std::num::ParseIntError) -> Self {
+        TariError::ValidationError(format!("Parse error: {}", err))
+    }
+}
+
+/// Convert from UTF-8 errors
+impl From<std::str::Utf8Error> for TariError {
+    fn from(err: std::str::Utf8Error) -> Self {
+        TariError::ValidationError(format!("UTF-8 error: {}", err))
+    }
 }
