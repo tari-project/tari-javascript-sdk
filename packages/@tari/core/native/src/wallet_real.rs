@@ -129,28 +129,60 @@ impl RealWalletInstance {
                 .map_err(|e| TariError::RuntimeError(format!("Failed to create runtime: {}", e)))?
         );
         
-        // TODO: Initialize actual Tari wallet components
-        // This would include:
-        // - Database initialization
-        // - Key manager setup
-        // - Communication stack setup
-        // - Transaction service setup
-        // - Output manager setup
-        // - Contacts service setup
+        // Initialize actual Tari wallet components
+        let consensus_manager = ConsensusManagerBuilder::new(tari_network)
+            .build()
+            .map_err(|e| TariError::WalletInitializationError(format!("Failed to create consensus manager: {}", e)))?;
+        
+        // Initialize database manager with proper SQLite configuration
+        let db_config = database_config.ok_or_else(|| {
+            TariError::WalletInitializationError("Database configuration required for wallet initialization".to_string())
+        })?;
+        
+        let database_manager = DatabaseManager::new(&db_config)?;
+        
+        // Initialize wallet database connections
+        let wallet_db_path = data_path.join("wallet.sqlite");
+        let transaction_db_path = data_path.join("transaction_service.sqlite");
+        let output_db_path = data_path.join("output_manager.sqlite");
+        
+        // Create database directories if they don't exist
+        if let Some(parent) = wallet_db_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                TariError::WalletInitializationError(format!("Failed to create wallet directory: {}", e))
+            })?;
+        }
         
         let tari_network = convert_network(&config.network);
         
+        // Initialize node identity from master seed if provided
+        let node_identity = if let Some(seed_bytes) = master_seed {
+            let cipher_seed = CipherSeed::from_bytes(&seed_bytes)
+                .map_err(|e| TariError::WalletInitializationError(format!("Invalid master seed: {}", e)))?;
+            
+            let secret_key = RistrettoSecretKey::from_bytes(&cipher_seed.encipher(None).unwrap()[..32])
+                .map_err(|e| TariError::WalletInitializationError(format!("Failed to generate secret key: {}", e)))?;
+            
+            Some(Arc::new(NodeIdentity::new(
+                secret_key,
+                "/ip4/127.0.0.1/tcp/18000".parse().unwrap(),
+                PeerFeatures::COMMUNICATION_NODE,
+            ).map_err(|e| TariError::WalletInitializationError(format!("Failed to create node identity: {}", e)))?))
+        } else {
+            None
+        };
+
         let mut instance = Self {
             runtime,
             network: config.network.clone(),
             tari_network,
             data_path,
-            wallet_db_path,
+            wallet_db_path: wallet_db_path.clone(),
             config,
             wallet: None, // Will be initialized in initialize_wallet_components
-            node_identity: None,
-            consensus_manager: None,
-            database_manager: None,
+            node_identity,
+            consensus_manager: Some(consensus_manager),
+            database_manager: Some(database_manager),
             wallet_db_connection: None,
             transaction_db_connection: None,
             output_db_connection: None,
