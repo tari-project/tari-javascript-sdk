@@ -13,6 +13,7 @@ mod health;
 mod resilience;
 mod network_config;
 mod database;
+mod wallet_builder;
 
 use neon::prelude::*;
 
