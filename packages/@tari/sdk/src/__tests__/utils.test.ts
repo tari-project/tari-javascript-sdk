@@ -1,88 +1,139 @@
-import { formatTari, parseTari, validateAddress, generateSeedWords } from '../utils';
+import { 
+  formatBalance, 
+  parseBalance, 
+  validateSeedWords, 
+  validateEmojiId,
+  mapErrorCode,
+  TariErrorCode 
+} from '../utils';
 
 describe('Utils', () => {
-  describe('formatTari', () => {
+  describe('formatBalance', () => {
     it('should format microTari to human readable', () => {
-      expect(formatTari(1000000n)).toBe('1.000000 XTR');
-      expect(formatTari(1500000n)).toBe('1.500000 XTR');
-      expect(formatTari(0n)).toBe('0.000000 XTR');
+      expect(formatBalance(1000000n)).toBe('1.000000');
+      expect(formatBalance(1500000n)).toBe('1.500000');
+      expect(formatBalance(0n)).toBe('0');
     });
 
     it('should handle large amounts', () => {
-      expect(formatTari(1234567890123456n)).toBe('1234567890.123456 XTR');
+      expect(formatBalance(1234567890123456n)).toBe('1234567890.123456');
     });
 
-    it('should handle decimal option', () => {
-      expect(formatTari(1000000n, 2)).toBe('1.00 XTR');
-      expect(formatTari(1230000n, 1)).toBe('1.2 XTR');
+    it('should handle custom decimal places', () => {
+      expect(formatBalance(1000000n, 2)).toBe('1.00');
+      expect(formatBalance(1230000n, 1)).toBe('1.2');
+    });
+
+    it('should remove trailing zeros', () => {
+      expect(formatBalance(1000000n)).toBe('1');
+      expect(formatBalance(1500000n)).toBe('1.5');
     });
   });
 
-  describe('parseTari', () => {
-    it('should parse XTR string to microTari', () => {
-      expect(parseTari('1.000000')).toBe(1000000n);
-      expect(parseTari('1.5')).toBe(1500000n);
-      expect(parseTari('0')).toBe(0n);
+  describe('parseBalance', () => {
+    it('should parse balance string to microTari', () => {
+      expect(parseBalance('1.000000')).toBe(1000000n);
+      expect(parseBalance('1.5')).toBe(1500000n);
+      expect(parseBalance('0')).toBe(0n);
     });
 
     it('should handle various formats', () => {
-      expect(parseTari('1')).toBe(1000000n);
-      expect(parseTari('0.001')).toBe(1000n);
-      expect(parseTari('1234567890.123456')).toBe(1234567890123456n);
+      expect(parseBalance('1')).toBe(1000000n);
+      expect(parseBalance('0.001')).toBe(1000n);
+      expect(parseBalance('1234567890.123456')).toBe(1234567890123456n);
     });
 
     it('should throw for invalid format', () => {
-      expect(() => parseTari('invalid')).toThrow('Invalid Tari amount format');
-      expect(() => parseTari('')).toThrow('Invalid Tari amount format');
-      expect(() => parseTari('1.2.3')).toThrow('Invalid Tari amount format');
+      expect(() => parseBalance('invalid')).toThrow('Invalid balance string');
+      expect(() => parseBalance('')).toThrow('Invalid balance string');
+      expect(() => parseBalance('1.2.3')).toThrow('Invalid balance format');
+    });
+
+    it('should throw for too many decimal places', () => {
+      expect(() => parseBalance('1.1234567')).toThrow('Too many decimal places');
     });
   });
 
-  describe('validateAddress', () => {
+  describe('validateSeedWords', () => {
+    it('should validate correct seed word lengths', () => {
+      const words12 = Array(12).fill('abandon').join(' ');
+      const words24 = Array(24).fill('abandon').join(' ');
+      
+      expect(validateSeedWords(words12)).toBe(true);
+      expect(validateSeedWords(words24)).toBe(true);
+    });
+
+    it('should reject invalid word counts', () => {
+      const words11 = Array(11).fill('abandon').join(' ');
+      const words25 = Array(25).fill('abandon').join(' ');
+      
+      expect(validateSeedWords(words11)).toBe(false);
+      expect(validateSeedWords(words25)).toBe(false);
+    });
+
+    it('should reject empty or invalid input', () => {
+      expect(validateSeedWords('')).toBe(false);
+      expect(validateSeedWords('   ')).toBe(false);
+      expect(validateSeedWords(null as any)).toBe(false);
+      expect(validateSeedWords(undefined as any)).toBe(false);
+    });
+
+    it('should handle extra whitespace', () => {
+      const words = '  abandon   abandon   abandon  ';
+      expect(validateSeedWords(words)).toBe(false); // Only 3 words
+    });
+  });
+
+  describe('validateEmojiId', () => {
     it('should validate emoji addresses', () => {
-      expect(validateAddress('🎉🎨🎭🎪🎯🎲🎸🎺')).toBe(true);
-      expect(validateAddress('🎉🎨🎭🎪🎯🎲🎸🎺🎻🎰🎱🎳')).toBe(true);
+      // Note: This is a basic test - real validation would be more complex
+      expect(validateEmojiId('🎉🎨🎭🎪🎯🎲🎸🎺')).toBe(true);
     });
 
     it('should reject invalid addresses', () => {
-      expect(validateAddress('')).toBe(false);
-      expect(validateAddress('not_emoji')).toBe(false);
-      expect(validateAddress('123456789')).toBe(false);
-      expect(validateAddress('🎉')).toBe(false); // Too short
-    });
-
-    it('should handle hex addresses', () => {
-      const hexAddress = '1234567890abcdef1234567890abcdef12345678';
-      expect(validateAddress(hexAddress)).toBe(true);
-      
-      expect(validateAddress('invalid_hex')).toBe(false);
-      expect(validateAddress('123')).toBe(false); // Too short
+      expect(validateEmojiId('')).toBe(false);
+      expect(validateEmojiId('not_emoji')).toBe(false);
+      expect(validateEmojiId('123456789')).toBe(false);
+      expect(validateEmojiId(null as any)).toBe(false);
     });
   });
 
-  describe('generateSeedWords', () => {
-    it('should generate 24 words by default', () => {
-      const words = generateSeedWords();
-      expect(words.split(' ')).toHaveLength(24);
+  describe('mapErrorCode', () => {
+    it('should map known error codes', () => {
+      const result = mapErrorCode(TariErrorCode.InvalidArgument);
+      expect(result.code).toBe(TariErrorCode.InvalidArgument);
+      expect(result.message).toContain('Invalid argument');
     });
 
-    it('should generate specified number of words', () => {
-      const words12 = generateSeedWords(12);
-      expect(words12.split(' ')).toHaveLength(12);
-      
-      const words15 = generateSeedWords(15);
-      expect(words15.split(' ')).toHaveLength(15);
+    it('should map success code', () => {
+      const result = mapErrorCode(TariErrorCode.Success);
+      expect(result.code).toBe(TariErrorCode.Success);
+      expect(result.message).toContain('Success');
     });
 
-    it('should generate unique words each time', () => {
-      const words1 = generateSeedWords();
-      const words2 = generateSeedWords();
-      expect(words1).not.toBe(words2);
+    it('should handle unknown error codes', () => {
+      const result = mapErrorCode(999999);
+      expect(result.code).toBe(TariErrorCode.UnknownError);
+      expect(result.message).toContain('Unknown error');
     });
 
-    it('should throw for invalid word count', () => {
-      expect(() => generateSeedWords(11)).toThrow('Invalid word count');
-      expect(() => generateSeedWords(25)).toThrow('Invalid word count');
+    it('should map all defined error codes', () => {
+      const errorCodes = [
+        TariErrorCode.InvalidArgument,
+        TariErrorCode.NetworkError,
+        TariErrorCode.InsufficientBalance,
+        TariErrorCode.TransactionError,
+        TariErrorCode.DatabaseError,
+        TariErrorCode.KeyError,
+        TariErrorCode.AddressError
+      ];
+
+      errorCodes.forEach(code => {
+        const result = mapErrorCode(code);
+        expect(result.code).toBe(code);
+        expect(result.message).toBeTruthy();
+        expect(typeof result.message).toBe('string');
+      });
     });
   });
 });
