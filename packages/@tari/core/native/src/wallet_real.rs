@@ -28,6 +28,7 @@ use tari_crypto::ristretto::RistrettoSecretKey;
 use crate::error::{TariError, TariResult};
 use crate::utils::{WalletConfig, Network};
 use crate::database::{DatabaseManager, DatabaseConfig};
+use crate::wallet_builder::{TariWalletBuilder, TariWalletInstance};
 
 /// Real Tari wallet instance using actual wallet components
 pub struct RealWalletInstance {
@@ -44,6 +45,7 @@ pub struct RealWalletInstance {
     pub wallet_db_connection: Option<Arc<WalletSqliteDatabase>>,
     pub transaction_db_connection: Option<Arc<TransactionServiceSqliteDatabase>>,
     pub output_db_connection: Option<Arc<OutputManagerSqliteDatabase>>,
+    pub tari_wallet_instance: Option<TariWalletInstance>,
 }
 
 impl RealWalletInstance {
@@ -98,6 +100,7 @@ impl RealWalletInstance {
             wallet_db_connection: None,
             transaction_db_connection: None,
             output_db_connection: None,
+            tari_wallet_instance: None,
         };
         
         // Initialize wallet database and services
@@ -263,25 +266,30 @@ impl RealWalletInstance {
     async fn initialize_services(&mut self) -> TariResult<()> {
         log::debug!("Initializing wallet services");
         
-        // For now, we'll prepare the configurations that would be used 
-        // to build an actual wallet. The full wallet builder integration
-        // requires more complex setup with comms and database connections.
+        // Get required components
+        let consensus_manager = self.consensus_manager
+            .as_ref()
+            .ok_or_else(|| TariError::WalletError("Consensus manager not initialized".to_string()))?
+            .clone();
+            
+        let node_identity = self.node_identity
+            .as_ref()
+            .ok_or_else(|| TariError::WalletError("Node identity not initialized".to_string()))?
+            .clone();
+
+        // Use TariWalletBuilder to create wallet instance
+        let wallet_instance = TariWalletBuilder::new()
+            .with_network(self.tari_network)
+            .with_data_path(&self.data_path)
+            .with_consensus_manager(consensus_manager)
+            .with_node_identity(node_identity)
+            .build()
+            .await?;
+            
+        // Store the wallet instance
+        self.tari_wallet_instance = Some(wallet_instance);
         
-        let network_config = crate::network_config::get_network_config(self.tari_network);
-        
-        // TODO: Implement actual WalletBuilder pattern here
-        // This would involve:
-        // 1. Setting up database connections
-        // 2. Configuring comms stack  
-        // 3. Building wallet with all services
-        // 4. Storing wallet instance in self.wallet
-        
-        log::info!("Wallet services prepared for network: {:?}", network_config.network);
-        
-        // For now, we don't create the actual wallet instance due to complexity
-        // of setting up all the required components. This will be implemented
-        // in the next phase.
-        
+        log::info!("Wallet services initialized using TariWalletBuilder for network: {:?}", self.tari_network);
         Ok(())
     }
     
