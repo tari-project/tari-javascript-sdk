@@ -16,6 +16,11 @@ use tari_utilities::hex::Hex;
 // DNS resolution imports
 use trust_dns_resolver::{Resolver, config::*};
 
+// Tari blockchain synchronization imports
+use tari_core::chain_storage::{BlockchainDatabase, ChainStorageError};
+use tari_core::blocks::{Block, BlockHeader};
+use tari_common_types::chain_metadata::ChainMetadata;
+
 /// Base node connection status
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeConnectionStatus {
@@ -649,21 +654,46 @@ impl NetworkSyncManager {
             *status = SyncStatus::InProgress { progress: 0.0 };
         }
         
-        // TODO: Implement actual blockchain synchronization
-        // This would involve:
-        // 1. Getting current blockchain height from active node
-        // 2. Downloading and validating blocks
-        // 3. Updating wallet state with new transactions
-        // 4. Updating UTXO set
+        // Get chain metadata from active node
+        let active_node_info = active_node.unwrap();
+        let chain_metadata = match self.get_chain_metadata_from_peer(&active_node_info).await {
+            Ok(metadata) => metadata,
+            Err(e) => {
+                log::error!("Failed to get chain metadata: {}", e);
+                self.set_sync_status(SyncStatus::Failed(e.to_string()))?;
+                return Err(e);
+            }
+        };
         
-        // Simulate synchronization process
-        for progress in (0..=100).step_by(10) {
-            let mut status = self.sync_status.lock()
-                .map_err(|e| TariError::NetworkError(format!("Failed to lock sync status: {}", e)))?;
-            *status = SyncStatus::InProgress { progress: progress as f64 / 100.0 };
-            
-            // Simulate work
-            tokio::time::sleep(Duration::from_millis(100)).await;
+        log::info!("Remote chain height: {}, syncing...", chain_metadata.best_block_height());
+        
+        // Perform header sync first
+        let header_sync_result = self.sync_headers(&chain_metadata).await;
+        if let Err(e) = header_sync_result {
+            log::error!("Header sync failed: {}", e);
+            self.set_sync_status(SyncStatus::Failed(e.to_string()))?;
+            return Err(e);
+        }
+        
+        // Update progress to 50% after header sync
+        self.set_sync_status(SyncStatus::InProgress { progress: 0.5 })?;
+        
+        // Perform block download and validation
+        let block_sync_result = self.sync_blocks(&chain_metadata).await;
+        if let Err(e) = block_sync_result {
+            log::error!("Block sync failed: {}", e);
+            self.set_sync_status(SyncStatus::Failed(e.to_string()))?;
+            return Err(e);
+        }
+        
+        // Update progress to 80% after block sync
+        self.set_sync_status(SyncStatus::InProgress { progress: 0.8 })?;
+        
+        // Perform UTXO scanning for wallet outputs
+        let utxo_scan_result = self.scan_utxos().await;
+        if let Err(e) = utxo_scan_result {
+            log::warn!("UTXO scan had issues: {}", e);
+            // Don't fail the entire sync for UTXO scan issues
         }
         
         // Mark sync as complete
@@ -678,6 +708,133 @@ impl NetworkSyncManager {
         }
         
         log::info!("Blockchain synchronization completed");
+        Ok(())
+    }
+    
+    /// Set sync status helper
+    fn set_sync_status(&self, status: SyncStatus) -> TariResult<()> {
+        let mut sync_status = self.sync_status.lock()
+            .map_err(|e| TariError::NetworkError(format!("Failed to lock sync status: {}", e)))?;
+        *sync_status = status;
+        Ok(())
+    }
+    
+    /// Get chain metadata from a peer
+    async fn get_chain_metadata_from_peer(&self, peer: &BaseNodeInfo) -> TariResult<ChainMetadata> {
+        log::debug!("Getting chain metadata from peer: {}@{}", peer.public_key, peer.address);
+        
+        // In a real implementation, this would:
+        // 1. Connect to the peer using Tari P2P protocol
+        // 2. Request chain metadata
+        // 3. Validate the response
+        
+        // For now, simulate getting chain metadata
+        // TODO: Replace with actual Tari P2P metadata request
+        let metadata = ChainMetadata::new(
+            1000, // best_block_height - simulated
+            Vec::new(), // best_block_hash
+            0, // pruned_height  
+            0, // timestamp
+            0, // accumulated_difficulty
+        );
+        
+        Ok(metadata)
+    }
+    
+    /// Sync block headers
+    async fn sync_headers(&self, chain_metadata: &ChainMetadata) -> TariResult<()> {
+        log::info!("Starting header sync to height {}", chain_metadata.best_block_height());
+        
+        let target_height = chain_metadata.best_block_height();
+        let current_height = 0u64; // TODO: Get from local blockchain database
+        
+        if current_height >= target_height {
+            log::info!("Headers already synced");
+            return Ok(());
+        }
+        
+        // Download headers in batches
+        let batch_size = 100;
+        let mut height = current_height;
+        
+        while height < target_height {
+            let end_height = std::cmp::min(height + batch_size, target_height);
+            
+            log::debug!("Downloading headers from {} to {}", height, end_height);
+            
+            // TODO: Download actual headers using Tari P2P protocol
+            // For now, simulate header download
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            
+            height = end_height + 1;
+            
+            // Update progress
+            let progress = height as f64 / target_height as f64 * 0.5; // Headers are 50% of sync
+            self.set_sync_status(SyncStatus::InProgress { progress })?;
+        }
+        
+        log::info!("Header sync completed");
+        Ok(())
+    }
+    
+    /// Sync blocks
+    async fn sync_blocks(&self, chain_metadata: &ChainMetadata) -> TariResult<()> {
+        log::info!("Starting block sync to height {}", chain_metadata.best_block_height());
+        
+        let target_height = chain_metadata.best_block_height();
+        let current_height = 0u64; // TODO: Get from local blockchain database
+        
+        if current_height >= target_height {
+            log::info!("Blocks already synced");
+            return Ok(());
+        }
+        
+        // Download and validate blocks
+        let batch_size = 50; // Smaller batches for full blocks
+        let mut height = current_height;
+        
+        while height < target_height {
+            let end_height = std::cmp::min(height + batch_size, target_height);
+            
+            log::debug!("Downloading blocks from {} to {}", height, end_height);
+            
+            // TODO: Download and validate actual blocks using Tari P2P protocol
+            // This would involve:
+            // 1. Download block data
+            // 2. Validate block structure
+            // 3. Validate transactions
+            // 4. Update UTXO set
+            // 5. Store in local database
+            
+            // For now, simulate block download and validation
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            
+            height = end_height + 1;
+            
+            // Update progress (50% to 80%)
+            let progress = 0.5 + (height as f64 / target_height as f64 * 0.3);
+            self.set_sync_status(SyncStatus::InProgress { progress })?;
+        }
+        
+        log::info!("Block sync completed");
+        Ok(())
+    }
+    
+    /// Scan UTXOs for wallet outputs
+    async fn scan_utxos(&self) -> TariResult<()> {
+        log::info!("Starting UTXO scan for wallet outputs");
+        
+        // TODO: Implement actual UTXO scanning
+        // This would involve:
+        // 1. Scan all UTXOs in the blockchain
+        // 2. Check if any belong to our wallet
+        // 3. Update wallet balance and transaction history
+        // 4. Mark UTXOs as spent/unspent appropriately
+        
+        // For now, simulate UTXO scanning
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        
+        log::info!("UTXO scan completed");
         Ok(())
     }
     
