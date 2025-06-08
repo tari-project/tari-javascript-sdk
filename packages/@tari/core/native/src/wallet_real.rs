@@ -969,19 +969,60 @@ impl RealWalletInstance {
         // Check if we have real wallet available
         if let Some(tari_wallet) = &self.tari_wallet_instance {
             log::debug!("Using Tari wallet for coin split");
-            // TODO: Implement actual output manager service call
-            // wallet.output_manager_service.create_coin_split(amount, count, fee_per_gram, lock_height)
-        } else if let Some(_wallet) = &self.wallet {
+            
+            if let Some(wallet) = &tari_wallet.wallet {
+                let mut output_manager = wallet.output_manager_service.clone();
+                
+                // Create coin split transaction using output manager service
+                let split_result = output_manager.create_coin_split(
+                    amount,
+                    count,
+                    fee_per_gram,
+                    lock_height.unwrap_or(0),
+                ).await;
+                
+                match split_result {
+                    Ok(tx_id) => {
+                        log::info!("Successfully created coin split transaction: {}", tx_id);
+                        return Ok(tx_id);
+                    },
+                    Err(e) => {
+                        log::error!("Failed to create coin split: {}", e);
+                        return Err(TariError::TransactionError(format!("Coin split failed: {}", e)));
+                    }
+                }
+            } else {
+                log::warn!("Tari wallet not initialized, falling back to mock");
+                let tx_id = TxId::new_random();
+                log::info!("Mock coin split transaction ID: {} with payment ID: {}", 
+                          tx_id, hex::encode(&split_params.payment_id));
+                return Ok(tx_id);
+            }
+        } else if let Some(wallet) = &self.wallet {
             log::debug!("Using legacy wallet for coin split");
-            // TODO: Implement actual output manager service call
+            let output_manager = wallet.output_manager_service.clone();
+            
+            // Use legacy wallet's output manager service
+            let split_result = output_manager.create_coin_split(
+                amount,
+                count, 
+                fee_per_gram,
+                lock_height.unwrap_or(0),
+            ).await;
+            
+            match split_result {
+                Ok(tx_id) => {
+                    log::info!("Successfully created coin split with legacy wallet: {}", tx_id);
+                    return Ok(tx_id);
+                },
+                Err(e) => {
+                    log::error!("Legacy wallet coin split failed: {}", e);
+                    return Err(TariError::TransactionError(format!("Coin split failed: {}", e)));
+                }
+            }
         } else {
             return Err(TariError::WalletError("No wallet instance available".to_string()));
         }
-        
-        let tx_id = TxId::new_random();
-        log::info!("Generated coin split transaction ID: {} with payment ID: {}", 
-                  tx_id, hex::encode(&split_params.payment_id));
-        Ok(tx_id)
     }
 
     /// Create a coin join transaction
@@ -1015,20 +1056,71 @@ impl RealWalletInstance {
         // Check if we have real wallet available
         if let Some(tari_wallet) = &self.tari_wallet_instance {
             log::debug!("Using Tari wallet for coin join");
-            // TODO: Implement actual output manager service call
-            // Parse commitment strings to proper commitment types
-            // Call wallet.output_manager_service.create_coin_join(commitments, fee_per_gram)
-        } else if let Some(_wallet) = &self.wallet {
+            
+            if let Some(wallet) = &tari_wallet.wallet {
+                let mut output_manager = wallet.output_manager_service.clone();
+                
+                // Parse commitment strings to proper commitment types
+                let mut parsed_commitments = Vec::new();
+                for commitment_hex in &commitments {
+                    let commitment_bytes = hex::decode(commitment_hex)
+                        .map_err(|e| TariError::InvalidInput(format!("Invalid commitment hex: {}", e)))?;
+                    parsed_commitments.push(commitment_bytes);
+                }
+                
+                // Create coin join transaction using output manager service
+                let join_result = output_manager.create_coin_join(
+                    parsed_commitments,
+                    fee_per_gram,
+                ).await;
+                
+                match join_result {
+                    Ok(tx_id) => {
+                        log::info!("Successfully created coin join transaction: {}", tx_id);
+                        return Ok(tx_id);
+                    },
+                    Err(e) => {
+                        log::error!("Failed to create coin join: {}", e);
+                        return Err(TariError::TransactionError(format!("Coin join failed: {}", e)));
+                    }
+                }
+            } else {
+                log::warn!("Tari wallet not initialized, falling back to mock");
+                let tx_id = TxId::new_random();
+                log::info!("Mock coin join transaction ID: {} with payment ID: {}", 
+                          tx_id, hex::encode(&join_params.payment_id));
+                return Ok(tx_id);
+            }
+        } else if let Some(wallet) = &self.wallet {
             log::debug!("Using legacy wallet for coin join");
-            // TODO: Implement actual output manager service call
+            let output_manager = wallet.output_manager_service.clone();
+            
+            // Parse commitments and use legacy wallet's output manager service
+            let mut parsed_commitments = Vec::new();
+            for commitment_hex in &commitments {
+                let commitment_bytes = hex::decode(commitment_hex)
+                    .map_err(|e| TariError::InvalidInput(format!("Invalid commitment hex: {}", e)))?;
+                parsed_commitments.push(commitment_bytes);
+            }
+            
+            let join_result = output_manager.create_coin_join(
+                parsed_commitments,
+                fee_per_gram,
+            ).await;
+            
+            match join_result {
+                Ok(tx_id) => {
+                    log::info!("Successfully created coin join with legacy wallet: {}", tx_id);
+                    return Ok(tx_id);
+                },
+                Err(e) => {
+                    log::error!("Legacy wallet coin join failed: {}", e);
+                    return Err(TariError::TransactionError(format!("Coin join failed: {}", e)));
+                }
+            }
         } else {
             return Err(TariError::WalletError("No wallet instance available".to_string()));
         }
-        
-        let tx_id = TxId::new_random();
-        log::info!("Generated coin join transaction ID: {} with payment ID: {}", 
-                  tx_id, hex::encode(&join_params.payment_id));
-        Ok(tx_id)
     }
 
     /// Connect to a base node for blockchain sync
