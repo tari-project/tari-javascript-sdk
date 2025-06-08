@@ -45,6 +45,8 @@ toml = "0.8"
 tempfile = "3.0"
 num_cpus = "1.0"
 hex = "0.4"
+trust-dns-resolver = "0.23"
+bip39 = "2.0"
 
 [build-dependencies]
 neon-build = "0.10"
