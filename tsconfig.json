@@ -15,13 +15,7 @@
   "files": [],
   "references": [
     {
-      "path": "./packages/@tari/core"
-    },
-    {
-      "path": "./packages/@tari/wallet"
-    },
-    {
-      "path": "./packages/@tari/full"
+      "path": "./packages/@tari/sdk"
     }
   ]
 }

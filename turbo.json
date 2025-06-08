@@ -5,6 +5,10 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "build/**"]
     },
+    "build:platform": {
+      "dependsOn": ["^build:platform"],
+      "outputs": ["dist/**", "prebuilds/**"]
+    },
     "test": {
       "dependsOn": ["build"],
       "inputs": ["src/**", "test/**"]
