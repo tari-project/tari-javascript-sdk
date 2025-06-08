@@ -22,14 +22,17 @@ use tari_key_manager::cipher_seed::CipherSeed;
 use tari_comms::peer_manager::{NodeIdentity, PeerFeatures};
 use tari_crypto::keys::SecretKey;
 use tari_crypto::ristretto::RistrettoSecretKey;
-use tari_crypto::tari_utilities::hex;
+
 
 // Communication types will be handled by minotari_wallet internally
 
 use crate::error::{TariError, TariResult};
 use crate::utils::{WalletConfig, Network};
 use crate::database::{DatabaseManager, DatabaseConfig};
-use crate::transaction_builder::{TransactionParams, UtxoSelectionCriteriaBuilder, OutputFeaturesBuilder, PaymentIdBuilder};
+use crate::transaction_builder::{
+    TransactionParams, UtxoSelectionCriteriaBuilder, OutputFeaturesBuilder, PaymentIdBuilder,
+    CoinSplitBuilder, CoinJoinBuilder
+};
 use crate::address::AddressParser;
 use crate::wallet_builder::{TariWalletBuilder, TariWalletInstance};
 
@@ -428,7 +431,7 @@ impl RealWalletInstance {
             // - Message (we have this)
             
             // For now, simulate successful transaction
-            let tx_id = TxId::new();
+            let tx_id = TxId::new_random();
             log::info!("Successfully created transaction {} for {} to {}", 
                       tx_id, amount, destination);
             
@@ -773,20 +776,20 @@ impl RealWalletInstance {
             return Err(TariError::InvalidInput("Split count cannot exceed 500 UTXOs".to_string()));
         }
         
-        // Create transaction parameters for coin split
-        let mut output_features_builder = OutputFeaturesBuilder::default_for_transaction();
+        // Create coin split parameters using the builder
+        let mut split_builder = CoinSplitBuilder::new(amount, count)
+            .with_fee_per_gram(fee_per_gram);
+        
         if let Some(height) = lock_height {
-            output_features_builder = output_features_builder.with_maturity(height);
+            split_builder = split_builder.with_lock_height(height);
         }
         
-        let split_amount = amount / count as u64;
-        let utxo_criteria = UtxoSelectionCriteriaBuilder::default_for_transaction(amount).build()?;
-        let output_features = output_features_builder.build()?;
-        let payment_id = PaymentIdBuilder::with_description_only(
-            format!("Coin split: {} into {} parts", amount, count)
-        ).build()?;
+        if !message.is_empty() {
+            split_builder = split_builder.with_message(message.clone());
+        }
         
-        log::info!("Built coin split parameters: amount per UTXO = {}", split_amount);
+        let split_params = split_builder.build()?;
+        log::info!("Built coin split parameters: amount per UTXO = {}", split_params.amount_per_split);
         
         // Check if we have real wallet available
         if let Some(tari_wallet) = &self.tari_wallet_instance {
@@ -802,7 +805,7 @@ impl RealWalletInstance {
         
         let tx_id = TxId::new_random();
         log::info!("Generated coin split transaction ID: {} with payment ID: {}", 
-                  tx_id, hex::encode(&payment_id));
+                  tx_id, hex::encode(&split_params.payment_id));
         Ok(tx_id)
     }
 
@@ -823,24 +826,16 @@ impl RealWalletInstance {
             return Err(TariError::InvalidInput("Too many commitments to join".to_string()));
         }
         
-        // Validate commitment format
-        for (i, commitment) in commitments.iter().enumerate() {
-            if commitment.is_empty() {
-                return Err(TariError::InvalidInput(format!("Commitment {} is empty", i)));
-            }
-            // Basic hex validation
-            if !commitment.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Err(TariError::InvalidInput(format!("Commitment {} is not valid hex", i)));
-            }
+        // Create coin join parameters using the builder
+        let mut join_builder = CoinJoinBuilder::new(commitments.clone())
+            .with_fee_per_gram(fee_per_gram);
+        
+        if !message.is_empty() {
+            join_builder = join_builder.with_message(message.clone());
         }
         
-        // Create transaction parameters for coin join
-        let output_features = OutputFeaturesBuilder::default_for_transaction().build()?;
-        let payment_id = PaymentIdBuilder::with_description_only(
-            format!("Coin join: {} UTXOs", commitments.len())
-        ).build()?;
-        
-        log::info!("Built coin join parameters for {} commitments", commitments.len());
+        let join_params = join_builder.build()?;
+        log::info!("Built coin join parameters for {} commitments", join_params.commitment_count);
         
         // Check if we have real wallet available
         if let Some(tari_wallet) = &self.tari_wallet_instance {
@@ -857,7 +852,7 @@ impl RealWalletInstance {
         
         let tx_id = TxId::new_random();
         log::info!("Generated coin join transaction ID: {} with payment ID: {}", 
-                  tx_id, hex::encode(&payment_id));
+                  tx_id, hex::encode(&join_params.payment_id));
         Ok(tx_id)
     }
 

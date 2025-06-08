@@ -1,11 +1,40 @@
 use crate::error::{TariError, TariResult};
-use minotari_wallet::utxo_scanner_service::utxo_scanning::UtxoSelectionCriteria;
-use minotari_wallet::output_manager_service::UtxoSelectionStrategy;
-use minotari_wallet::transaction_service::config::TransactionServiceConfig;
-use tari_core::transactions::transaction_components::{OutputFeatures, OutputFeaturesVersion};
 use tari_core::transactions::tari_amount::MicroMinotari;
-use tari_crypto::tari_utilities::hex::Hex;
-use std::time::Duration;
+
+
+/// Simplified UTXO selection strategy for our SDK
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UtxoSelectionStrategy {
+    /// Select UTXOs closest to the target amount
+    Closest,
+    /// Select largest UTXOs first
+    Largest,
+    /// Select smallest UTXOs first
+    Smallest,
+    /// Random selection for privacy
+    Random,
+}
+
+/// Simplified UTXO selection criteria
+#[derive(Debug, Clone)]
+pub struct UtxoSelectionCriteria {
+    pub strategy: UtxoSelectionStrategy,
+}
+
+/// Simplified output features version
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OutputFeaturesVersion {
+    V1,
+    V2,
+}
+
+/// Simplified output features 
+#[derive(Debug, Clone)]
+pub struct OutputFeatures {
+    pub version: OutputFeaturesVersion,
+    pub maturity: u64,
+    pub metadata: Vec<u8>,
+}
 
 /// Builder for UTXO selection criteria
 #[derive(Debug, Clone)]
@@ -168,15 +197,11 @@ impl OutputFeaturesBuilder {
     
     /// Build the output features
     pub fn build(self) -> TariResult<OutputFeatures> {
-        let mut features = OutputFeatures::new(
-            self.version,
-            self.maturity,
-            self.metadata,
-        );
-        
-        if let Some(unique_id) = self.unique_id {
-            features.unique_id = Some(unique_id);
-        }
+        let features = OutputFeatures {
+            version: self.version,
+            maturity: self.maturity,
+            metadata: self.metadata,
+        };
         
         Ok(features)
     }
@@ -240,7 +265,7 @@ impl PaymentIdBuilder {
     
     /// Parse a payment ID from a hex string
     pub fn from_hex(hex_string: &str) -> TariResult<Self> {
-        let bytes = Vec::from_hex(hex_string)
+        let bytes = hex::decode(hex_string)
             .map_err(|e| TariError::InvalidInput(format!("Invalid hex payment ID: {}", e)))?;
         Ok(Self::new().with_raw_id(bytes))
     }
@@ -287,6 +312,203 @@ pub struct TransactionParams {
     pub fee_per_gram: MicroMinotari,
     pub lock_height: Option<u64>,
     pub message: Option<String>,
+}
+
+/// Advanced transaction parameters for complex operations
+#[derive(Debug, Clone)]
+pub struct AdvancedTransactionParams {
+    pub base_params: TransactionParams,
+    pub one_sided: bool,
+    pub encrypted_data: Option<Vec<u8>>,
+    pub stealth_payment: bool,
+    pub custom_covenant: Option<Vec<u8>>,
+    pub burn_commitment: Option<Vec<u8>>,
+}
+
+/// Builder for coin split transactions
+#[derive(Debug, Clone)]
+pub struct CoinSplitBuilder {
+    amount: MicroMinotari,
+    split_count: usize,
+    fee_per_gram: MicroMinotari,
+    lock_height: Option<u64>,
+    message: Option<String>,
+    strategy: UtxoSelectionStrategy,
+}
+
+impl CoinSplitBuilder {
+    /// Create a new coin split builder
+    pub fn new(amount: MicroMinotari, split_count: usize) -> Self {
+        Self {
+            amount,
+            split_count,
+            fee_per_gram: MicroMinotari::from(100), // Default fee
+            lock_height: None,
+            message: None,
+            strategy: UtxoSelectionStrategy::Closest,
+        }
+    }
+    
+    /// Set the fee per gram
+    pub fn with_fee_per_gram(mut self, fee_per_gram: MicroMinotari) -> Self {
+        self.fee_per_gram = fee_per_gram;
+        self
+    }
+    
+    /// Set a lock height for the outputs
+    pub fn with_lock_height(mut self, lock_height: u64) -> Self {
+        self.lock_height = Some(lock_height);
+        self
+    }
+    
+    /// Set a message for the transaction
+    pub fn with_message(mut self, message: String) -> Self {
+        self.message = Some(message);
+        self
+    }
+    
+    /// Set the UTXO selection strategy
+    pub fn with_strategy(mut self, strategy: UtxoSelectionStrategy) -> Self {
+        self.strategy = strategy;
+        self
+    }
+    
+    /// Build coin split parameters
+    pub fn build(self) -> TariResult<CoinSplitParams> {
+        if self.split_count == 0 {
+            return Err(TariError::InvalidInput("Split count cannot be zero".to_string()));
+        }
+        if self.split_count > 500 {
+            return Err(TariError::InvalidInput("Split count cannot exceed 500".to_string()));
+        }
+        if self.amount == MicroMinotari::from(0) {
+            return Err(TariError::InvalidInput("Amount cannot be zero".to_string()));
+        }
+        
+        let amount_per_split = self.amount / self.split_count as u64;
+        if amount_per_split == MicroMinotari::from(0) {
+            return Err(TariError::InvalidInput("Amount per split would be zero".to_string()));
+        }
+        
+        Ok(CoinSplitParams {
+            total_amount: self.amount,
+            split_count: self.split_count,
+            amount_per_split,
+            fee_per_gram: self.fee_per_gram,
+            lock_height: self.lock_height,
+            message: self.message,
+            utxo_selection: UtxoSelectionCriteriaBuilder::new()
+                .with_strategy(self.strategy)
+                .with_amount(self.amount)
+                .build()?,
+            output_features: if let Some(height) = self.lock_height {
+                OutputFeaturesBuilder::time_locked(height).build()?
+            } else {
+                OutputFeaturesBuilder::default_for_transaction().build()?
+            },
+            payment_id: PaymentIdBuilder::with_description_only(
+                format!("Coin split: {} into {} UTXOs", self.amount, self.split_count)
+            ).build()?,
+        })
+    }
+}
+
+/// Parameters for coin split operations
+#[derive(Debug, Clone)]
+pub struct CoinSplitParams {
+    pub total_amount: MicroMinotari,
+    pub split_count: usize,
+    pub amount_per_split: MicroMinotari,
+    pub fee_per_gram: MicroMinotari,
+    pub lock_height: Option<u64>,
+    pub message: Option<String>,
+    pub utxo_selection: UtxoSelectionCriteria,
+    pub output_features: OutputFeatures,
+    pub payment_id: Vec<u8>,
+}
+
+/// Builder for coin join transactions
+#[derive(Debug, Clone)]
+pub struct CoinJoinBuilder {
+    commitments: Vec<String>,
+    fee_per_gram: MicroMinotari,
+    message: Option<String>,
+    merge_to_single_output: bool,
+}
+
+impl CoinJoinBuilder {
+    /// Create a new coin join builder
+    pub fn new(commitments: Vec<String>) -> Self {
+        Self {
+            commitments,
+            fee_per_gram: MicroMinotari::from(100), // Default fee
+            message: None,
+            merge_to_single_output: true,
+        }
+    }
+    
+    /// Set the fee per gram
+    pub fn with_fee_per_gram(mut self, fee_per_gram: MicroMinotari) -> Self {
+        self.fee_per_gram = fee_per_gram;
+        self
+    }
+    
+    /// Set a message for the transaction
+    pub fn with_message(mut self, message: String) -> Self {
+        self.message = Some(message);
+        self
+    }
+    
+    /// Set whether to merge to a single output
+    pub fn merge_to_single_output(mut self, merge: bool) -> Self {
+        self.merge_to_single_output = merge;
+        self
+    }
+    
+    /// Build coin join parameters
+    pub fn build(self) -> TariResult<CoinJoinParams> {
+        if self.commitments.is_empty() {
+            return Err(TariError::InvalidInput("Commitments cannot be empty".to_string()));
+        }
+        if self.commitments.len() > 100 {
+            return Err(TariError::InvalidInput("Too many commitments to join".to_string()));
+        }
+        
+        // Validate commitment format
+        for (i, commitment) in self.commitments.iter().enumerate() {
+            if commitment.is_empty() {
+                return Err(TariError::InvalidInput(format!("Commitment {} is empty", i)));
+            }
+            // Basic hex validation
+            if !commitment.chars().all(|c| c.is_ascii_hexdigit()) {
+                return Err(TariError::InvalidInput(format!("Commitment {} is not valid hex", i)));
+            }
+        }
+        
+        Ok(CoinJoinParams {
+            commitments: self.commitments.clone(),
+            commitment_count: self.commitments.len(),
+            fee_per_gram: self.fee_per_gram,
+            message: self.message,
+            merge_to_single_output: self.merge_to_single_output,
+            output_features: OutputFeaturesBuilder::default_for_transaction().build()?,
+            payment_id: PaymentIdBuilder::with_description_only(
+                format!("Coin join: {} UTXOs", self.commitments.len())
+            ).build()?,
+        })
+    }
+}
+
+/// Parameters for coin join operations
+#[derive(Debug, Clone)]
+pub struct CoinJoinParams {
+    pub commitments: Vec<String>,
+    pub commitment_count: usize,
+    pub fee_per_gram: MicroMinotari,
+    pub message: Option<String>,
+    pub merge_to_single_output: bool,
+    pub output_features: OutputFeatures,
+    pub payment_id: Vec<u8>,
 }
 
 impl TransactionParams {
