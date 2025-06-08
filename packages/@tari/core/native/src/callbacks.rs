@@ -4,6 +4,12 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
 
+// Wallet event imports
+use minotari_wallet::output_manager_service::handle::OutputManagerEvent;
+use minotari_wallet::transaction_service::handle::TransactionEvent;
+use tokio::sync::broadcast;
+use std::sync::mpsc;
+
 /// Callback information storage
 pub struct CallbackInfo {
     pub id: u64,
@@ -139,3 +145,119 @@ pub fn test_callback(mut cx: FunctionContext) -> JsResult<JsUndefined> {
         TariError::InvalidHandle(id).to_js_error(&mut cx)
     }
 }
+
+/// Enhanced callback manager with event processing
+pub struct EventCallbackManager {
+    transaction_callbacks: Vec<u64>,
+    balance_callbacks: Vec<u64>,
+    connectivity_callbacks: Vec<u64>,
+    recovery_callbacks: Vec<u64>,
+    event_senders: HashMap<String, mpsc::Sender<WalletEvent>>,
+}
+
+impl EventCallbackManager {
+    pub fn new() -> Self {
+        Self {
+            transaction_callbacks: Vec::new(),
+            balance_callbacks: Vec::new(),
+            connectivity_callbacks: Vec::new(),
+            recovery_callbacks: Vec::new(),
+            event_senders: HashMap::new(),
+        }
+    }
+
+    /// Register callback for transaction events
+    pub fn register_transaction_callback(&mut self, callback_id: u64) -> Result<(), String> {
+        if !self.transaction_callbacks.contains(&callback_id) {
+            self.transaction_callbacks.push(callback_id);
+            log::debug!("Registered transaction callback {}", callback_id);
+        }
+        Ok(())
+    }
+
+    /// Register callback for balance update events
+    pub fn register_balance_callback(&mut self, callback_id: u64) -> Result<(), String> {
+        if !self.balance_callbacks.contains(&callback_id) {
+            self.balance_callbacks.push(callback_id);
+            log::debug!("Registered balance callback {}", callback_id);
+        }
+        Ok(())
+    }
+
+    /// Register callback for connectivity events
+    pub fn register_connectivity_callback(&mut self, callback_id: u64) -> Result<(), String> {
+        if !self.connectivity_callbacks.contains(&callback_id) {
+            self.connectivity_callbacks.push(callback_id);
+            log::debug!("Registered connectivity callback {}", callback_id);
+        }
+        Ok(())
+    }
+
+    /// Register callback for recovery events
+    pub fn register_recovery_callback(&mut self, callback_id: u64) -> Result<(), String> {
+        if !self.recovery_callbacks.contains(&callback_id) {
+            self.recovery_callbacks.push(callback_id);
+            log::debug!("Registered recovery callback {}", callback_id);
+        }
+        Ok(())
+    }
+}
+
+/// Wallet event types
+#[derive(Debug, Clone)]
+pub enum WalletEvent {
+    TransactionReceived { tx_id: String, amount: u64 },
+    TransactionSent { tx_id: String, amount: u64 },
+    TransactionConfirmed { tx_id: String },
+    BalanceUpdated { available: u64, pending: u64 },
+    PeerConnected { peer_id: String },
+    PeerDisconnected { peer_id: String },
+    RecoveryProgress { percentage: f64, blocks_scanned: u64 },
+}
+
+/// Process transaction events
+pub async fn process_transaction_event(event: TransactionEvent) -> Result<(), String> {
+    match event {
+        TransactionEvent::ReceivedTransaction(tx_id) => {
+            log::info!("Processing received transaction event: {:?}", tx_id);
+            // In a real implementation, this would:
+            // 1. Extract transaction details
+            // 2. Trigger registered transaction callbacks
+            // 3. Update wallet balance
+            Ok(())
+        }
+        TransactionEvent::TransactionSendResult { tx_id, result } => {
+            log::info!("Processing transaction send result: {:?} -> {:?}", tx_id, result);
+            // Handle transaction send completion
+            Ok(())
+        }
+        _ => {
+            log::debug!("Unhandled transaction event: {:?}", event);
+            Ok(())
+        }
+    }
+}
+
+/// Process output manager events
+pub async fn process_output_manager_event(event: OutputManagerEvent) -> Result<(), String> {
+    match event {
+        OutputManagerEvent::TxoValidationSuccess(_) => {
+            log::info!("Processing TXO validation success event");
+            // Handle successful output validation
+            Ok(())
+        }
+        OutputManagerEvent::TxoValidationFailure { .. } => {
+            log::warn!("Processing TXO validation failure event");
+            // Handle failed output validation
+            Ok(())
+        }
+        _ => {
+            log::debug!("Unhandled output manager event: {:?}", event);
+            Ok(())
+        }
+    }
+}
+
+/// Global event callback manager
+static EVENT_CALLBACK_MANAGER: Lazy<Arc<Mutex<EventCallbackManager>>> = 
+    Lazy::new(|| Arc::new(Mutex::new(EventCallbackManager::new())));
