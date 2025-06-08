@@ -35,6 +35,7 @@ use crate::transaction_builder::{
 };
 use crate::address::AddressParser;
 use crate::wallet_builder::{TariWalletBuilder, TariWalletInstance};
+use crate::node_connection::{NodeConnectionPool, PeerDiscovery, NetworkSyncManager, NodeConnectionStatus};
 
 /// Real Tari wallet instance using actual wallet components
 pub struct RealWalletInstance {
@@ -52,6 +53,15 @@ pub struct RealWalletInstance {
     pub transaction_db_connection: Option<Arc<TransactionServiceSqliteDatabase>>,
     pub output_db_connection: Option<Arc<OutputManagerSqliteDatabase>>,
     pub tari_wallet_instance: Option<TariWalletInstance>,
+    
+    /// Node connection pool for managing base node connections
+    pub node_connection_pool: Option<NodeConnectionPool>,
+    
+    /// Peer discovery service
+    pub peer_discovery: Option<PeerDiscovery>,
+    
+    /// Network synchronization manager
+    pub sync_manager: Option<NetworkSyncManager>,
 }
 
 impl RealWalletInstance {
@@ -107,10 +117,16 @@ impl RealWalletInstance {
             transaction_db_connection: None,
             output_db_connection: None,
             tari_wallet_instance: None,
+            node_connection_pool: None,
+            peer_discovery: None,
+            sync_manager: None,
         };
         
         // Initialize wallet database and services
         instance.initialize_wallet_components().await?;
+        
+        // Initialize network services
+        instance.initialize_network_services().await?;
         
         Ok(instance)
     }
@@ -296,6 +312,45 @@ impl RealWalletInstance {
         self.tari_wallet_instance = Some(wallet_instance);
         
         log::info!("Wallet services initialized using TariWalletBuilder for network: {:?}", self.tari_network);
+        Ok(())
+    }
+    
+    /// Initialize network services (node connections, peer discovery, sync)
+    async fn initialize_network_services(&mut self) -> TariResult<()> {
+        log::info!("Initializing network services");
+        
+        // Create node connection pool
+        let connection_pool = NodeConnectionPool::new(
+            5, // max_connections
+            std::time::Duration::from_secs(30) // connection_timeout
+        );
+        
+        // Get network configuration for DNS seeds
+        let network_config = crate::network_config::get_network_config(self.tari_network);
+        let dns_seeds = network_config.dns_seeds.clone();
+        
+        // Create peer discovery service
+        let peer_discovery = PeerDiscovery::new(dns_seeds);
+        
+        // Create network sync manager
+        let sync_manager = NetworkSyncManager::new();
+        
+        // Add some default base nodes from network config
+        for (i, address) in network_config.base_node_addresses.iter().enumerate() {
+            let node_key = format!("base_node_{}", i);
+            if let Err(e) = connection_pool.add_node(node_key.clone(), address.clone()) {
+                log::warn!("Failed to add base node {}: {}", node_key, e);
+            } else {
+                log::debug!("Added base node {} at {}", node_key, address);
+            }
+        }
+        
+        // Store network services
+        self.node_connection_pool = Some(connection_pool);
+        self.peer_discovery = Some(peer_discovery);
+        self.sync_manager = Some(sync_manager);
+        
+        log::info!("Network services initialized successfully");
         Ok(())
     }
     

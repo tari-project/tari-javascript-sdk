@@ -16,6 +16,7 @@ mod database;
 mod wallet_builder;
 mod address;
 mod transaction_builder;
+mod node_connection;
 
 use neon::prelude::*;
 
