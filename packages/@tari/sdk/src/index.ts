@@ -68,8 +68,19 @@ export {
 // Type definitions
 export * from './types';
 
-// Error handling
-export * from './errors';
+// Error handling (avoid re-export conflicts)
+export { 
+  TariFFIError,
+  mapErrorCode as mapTariErrorCode,
+  createFFIError,
+  isRecoverableError,
+  isUserError,
+  isSystemError,
+  getUserFriendlyMessage,
+  logError,
+  normalizeError,
+  createErrorReport
+} from './errors';
 
 // Memory management utilities (iOS RAII pattern)
 export {

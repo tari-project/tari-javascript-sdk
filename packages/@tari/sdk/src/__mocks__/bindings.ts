@@ -9,7 +9,7 @@ const utxos = new Map<number, any>();
 
 export const mockBinding = {
   // Wallet operations
-  wallet_create: jest.fn().mockImplementation((config) => {
+  walletCreate: jest.fn().mockImplementation((config) => {
     const handle = nextHandle++;
     wallets.set(handle, {
       config,
@@ -18,40 +18,38 @@ export const mockBinding = {
     return handle;
   }),
   
-  wallet_destroy: jest.fn().mockImplementation((handle) => {
+  walletDestroy: jest.fn().mockImplementation((handle) => {
     wallets.delete(handle);
   }),
   
-  wallet_get_seed_words: jest.fn().mockImplementation((handle) => {
+  walletGetSeedWords: jest.fn().mockImplementation((handle) => {
     const wallet = wallets.get(handle);
     return wallet?.seedWords || 'mock seed words';
   }),
   
-  wallet_get_balance: jest.fn().mockImplementation((handle) => {
-    const balanceHandle = nextHandle++;
-    balances.set(balanceHandle, {
-      available: 1000000000n,
-      pending: 0n,
-      locked: 0n,
-      total: 1000000000n,
-    });
-    return balanceHandle;
+  walletGetBalance: jest.fn().mockImplementation((handle) => {
+    // Return raw balance object as expected by binding interface
+    return {
+      available: 1000000000,
+      pending: 0,
+      locked: 0,
+      total: 1000000000,
+    };
   }),
   
-  wallet_get_tari_address: jest.fn().mockImplementation((handle) => {
-    return nextHandle++;
+  walletGetAddress: jest.fn().mockImplementation((handle) => {
+    return {
+      handle: nextHandle++,
+      emojiId: '🎉🎨🎭🎪🎯🎲🎸🎺'
+    };
   }),
   
-  wallet_send_transaction: jest.fn().mockImplementation((wallet, destination, amount, fee, message, oneSided) => {
-    return BigInt(Date.now());
+  walletSendTransaction: jest.fn().mockImplementation((handle, params) => {
+    return `tx_${Date.now()}_mock`;
   }),
-  
-  wallet_get_completed_transactions: jest.fn().mockReturnValue(null),
-  wallet_get_pending_transactions: jest.fn().mockReturnValue(null),
-  wallet_cancel_pending_transaction: jest.fn().mockReturnValue(true),
   
   // Address operations
-  tari_address_destroy: jest.fn(),
+  addressDestroy: jest.fn(),
   tari_address_to_emoji_id: jest.fn().mockReturnValue('🎉🎨🎭🎪🎯🎲🎸🎺'),
   tari_address_get_bytes: jest.fn().mockReturnValue(nextHandle++),
   tari_address_from_emoji_id: jest.fn().mockImplementation((emojiId) => {
@@ -101,7 +99,7 @@ export const mockBinding = {
   completed_transaction_get_amount: jest.fn().mockReturnValue(1000000n),
   completed_transaction_get_fee: jest.fn().mockReturnValue(100n),
   completed_transaction_get_status: jest.fn().mockReturnValue(3), // Confirmed
-  completed_transaction_get_timestamp: jest.fn().mockReturnValue(BigInt(Date.now() / 1000)),
+  completed_transaction_get_timestamp: jest.fn().mockReturnValue(BigInt(Math.floor(Date.now() / 1000))),
   completed_transaction_get_message: jest.fn().mockReturnValue('Test transaction'),
   completed_transaction_is_outbound: jest.fn().mockReturnValue(false),
   completed_transaction_destroy: jest.fn(),
@@ -109,7 +107,7 @@ export const mockBinding = {
   pending_transaction_get_id: jest.fn().mockReturnValue(BigInt(456)),
   pending_transaction_get_amount: jest.fn().mockReturnValue(2000000n),
   pending_transaction_get_fee: jest.fn().mockReturnValue(200n),
-  pending_transaction_get_timestamp: jest.fn().mockReturnValue(BigInt(Date.now() / 1000)),
+  pending_transaction_get_timestamp: jest.fn().mockReturnValue(BigInt(Math.floor(Date.now() / 1000))),
   pending_transaction_get_message: jest.fn().mockReturnValue('Pending transaction'),
   
   // UTXO operations
@@ -143,6 +141,27 @@ export const mockBinding = {
   
   // Cryptographic operations
   wallet_sign_message: jest.fn().mockReturnValue('mock_signature'),
+  
+  // Recovery operations  
+  walletStartRecovery: jest.fn().mockReturnValue(true),
+  
+  // Peer operations
+  walletGetPeers: jest.fn().mockReturnValue([]),
+  walletAddPeer: jest.fn().mockReturnValue(true),
+  
+  // UTXO operations for existing interface
+  walletGetUtxos: jest.fn().mockReturnValue([
+    {
+      value: '1000000',
+      commitment: 'commitment_1',
+      minedHeight: 100,
+      status: 0,
+    },
+  ]),
+  
+  // Coin operations
+  walletCoinSplit: jest.fn().mockReturnValue('split_tx_123'),
+  walletCoinJoin: jest.fn().mockReturnValue('join_tx_456'),
   
   // Utility functions
   string_destroy: jest.fn(),

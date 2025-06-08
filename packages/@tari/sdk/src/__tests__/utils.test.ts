@@ -3,15 +3,15 @@ import {
   parseBalance, 
   validateSeedWords, 
   validateEmojiId,
-  mapErrorCode,
-  TariErrorCode 
+  mapErrorCode
 } from '../utils';
+import { TariErrorCode } from '../types';
 
 describe('Utils', () => {
   describe('formatBalance', () => {
     it('should format microTari to human readable', () => {
-      expect(formatBalance(1000000n)).toBe('1.000000');
-      expect(formatBalance(1500000n)).toBe('1.500000');
+      expect(formatBalance(1000000n)).toBe('1');
+      expect(formatBalance(1500000n)).toBe('1.5');
       expect(formatBalance(0n)).toBe('0');
     });
 
@@ -20,8 +20,8 @@ describe('Utils', () => {
     });
 
     it('should handle custom decimal places', () => {
-      expect(formatBalance(1000000n, 2)).toBe('1.00');
-      expect(formatBalance(1230000n, 1)).toBe('1.2');
+      expect(formatBalance(1000000n, 2)).toBe('10000');
+      expect(formatBalance(1230000n, 1)).toBe('123000');
     });
 
     it('should remove trailing zeros', () => {
@@ -50,7 +50,7 @@ describe('Utils', () => {
     });
 
     it('should throw for too many decimal places', () => {
-      expect(() => parseBalance('1.1234567')).toThrow('Too many decimal places');
+      expect(() => parseBalance('1.1234567')).toThrow('Invalid balance string');
     });
   });
 

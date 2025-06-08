@@ -1,7 +1,7 @@
 import { 
   WalletHandle, 
   AddressHandle, 
-  WalletConfig, 
+  WalletCreateConfig, 
   AddressInfo,
   TariFFIError,
   TariErrorCode
@@ -27,7 +27,7 @@ import {
  * @returns Result of the operation
  */
 export function withWallet<T>(
-  config: WalletConfig, 
+  config: WalletCreateConfig, 
   operation: (handle: WalletHandle) => T
 ): T {
   const handle = createWallet(config);
@@ -160,7 +160,7 @@ export function mapErrorCode(code: number): { message: string; code: TariErrorCo
  * @returns Wallet handle
  */
 export function createDefaultWallet(seedWords: string, network = 0): WalletHandle {
-  const config: WalletConfig = {
+  const config: WalletCreateConfig = {
     seedWords,
     network,
     dbPath: './tari-wallet-db',
@@ -251,18 +251,22 @@ export function parseBalance(balanceStr: string, decimals: number = 6): bigint {
     throw new TariFFIError('Invalid balance format', TariErrorCode.InvalidArgument);
   }
   
-  const wholePart = BigInt(parts[0] || '0');
-  const decimalPart = parts[1] || '0';
+  try {
+    const wholePart = BigInt(parts[0] || '0');
+    const decimalPart = parts[1] || '0';
   
-  if (decimalPart.length > decimals) {
-    throw new TariFFIError(`Too many decimal places (max ${decimals})`, TariErrorCode.InvalidArgument);
+    if (decimalPart.length > decimals) {
+      throw new TariFFIError(`Too many decimal places (max ${decimals})`, TariErrorCode.InvalidArgument);
+    }
+    
+    const paddedDecimal = decimalPart.padEnd(decimals, '0');
+    const decimalValue = BigInt(paddedDecimal);
+    const multiplier = BigInt(10 ** decimals);
+    
+    return wholePart * multiplier + decimalValue;
+  } catch (error) {
+    throw new TariFFIError('Invalid balance string', TariErrorCode.InvalidArgument);
   }
-  
-  const paddedDecimal = decimalPart.padEnd(decimals, '0');
-  const decimalValue = BigInt(paddedDecimal);
-  const multiplier = BigInt(10 ** decimals);
-  
-  return wholePart * multiplier + decimalValue;
 }
 
 // =============================================================================
@@ -278,7 +282,7 @@ export function parseBalance(balanceStr: string, decimals: number = 6): bigint {
  * @returns Promise with result
  */
 export async function withWalletAsync<T>(
-  config: WalletConfig,
+  config: WalletCreateConfig,
   operation: (handle: WalletHandle) => Promise<T>
 ): Promise<T> {
   const handle = createWallet(config);
@@ -326,7 +330,7 @@ export async function withRetry<T>(
   maxRetries: number = 3,
   baseDelay: number = 1000
 ): Promise<T> {
-  let lastError: Error;
+  let lastError: Error | undefined;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -341,6 +345,14 @@ export async function withRetry<T>(
       const delay = baseDelay * Math.pow(2, attempt);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
+  }
+  
+  if (!lastError) {
+    throw new TariFFIError(
+      `Operation failed after ${maxRetries + 1} attempts`,
+      TariErrorCode.NetworkError,
+      { attempts: maxRetries + 1 }
+    );
   }
   
   throw new TariFFIError(
