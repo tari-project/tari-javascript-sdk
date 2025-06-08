@@ -12,6 +12,7 @@ mod config;
 mod health;
 mod resilience;
 mod network_config;
+mod database;
 
 use neon::prelude::*;
 

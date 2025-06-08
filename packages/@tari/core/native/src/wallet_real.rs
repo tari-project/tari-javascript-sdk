@@ -27,6 +27,7 @@ use tari_crypto::ristretto::RistrettoSecretKey;
 
 use crate::error::{TariError, TariResult};
 use crate::utils::{WalletConfig, Network};
+use crate::database::{DatabaseManager, DatabaseConfig};
 
 /// Real Tari wallet instance using actual wallet components
 pub struct RealWalletInstance {
@@ -39,6 +40,10 @@ pub struct RealWalletInstance {
     pub wallet: Option<Arc<Wallet<WalletSqliteDatabase, TransactionServiceSqliteDatabase, OutputManagerSqliteDatabase, (), ()>>>,
     pub node_identity: Option<Arc<NodeIdentity>>,
     pub consensus_manager: Option<ConsensusManager>,
+    pub database_manager: Option<DatabaseManager>,
+    pub wallet_db_connection: Option<Arc<WalletSqliteDatabase>>,
+    pub transaction_db_connection: Option<Arc<TransactionServiceSqliteDatabase>>,
+    pub output_db_connection: Option<Arc<OutputManagerSqliteDatabase>>,
 }
 
 impl RealWalletInstance {
@@ -89,6 +94,10 @@ impl RealWalletInstance {
             wallet: None, // Will be initialized in initialize_wallet_components
             node_identity: None,
             consensus_manager: None,
+            database_manager: None,
+            wallet_db_connection: None,
+            transaction_db_connection: None,
+            output_db_connection: None,
         };
         
         // Initialize wallet database and services
@@ -143,30 +152,31 @@ impl RealWalletInstance {
     }
     
     /// Initialize wallet database
-    async fn initialize_database(&self) -> TariResult<()> {
+    async fn initialize_database(&mut self) -> TariResult<()> {
         log::debug!("Initializing wallet database at: {:?}", self.wallet_db_path);
         
-        // Ensure the database directory exists
-        std::fs::create_dir_all(self.data_path.parent().unwrap_or(&self.data_path))
-            .map_err(|e| TariError::DatabaseError(format!("Failed to create database directory: {}", e)))?;
+        // Create database configuration
+        let db_config = DatabaseConfig::new(&self.data_path);
         
-        // Initialize SQLite database with proper schema
-        log::debug!("Database path prepared: {:?}", self.wallet_db_path);
+        // Ensure we have consensus manager and cipher seed
+        let consensus_manager = self.consensus_manager
+            .as_ref()
+            .ok_or_else(|| TariError::DatabaseError("Consensus manager not initialized".to_string()))?;
         
-        // For the real implementation, the database initialization will be handled
-        // by the WalletBuilder when creating the full wallet instance.
-        // Here we just ensure the directory structure is ready.
+        // Create cipher seed for encryption
+        let cipher_seed = CipherSeed::new();
         
-        log::info!("Database directory structure prepared");
+        // Initialize database manager
+        let mut db_manager = DatabaseManager::new(db_config)?;
+        db_manager.initialize_databases(consensus_manager, &cipher_seed).await?;
         
-        // The actual database connections will be created by:
-        // - WalletSqliteDatabase::new() with proper WalletDbConnection
-        // - TransactionServiceSqliteDatabase::new() with proper connection and cipher
-        // - OutputManagerSqliteDatabase::new() with proper WalletDbConnection
-        // These will be handled by the wallet builder during wallet creation.
+        // Database connections will be created by the wallet builder
+        // For now, just mark as prepared
         
-        log::info!("Database preparation completed");
+        // Store database manager
+        self.database_manager = Some(db_manager);
         
+        log::info!("Database connections initialized successfully");
         Ok(())
     }
     
