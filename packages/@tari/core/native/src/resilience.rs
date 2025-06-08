@@ -119,6 +119,8 @@ impl ResilienceManager {
             TariError::SyncError(_) => true,
             TariError::ConfigError(_) => false,
             TariError::ValidationError(_) => false,
+            TariError::TimeoutError(_) => true,
+            TariError::ConnectivityError(_) => true,
             TariError::NeonError(_) => false,
         }
     }

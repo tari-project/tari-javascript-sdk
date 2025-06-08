@@ -65,6 +65,44 @@ pub struct RealWalletInstance {
 }
 
 impl RealWalletInstance {
+    /// Create a minimal wallet instance for testing
+    pub fn new() -> TariResult<Self> {
+        let runtime = Arc::new(
+            tokio::runtime::Builder::new_multi_thread()
+                .worker_threads(1)
+                .thread_name("test-wallet")
+                .enable_all()
+                .build()
+                .map_err(|e| TariError::RuntimeError(format!("Failed to create runtime: {}", e)))?
+        );
+
+        Ok(Self {
+            runtime,
+            network: crate::utils::Network::Mainnet,
+            tari_network: TariNetwork::MainNet,
+            data_path: PathBuf::from("./test_data"),
+            wallet_db_path: PathBuf::from("./test_data/wallet.db"),
+            config: WalletConfig {
+                seed_words: "test seed words".to_string(),
+                network: crate::utils::Network::Mainnet,
+                db_path: Some("./test_data".to_string()),
+                db_name: None,
+                passphrase: None,
+            },
+            wallet: None,
+            node_identity: None,
+            consensus_manager: None,
+            database_manager: None,
+            wallet_db_connection: None,
+            transaction_db_connection: None,
+            output_db_connection: None,
+            tari_wallet_instance: None,
+            node_connection_pool: None,
+            peer_discovery: None,
+            sync_manager: None,
+        })
+    }
+
     /// Create a new real wallet instance
     pub async fn create_real_wallet(config: WalletConfig) -> TariResult<Self> {
         let network = convert_network(&config.network);

@@ -58,6 +58,12 @@ pub enum TariError {
     
     #[error("Validation error: {0}")]
     ValidationError(String),
+
+    #[error("Timeout error: {0}")]
+    TimeoutError(String),
+
+    #[error("Connectivity error: {0}")]
+    ConnectivityError(String),
 }
 
 impl TariError {
@@ -227,6 +233,8 @@ impl TariError {
             TariError::InvalidArgument(_) => "invalid_argument",
             TariError::InvalidInput(_) => "invalid_input",
             TariError::NotImplemented(_) => "not_implemented",
+            TariError::TimeoutError(_) => "timeout",
+            TariError::ConnectivityError(_) => "connectivity",
             TariError::NeonError(_) => "neon",
         }
     }
@@ -241,20 +249,6 @@ macro_rules! try_js {
             Err(e) => return e.to_js_error($cx),
         }
     };
-}
-
-/// Convert from standard IO errors
-impl From<std::io::Error> for TariError {
-    fn from(err: std::io::Error) -> Self {
-        TariError::RuntimeError(format!("IO error: {}", err))
-    }
-}
-
-/// Convert from parse errors
-impl From<std::num::ParseIntError> for TariError {
-    fn from(err: std::num::ParseIntError) -> Self {
-        TariError::ValidationError(format!("Parse error: {}", err))
-    }
 }
 
 /// Convert from UTF-8 errors
