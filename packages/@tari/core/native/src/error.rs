@@ -29,6 +29,9 @@ pub enum TariError {
     #[error("Database error: {0}")]
     DatabaseError(String),
     
+    #[error("Wallet initialization error: {0}")]
+    WalletInitializationError(String),
+    
     #[error("Runtime error: {0}")]
     RuntimeError(String),
     
@@ -236,6 +239,7 @@ impl TariError {
             TariError::TimeoutError(_) => "timeout",
             TariError::ConnectivityError(_) => "connectivity",
             TariError::NeonError(_) => "neon",
+            TariError::WalletInitializationError(_) => "wallet_initialization",
         }
     }
 }

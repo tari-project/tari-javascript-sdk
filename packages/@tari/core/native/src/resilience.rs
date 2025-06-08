@@ -122,6 +122,7 @@ impl ResilienceManager {
             TariError::TimeoutError(_) => true,
             TariError::ConnectivityError(_) => true,
             TariError::NeonError(_) => false,
+            TariError::WalletInitializationError(_) => true, // Should retry initialization
         }
     }
     
