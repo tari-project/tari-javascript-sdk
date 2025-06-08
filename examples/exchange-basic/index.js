@@ -12,6 +12,7 @@ const {
 } = require('@tari/sdk');
 require('dotenv').config();
 
+const path = require('path');
 // =============================================================================
 // SIMPLE EXCHANGE BUSINESS LOGIC (Application Layer)
 // This is where your exchange implements its own business logic
@@ -89,7 +90,7 @@ async function main() {
     {
       seedWords,
       network,
-      dbPath: process.env.DATA_DIRECTORY || './exchange-data',
+      dbPath: process.env.DATA_DIRECTORY || path.resolve('./exchange-data'),
       dbName: 'exchange_wallet',
     },
     async (walletHandle) => {
@@ -178,7 +179,7 @@ async function main() {
       setTimeout(async () => {
         try {
           const balance = ffi.getBalance(walletHandle);
-          if (balance.available > parseBalance('0.1')) {
+          if (balance.available > parseBalance('0.01')) {
             console.log('\n💸 Demo: Could send transaction');
             console.log('   (Uncomment code below to actually send)');
 

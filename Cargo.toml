@@ -1,4 +1,4 @@
 [workspace]
 members = [
-    "packages/@tari/core/native"
+    "packages/@tari/sdk/native"
 ]

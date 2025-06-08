@@ -36,7 +36,6 @@
     "build:native": "node scripts/build-native.js",
     "build:native:platform": "node scripts/build-native.js --platform",
     "build:ts": "tsc",
-    "build:dev": "cd native && cargo build --target x86_64-unknown-linux-gnu && cd .. && npm run build:ts",
     "prebuild": "node scripts/prebuild-all.js",
     "install": "node scripts/install.js",
     "clean": "rm -rf dist native/target prebuilds",

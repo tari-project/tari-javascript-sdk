@@ -120,7 +120,6 @@ impl RealWalletInstance {
             .map_err(|e| TariError::WalletError(format!("Failed to create data directory: {}", e)))?;
         
         let wallet_db_path = data_path.join("wallet.db");
-        
         // Create dedicated runtime for wallet operations
         let runtime = Arc::new(
             tokio::runtime::Builder::new_multi_thread()
@@ -131,13 +130,11 @@ impl RealWalletInstance {
                 .build()
                 .map_err(|e| TariError::RuntimeError(format!("Failed to create runtime: {}", e)))?
         );
-        
         // Initialize actual Tari wallet components
         let tari_network = convert_network(&config.network);
         let consensus_manager = ConsensusManagerBuilder::new(tari_network)
             .build()
             .map_err(|e| TariError::WalletInitializationError(format!("Failed to create consensus manager: {}", e)))?;
-        
         // Initialize database manager with proper SQLite configuration
         let db_config = DatabaseConfig::new(&data_path);
         let database_manager = DatabaseManager::new(db_config)?;

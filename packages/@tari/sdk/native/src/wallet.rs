@@ -80,7 +80,6 @@ pub fn wallet_get_balance(mut cx: FunctionContext) -> JsResult<JsObject> {
         Some(w) => w,
         None => return TariError::InvalidHandle(handle).to_js_error(&mut cx),
     };
-    
     // Get actual balance from real Tari wallet
     let balance = match &wallet.real_wallet {
         Some(real_wallet) => {
@@ -100,11 +99,16 @@ pub fn wallet_get_balance(mut cx: FunctionContext) -> JsResult<JsObject> {
     let pending = balance.pending_incoming.as_u64();
     let locked = balance.timelocked.as_u64();
     let total = available + pending + locked;
+
+    let available_num = cx.number(available as f64);
+    let pending_num = cx.number(pending as f64);
+    let locked_num = cx.number(locked as f64);
+    let total_num = cx.number(total as f64);
     
-    obj.set(&mut cx, "available", available)?;
-    obj.set(&mut cx, "pending", pending)?;
-    obj.set(&mut cx, "locked", locked)?;
-    obj.set(&mut cx, "total", total)?;
+    obj.set(&mut cx, "available", available_num)?;
+    obj.set(&mut cx, "pending", pending_num)?;
+    obj.set(&mut cx, "locked", locked_num)?;
+    obj.set(&mut cx, "total", total_num)?;
     
     Ok(obj)
 }
