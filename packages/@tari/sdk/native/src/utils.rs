@@ -14,28 +14,31 @@ pub fn rust_string_to_js<'a>(cx: &'a mut FunctionContext<'a>, rust_str: String) 
 
 /// Parse a JavaScript object as a wallet configuration
 pub fn parse_wallet_config(cx: &mut FunctionContext, config_obj: Handle<JsObject>) -> TariResult<WalletConfig> {
+    let network_str = match config_obj.get::<JsValue, _, _>(cx, "network") {
+        Ok(js_value) => {
+            if js_value.is_a::<JsString, _>(cx) {
+                js_value.downcast::<JsString, _>(cx).unwrap().value(cx)
+            } else if js_value.is_a::<JsNumber, _>(cx) {
+                match js_value.downcast::<JsNumber, _>(cx).unwrap().value(cx) as i32 {
+                    0 => "mainnet".to_string(),
+                    1 => "testnet".to_string(),
+                    2 => "nextnet".to_string(),
+                    3 => "localnet".to_string(),
+                    n => format!("unknown({})", n),
+                }
+            } else {
+                "mainnet".to_string()
+            }
+        }
+        Err(_) => "mainnet".to_string(),
+    };
 
-    // Extract network (optional, default to mainnet) - handle both string and enum values
-    // let network_str = if let Ok(Some(js_str)) = config_obj.get_opt::<JsString, _, _>(cx, "network") {
-    //     js_string_to_rust(cx, js_str)
-    // } else if let Ok(Some(js_num)) = config_obj.get_opt::<JsNumber, _, _>(cx, "network") {
-    //     match js_num.value(cx) as i32 {
-    //         0 => "mainnet".to_string(),
-    //         1 => "testnet".to_string(),
-    //         2 => "nextnet".to_string(),
-    //         3 => "localnet".to_string(),
-    //         n => format!("unknown({})", n),
-    //     }
-    // } else {
-    //     "mainnet".to_string()
-    // };
-
-    // let network = match network_str.as_str() {
-    //     "mainnet" => Network::Mainnet,
-    //     "testnet" | "nextnet" => Network::Testnet, // Map both testnet and nextnet to Testnet
-    //     "localnet" => Network::Localnet,
-    //     _ => return Err(TariError::InvalidArgument(format!("Invalid network: {}", network_str))),
-    // };
+    let network = match network_str.as_str() {
+        "mainnet" => Network::Mainnet,
+        "testnet" | "nextnet" => Network::Testnet,
+        "localnet" => Network::Localnet,
+        _ => return Err(TariError::InvalidArgument(format!("Invalid network: {}", network_str))),
+    };
 
     // Extract optional database settings
     let db_path = config_obj
@@ -58,22 +61,11 @@ pub fn parse_wallet_config(cx: &mut FunctionContext, config_obj: Handle<JsObject
 
     Ok(WalletConfig {
         seed_words,
-        network: Network::Testnet,
+        network,
         db_path,
         db_name,
         passphrase,
     })
-}
-
-impl fmt::Display for Network {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match self {
-            Network::Mainnet => "mainnet",
-            Network::Testnet => "testnet",
-            Network::Localnet => "localnet",
-        };
-        write!(f, "{}", s)
-    }
 }
 
 /// Wallet configuration struct
@@ -86,23 +78,7 @@ pub struct WalletConfig {
     pub passphrase: Option<String>,
 }
 
-/// Network enum
-#[derive(Debug, Clone)]
-pub enum Network {
-    Mainnet,
-    Testnet,
-    Localnet,
-}
 
-impl Network {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Network::Mainnet => "mainnet",
-            Network::Testnet => "testnet",
-            Network::Localnet => "localnet",
-        }
-    }
-}
 
 /// Create a balance object for JavaScript
 pub fn create_balance_object<'a>(
@@ -209,4 +185,24 @@ pub struct SendParams {
     pub fee_per_gram: Option<String>,
     pub message: Option<String>,
     pub one_sided: bool,
+}
+
+
+/// Network enum
+#[derive(Debug, Clone)]
+pub enum Network {
+    Mainnet,
+    Testnet,
+    Localnet,
+}
+
+impl fmt::Display for Network {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Network::Mainnet => "mainnet",
+            Network::Testnet => "testnet",
+            Network::Localnet => "localnet",
+        };
+        write!(f, "{}", s)
+    }
 }

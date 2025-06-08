@@ -37,7 +37,7 @@
     "prettier": "^3.1.0",
     "semver": ">=7.5.2",
     "ts-jest": "^29.1.1",
-    "turbo": "^1.11.0",
+    "turbo": "^2.5.4",
     "typescript": "^5.3.0"
   },
   "pnpm": {
@@ -45,6 +45,7 @@
       "semver": ">=7.5.2"
     }
   },
+  "packageManager": "pnpm@10.11.1",
   "engines": {
     "node": ">=16.0.0",
     "pnpm": ">=8.0.0"
