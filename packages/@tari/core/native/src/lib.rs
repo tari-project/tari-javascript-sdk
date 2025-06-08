@@ -14,6 +14,8 @@ mod resilience;
 mod network_config;
 mod database;
 mod wallet_builder;
+mod address;
+mod transaction_builder;
 
 use neon::prelude::*;
 
