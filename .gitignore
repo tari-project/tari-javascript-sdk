@@ -90,3 +90,6 @@ yarn.lock
 
 # Husky
 .husky/_
+
+
+examples/exchange-basic/exchange-data/**
