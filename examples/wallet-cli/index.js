@@ -1,16 +1,27 @@
-const { TariWallet, Network, formatTari, parseTari, validateAddress, generateSeedWords } = require('@tari-project/wallet');
+// Simple wallet CLI example using the new FFI-based SDK
+// This demonstrates the mobile wallet pattern with direct FFI calls
+
+const { 
+  ffi, 
+  withWallet,
+  createTestnetWallet,
+  formatBalance,
+  parseBalance,
+  Network,
+  TariFFIError,
+  validateSeedWords
+} = require('@tari/sdk');
+
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const Table = require('cli-table3');
 const qrcode = require('qrcode-terminal');
 require('dotenv').config();
 
-class TariWalletCLI {
+class SimpleTariWallet {
   constructor() {
-    this.wallet = null;
-    this.isConnected = false;
-    this.transactions = [];
-    this.addressBook = new Map();
+    this.walletHandle = null;
+    this.seedWords = null;
   }
 
   async start() {
@@ -22,14 +33,17 @@ class TariWalletCLI {
       await this.mainMenu();
     } catch (error) {
       console.error(chalk.red('❌ Fatal error:'), error.message);
+      if (error instanceof TariFFIError) {
+        console.error(chalk.red(`   Error code: ${error.code}`));
+      }
       process.exit(1);
     }
   }
 
   printHeader() {
     console.log(chalk.cyan.bold('┌─────────────────────────────────────────┐'));
-    console.log(chalk.cyan.bold('│           Tari Wallet CLI               │'));
-    console.log(chalk.cyan.bold('│         Example Application             │'));
+    console.log(chalk.cyan.bold('│       Simple Tari Wallet CLI           │'));
+    console.log(chalk.cyan.bold('│        (FFI-based SDK)                  │'));
     console.log(chalk.cyan.bold('└─────────────────────────────────────────┘'));
     console.log('');
   }
@@ -42,8 +56,7 @@ class TariWalletCLI {
         message: 'What would you like to do?',
         choices: [
           { name: '🆕 Create new wallet', value: 'create' },
-          { name: '🔓 Open existing wallet', value: 'open' },
-          { name: '🔄 Recover wallet from seed', value: 'recover' },
+          { name: '🔄 Use existing seed words', value: 'seed' },
           { name: '❌ Exit', value: 'exit' }
         ]
       }
@@ -51,334 +64,174 @@ class TariWalletCLI {
 
     switch (action) {
       case 'create':
-        await this.createWallet();
+        await this.createNewWallet();
         break;
-      case 'open':
-        await this.openWallet();
-        break;
-      case 'recover':
-        await this.recoverWallet();
+      case 'seed':
+        await this.useExistingSeed();
         break;
       case 'exit':
         console.log(chalk.yellow('👋 Goodbye!'));
         process.exit(0);
+        break;
     }
   }
 
-  async createWallet() {
-    console.log(chalk.blue('\n🆕 Creating new wallet...\n'));
-
-    const { network } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'network',
-        message: 'Select network:',
-        choices: [
-          { name: '🧪 Testnet (recommended for testing)', value: Network.Testnet },
-          { name: '🌍 Mainnet (real money!)', value: Network.Mainnet }
-        ]
-      }
-    ]);
-
-    const seedWords = generateSeedWords();
+  async createNewWallet() {
+    // Generate new seed words (in real app, use crypto-secure generation)
+    const seedWords = this.generateTestSeedWords();
     
-    console.log(chalk.yellow('\n🔐 Your wallet seed words (KEEP THESE SAFE!):'));
-    console.log(chalk.white.bgRed.bold(` ${seedWords} `));
-    console.log('');
-
+    console.log(chalk.yellow('\n🔐 Generated new seed words:'));
+    console.log(chalk.white.bold(seedWords));
+    console.log(chalk.red.bold('\n⚠️  IMPORTANT: Write these down and keep them safe!'));
+    console.log(chalk.red('    You will need them to recover your wallet.'));
+    
     const { confirmed } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'confirmed',
-        message: 'Have you written down your seed words in a safe place?',
+        message: 'Have you safely stored your seed words?',
         default: false
       }
     ]);
 
     if (!confirmed) {
-      console.log(chalk.red('❌ Please write down your seed words before continuing.'));
+      console.log(chalk.yellow('Please save your seed words before continuing.'));
       return this.initialize();
     }
 
-    await this.connectWallet(network, seedWords);
+    this.seedWords = seedWords;
   }
 
-  async openWallet() {
-    const { seedWords, network } = await this.promptForWalletDetails();
-    await this.connectWallet(network, seedWords);
-  }
-
-  async recoverWallet() {
-    console.log(chalk.blue('\n🔄 Recovering wallet from seed words...\n'));
-    
-    const { seedWords, network } = await this.promptForWalletDetails();
-    
-    console.log(chalk.yellow('🔍 Scanning for transactions (this may take a while)...'));
-    await this.connectWallet(network, seedWords, true);
-  }
-
-  async promptForWalletDetails() {
-    const answers = await inquirer.prompt([
+  async useExistingSeed() {
+    const { seedWords } = await inquirer.prompt([
       {
         type: 'input',
         name: 'seedWords',
-        message: 'Enter your 24-word seed phrase:',
+        message: 'Enter your seed words:',
         validate: (input) => {
-          const words = input.trim().split(/\s+/);
-          return words.length === 24 ? true : 'Please enter exactly 24 words';
+          if (!input || !validateSeedWords(input)) {
+            return 'Please enter valid seed words (12 or 24 words)';
+          }
+          return true;
         }
-      },
-      {
-        type: 'list',
-        name: 'network',
-        message: 'Select network:',
-        choices: [
-          { name: '🧪 Testnet', value: Network.Testnet },
-          { name: '🌍 Mainnet', value: Network.Mainnet }
-        ]
       }
     ]);
 
-    return answers;
-  }
-
-  async connectWallet(network, seedWords, recover = false) {
-    try {
-      console.log(chalk.blue('\n📡 Connecting to Tari network...'));
-      
-      this.wallet = TariWallet.builder()
-        .network(network)
-        .seedWords(seedWords)
-        .dataDirectory('./cli-wallet-data')
-        .build();
-
-      await this.wallet.connect();
-      this.isConnected = true;
-
-      if (recover) {
-        console.log(chalk.yellow('🔍 Scanning for transactions...'));
-        // In a real implementation, we'd call wallet.scanForUtxos()
-      }
-
-      console.log(chalk.green('✅ Connected successfully!'));
-      
-      // Set up event listeners
-      this.setupEventListeners();
-      
-      // Show initial wallet info
-      await this.showWalletInfo();
-
-    } catch (error) {
-      console.error(chalk.red('❌ Failed to connect:'), error.message);
-      await this.initialize();
-    }
-  }
-
-  setupEventListeners() {
-    this.wallet.on('transaction-received', (tx) => {
-      console.log(chalk.green(`\n💰 Incoming transaction: ${formatTari(tx.amount)}`));
-      console.log(chalk.gray(`   TX ID: ${tx.id}`));
-      this.transactions.unshift(tx);
-    });
-
-    this.wallet.on('transaction-confirmed', (tx) => {
-      console.log(chalk.green(`✅ Transaction confirmed: ${tx.id}`));
-    });
-
-    this.wallet.on('balance-updated', (balance) => {
-      console.log(chalk.blue(`💼 Balance updated: ${formatTari(balance.available)} available`));
-    });
-  }
-
-  async showWalletInfo() {
-    console.log('');
-    const address = this.wallet.getReceiveAddress();
-    const balance = await this.wallet.getBalance();
-
-    const table = new Table({
-      head: [chalk.cyan.bold('Wallet Information'), chalk.cyan.bold('Value')],
-      style: { head: [], border: [] }
-    });
-
-    table.push(
-      ['Address', address.substring(0, 40) + '...'],
-      ['Available Balance', chalk.green(formatTari(balance.available))],
-      ['Pending Balance', chalk.yellow(formatTari(balance.pending))],
-      ['Total Balance', chalk.blue(formatTari(balance.total))]
-    );
-
-    console.log(table.toString());
-    console.log('');
+    this.seedWords = seedWords.trim();
   }
 
   async mainMenu() {
-    while (this.isConnected) {
-      const { action } = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'action',
-          message: 'What would you like to do?',
-          choices: [
-            { name: '💰 Check balance', value: 'balance' },
-            { name: '📤 Send transaction', value: 'send' },
-            { name: '📥 Show receive address', value: 'receive' },
-            { name: '📜 Transaction history', value: 'history' },
-            { name: '📖 Address book', value: 'addressbook' },
-            { name: '⚙️  Settings', value: 'settings' },
-            { name: '❌ Exit', value: 'exit' }
-          ]
-        }
-      ]);
-
-      try {
-        switch (action) {
-          case 'balance':
-            await this.showBalance();
-            break;
-          case 'send':
-            await this.sendTransaction();
-            break;
-          case 'receive':
-            await this.showReceiveAddress();
-            break;
-          case 'history':
-            await this.showTransactionHistory();
-            break;
-          case 'addressbook':
-            await this.manageAddressBook();
-            break;
-          case 'settings':
-            await this.showSettings();
-            break;
-          case 'exit':
-            await this.exit();
-            return;
-        }
-      } catch (error) {
-        console.error(chalk.red('❌ Error:'), error.message);
-        console.log('');
+    // Create wallet with our seed words using the simple FFI approach
+    await withWallet(
+      {
+        seedWords: this.seedWords,
+        network: Network.Testnet,
+        dbPath: './wallet-data',
+        dbName: 'cli_wallet'
+      },
+      async (walletHandle) => {
+        this.walletHandle = walletHandle;
+        console.log(chalk.green('\n✅ Wallet loaded successfully!'));
+        
+        await this.showMainMenu();
       }
+    );
+  }
+
+  async showMainMenu() {
+    while (true) {
+      try {
+        const { action } = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'action',
+            message: 'What would you like to do?',
+            choices: [
+              { name: '💰 Check balance', value: 'balance' },
+              { name: '📍 Show receive address', value: 'address' },
+              { name: '📤 Send transaction', value: 'send' },
+              { name: '📜 Show transactions', value: 'transactions' },
+              { name: '👥 Contact management', value: 'contacts' },
+              { name: '🔄 Refresh data', value: 'refresh' },
+              { name: '❌ Exit', value: 'exit' }
+            ]
+          }
+        ]);
+
+        await this.handleAction(action);
+        
+        if (action === 'exit') {
+          break;
+        }
+
+        // Wait for user to continue
+        await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'continue',
+            message: 'Press Enter to continue...'
+          }
+        ]);
+
+      } catch (error) {
+        console.error(chalk.red('Error:'), error.message);
+      }
+    }
+  }
+
+  async handleAction(action) {
+    switch (action) {
+      case 'balance':
+        await this.showBalance();
+        break;
+      case 'address':
+        await this.showAddress();
+        break;
+      case 'send':
+        await this.sendTransaction();
+        break;
+      case 'transactions':
+        await this.showTransactions();
+        break;
+      case 'contacts':
+        await this.manageContacts();
+        break;
+      case 'refresh':
+        console.log(chalk.blue('🔄 Data refreshed'));
+        break;
+      case 'exit':
+        console.log(chalk.yellow('👋 Goodbye!'));
+        break;
     }
   }
 
   async showBalance() {
     console.log(chalk.blue('\n💰 Checking balance...'));
     
-    const balance = await this.wallet.getBalance();
+    const balance = ffi.getBalance(this.walletHandle);
     
     const table = new Table({
-      head: [chalk.cyan.bold('Balance Type'), chalk.cyan.bold('Amount')],
-      style: { head: [], border: [] }
+      head: ['Type', 'Amount (µT)', 'Amount (T)'],
+      colWidths: [15, 20, 15]
     });
 
     table.push(
-      ['Available (spendable)', chalk.green(formatTari(balance.available))],
-      ['Pending (incoming)', chalk.yellow(formatTari(balance.pending))],
-      ['Locked (staked/time-locked)', chalk.red(formatTari(balance.locked))],
-      ['Total', chalk.blue.bold(formatTari(balance.total))]
+      ['Available', balance.available.toString(), formatBalance(balance.available)],
+      ['Pending', balance.pending.toString(), formatBalance(balance.pending)],
+      ['Locked', balance.locked.toString(), formatBalance(balance.locked)],
+      ['Total', balance.total.toString(), formatBalance(balance.total)]
     );
 
     console.log(table.toString());
-    console.log('');
   }
 
-  async sendTransaction() {
-    console.log(chalk.blue('\n📤 Send Transaction\n'));
-
-    // Check balance first
-    const balance = await this.wallet.getBalance();
-    if (balance.available === 0n) {
-      console.log(chalk.red('❌ No funds available to send'));
-      return;
-    }
-
-    console.log(chalk.gray(`Available balance: ${formatTari(balance.available)}`));
-
-    const answers = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'destination',
-        message: 'Destination address (or address book name):',
-        validate: (input) => {
-          if (this.addressBook.has(input)) return true;
-          return validateAddress(input) ? true : 'Invalid Tari address format';
-        }
-      },
-      {
-        type: 'input',
-        name: 'amount',
-        message: 'Amount to send (XTR):',
-        validate: (input) => {
-          try {
-            const amount = parseTari(input);
-            if (amount <= 0n) return 'Amount must be greater than 0';
-            if (amount > balance.available) return 'Insufficient balance';
-            return true;
-          } catch {
-            return 'Invalid amount format';
-          }
-        }
-      },
-      {
-        type: 'input',
-        name: 'message',
-        message: 'Message (optional):'
-      },
-      {
-        type: 'confirm',
-        name: 'confirm',
-        message: (answers) => `Send ${answers.amount} XTR to ${answers.destination}?`,
-        default: false
-      }
-    ]);
-
-    if (!answers.confirm) {
-      console.log(chalk.yellow('❌ Transaction cancelled'));
-      return;
-    }
-
-    try {
-      console.log(chalk.blue('📡 Sending transaction...'));
-
-      // Resolve address from address book if needed
-      const destination = this.addressBook.get(answers.destination) || answers.destination;
-      
-      const tx = await this.wallet.sendTransaction({
-        destination,
-        amount: parseTari(answers.amount),
-        message: answers.message || undefined
-      });
-
-      console.log(chalk.green('✅ Transaction sent successfully!'));
-      console.log(chalk.gray(`Transaction ID: ${tx.id}`));
-      
-      this.transactions.unshift(tx);
-
-      // Watch for confirmations
-      const unwatch = this.wallet.watchTransaction(tx.id, (updatedTx) => {
-        console.log(chalk.blue(`📊 Confirmations: ${updatedTx.confirmations}`));
-        if (updatedTx.confirmations >= 6) {
-          console.log(chalk.green('🎉 Transaction fully confirmed!'));
-          unwatch();
-        }
-      });
-
-    } catch (error) {
-      console.error(chalk.red('❌ Transaction failed:'), error.message);
-    }
-
-    console.log('');
-  }
-
-  async showReceiveAddress() {
-    console.log(chalk.blue('\n📥 Receive Address\n'));
+  async showAddress() {
+    console.log(chalk.blue('\n📍 Your receive address:'));
     
-    const address = this.wallet.getReceiveAddress();
+    const addressInfo = ffi.getAddress(this.walletHandle);
     
-    console.log(chalk.green('Your receiving address:'));
-    console.log(chalk.white.bold(address));
-    console.log('');
-
+    console.log(chalk.white.bold(`\n${addressInfo.emojiId}\n`));
+    
     const { showQR } = await inquirer.prompt([
       {
         type: 'confirm',
@@ -390,180 +243,259 @@ class TariWalletCLI {
 
     if (showQR) {
       console.log('\n📱 QR Code:');
-      qrcode.generate(address, { small: true });
+      qrcode.generate(addressInfo.emojiId, { small: true });
     }
-
-    console.log('');
   }
 
-  async showTransactionHistory() {
-    console.log(chalk.blue('\n📜 Transaction History\n'));
-
-    if (this.transactions.length === 0) {
-      console.log(chalk.gray('No transactions yet'));
-      console.log('');
+  async sendTransaction() {
+    console.log(chalk.blue('\n📤 Send Transaction'));
+    
+    // Check balance first
+    const balance = ffi.getBalance(this.walletHandle);
+    if (balance.available === BigInt(0)) {
+      console.log(chalk.red('❌ No funds available to send'));
       return;
     }
-
-    const table = new Table({
-      head: [
-        chalk.cyan.bold('Type'),
-        chalk.cyan.bold('Amount'),
-        chalk.cyan.bold('Status'),
-        chalk.cyan.bold('ID'),
-        chalk.cyan.bold('Time')
-      ],
-      style: { head: [], border: [] }
-    });
-
-    this.transactions.slice(0, 10).forEach(tx => {
-      const type = tx.isOutbound ? '📤 Sent' : '📥 Received';
-      const amount = formatTari(tx.amount);
-      const status = tx.confirmations >= 6 ? '✅ Confirmed' : `⏳ ${tx.confirmations}/6`;
-      const id = tx.id.substring(0, 12) + '...';
-      const time = tx.timestamp.toLocaleString();
-
-      table.push([type, amount, status, id, time]);
-    });
-
-    console.log(table.toString());
-    console.log('');
-  }
-
-  async manageAddressBook() {
-    const { action } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'action',
-        message: 'Address Book:',
-        choices: [
-          { name: '📖 View all addresses', value: 'view' },
-          { name: '➕ Add new address', value: 'add' },
-          { name: '❌ Remove address', value: 'remove' },
-          { name: '🔙 Back to main menu', value: 'back' }
-        ]
-      }
-    ]);
-
-    switch (action) {
-      case 'view':
-        this.viewAddressBook();
-        break;
-      case 'add':
-        await this.addToAddressBook();
-        break;
-      case 'remove':
-        await this.removeFromAddressBook();
-        break;
-      case 'back':
-        return;
-    }
-  }
-
-  viewAddressBook() {
-    console.log(chalk.blue('\n📖 Address Book\n'));
-
-    if (this.addressBook.size === 0) {
-      console.log(chalk.gray('No addresses saved yet'));
-      console.log('');
-      return;
-    }
-
-    const table = new Table({
-      head: [chalk.cyan.bold('Name'), chalk.cyan.bold('Address')],
-      style: { head: [], border: [] }
-    });
-
-    for (const [name, address] of this.addressBook) {
-      table.push([name, address.substring(0, 40) + '...']);
-    }
-
-    console.log(table.toString());
-    console.log('');
-  }
-
-  async addToAddressBook() {
+    
+    console.log(chalk.white(`Available balance: ${formatBalance(balance.available)}`));
+    
     const answers = await inquirer.prompt([
       {
         type: 'input',
-        name: 'name',
-        message: 'Name for this address:',
-        validate: (input) => input.trim().length > 0 ? true : 'Name cannot be empty'
+        name: 'destination',
+        message: 'Destination address:',
+        validate: (input) => input ? true : 'Please enter a destination address'
       },
       {
         type: 'input',
-        name: 'address',
-        message: 'Tari address:',
-        validate: (input) => validateAddress(input) ? true : 'Invalid Tari address format'
+        name: 'amount',
+        message: 'Amount to send (in Tari):',
+        validate: (input) => {
+          try {
+            const amount = parseBalance(input);
+            if (amount <= BigInt(0)) {
+              return 'Amount must be greater than 0';
+            }
+            if (amount > balance.available) {
+              return 'Insufficient balance';
+            }
+            return true;
+          } catch {
+            return 'Please enter a valid amount';
+          }
+        }
+      },
+      {
+        type: 'input',
+        name: 'message',
+        message: 'Message (optional):',
+        default: ''
+      },
+      {
+        type: 'confirm',
+        name: 'confirm',
+        message: 'Confirm transaction?',
+        default: false
       }
     ]);
 
-    this.addressBook.set(answers.name, answers.address);
-    console.log(chalk.green(`✅ Added ${answers.name} to address book`));
-    console.log('');
-  }
-
-  async removeFromAddressBook() {
-    if (this.addressBook.size === 0) {
-      console.log(chalk.gray('No addresses to remove'));
+    if (!answers.confirm) {
+      console.log(chalk.yellow('Transaction cancelled'));
       return;
     }
 
-    const { name } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'name',
-        message: 'Remove which address?',
-        choices: Array.from(this.addressBook.keys())
-      }
-    ]);
+    try {
+      console.log(chalk.blue('📡 Sending transaction...'));
+      
+      const txId = ffi.sendTransaction(this.walletHandle, {
+        destination: answers.destination,
+        amount: parseBalance(answers.amount),
+        message: answers.message,
+        feePerGram: BigInt(5) // Standard fee
+      });
 
-    this.addressBook.delete(name);
-    console.log(chalk.green(`✅ Removed ${name} from address book`));
-    console.log('');
-  }
-
-  async showSettings() {
-    console.log(chalk.blue('\n⚙️  Wallet Settings\n'));
-
-    const table = new Table({
-      head: [chalk.cyan.bold('Setting'), chalk.cyan.bold('Value')],
-      style: { head: [], border: [] }
-    });
-
-    table.push(
-      ['Network', this.wallet._network || 'Unknown'],
-      ['Data Directory', './cli-wallet-data'],
-      ['Address Book Entries', this.addressBook.size.toString()],
-      ['Cached Transactions', this.transactions.length.toString()]
-    );
-
-    console.log(table.toString());
-    console.log('');
-  }
-
-  async exit() {
-    console.log(chalk.blue('\n🛑 Shutting down wallet...'));
-    
-    if (this.wallet && this.isConnected) {
-      await this.wallet.close();
-      console.log(chalk.green('✅ Wallet disconnected safely'));
+      console.log(chalk.green(`✅ Transaction sent successfully!`));
+      console.log(chalk.white(`Transaction ID: ${txId}`));
+      
+    } catch (error) {
+      console.error(chalk.red('❌ Transaction failed:'), error.message);
     }
+  }
+
+  async showTransactions() {
+    console.log(chalk.blue('\n📜 Transaction History'));
     
-    console.log(chalk.yellow('👋 Goodbye!'));
-    process.exit(0);
+    try {
+      const completed = ffi.getCompletedTransactions(this.walletHandle);
+      const pendingIn = ffi.getPendingInboundTransactions(this.walletHandle);
+      const pendingOut = ffi.getPendingOutboundTransactions(this.walletHandle);
+      
+      if (completed.length === 0 && pendingIn.length === 0 && pendingOut.length === 0) {
+        console.log(chalk.yellow('No transactions found'));
+        return;
+      }
+
+      // Show completed transactions
+      if (completed.length > 0) {
+        console.log(chalk.white.bold('\n✅ Completed Transactions:'));
+        const table = new Table({
+          head: ['Type', 'Amount', 'Status', 'Date', 'Message'],
+          colWidths: [8, 15, 12, 20, 20]
+        });
+
+        completed.slice(-10).forEach(tx => { // Show last 10
+          table.push([
+            tx.isOutbound ? 'OUT' : 'IN',
+            formatBalance(tx.amount),
+            'Confirmed',
+            tx.timestamp.toLocaleString(),
+            tx.message || ''
+          ]);
+        });
+
+        console.log(table.toString());
+      }
+
+      // Show pending transactions
+      if (pendingIn.length > 0 || pendingOut.length > 0) {
+        console.log(chalk.white.bold('\n⏳ Pending Transactions:'));
+        const pendingTable = new Table({
+          head: ['Type', 'Amount', 'Status', 'Date', 'Message'],
+          colWidths: [8, 15, 12, 20, 20]
+        });
+
+        [...pendingIn, ...pendingOut].forEach(tx => {
+          pendingTable.push([
+            tx.isOutbound ? 'OUT' : 'IN',
+            formatBalance(tx.amount),
+            'Pending',
+            tx.timestamp.toLocaleString(),
+            tx.message || ''
+          ]);
+        });
+
+        console.log(pendingTable.toString());
+      }
+      
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to load transactions:'), error.message);
+    }
+  }
+
+  async manageContacts() {
+    console.log(chalk.blue('\n👥 Contact Management'));
+    
+    try {
+      const contacts = ffi.getContacts(this.walletHandle);
+      
+      const { action } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'action',
+          message: 'What would you like to do?',
+          choices: [
+            { name: '📋 View contacts', value: 'view' },
+            { name: '➕ Add contact', value: 'add' },
+            { name: '🗑️  Remove contact', value: 'remove' },
+            { name: '🔙 Back to main menu', value: 'back' }
+          ]
+        }
+      ]);
+
+      switch (action) {
+        case 'view':
+          if (contacts.length === 0) {
+            console.log(chalk.yellow('No contacts found'));
+          } else {
+            const table = new Table({
+              head: ['Alias', 'Address', 'Favorite'],
+              colWidths: [15, 50, 10]
+            });
+            
+            contacts.forEach(contact => {
+              table.push([
+                contact.alias,
+                contact.address,
+                contact.isFavorite ? '⭐' : ''
+              ]);
+            });
+            
+            console.log(table.toString());
+          }
+          break;
+
+        case 'add':
+          const newContact = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'alias',
+              message: 'Contact name:',
+              validate: input => input ? true : 'Please enter a name'
+            },
+            {
+              type: 'input',
+              name: 'address',
+              message: 'Contact address:',
+              validate: input => input ? true : 'Please enter an address'
+            }
+          ]);
+
+          const success = ffi.upsertContact(this.walletHandle, {
+            alias: newContact.alias,
+            address: newContact.address,
+            isFavorite: false
+          });
+
+          if (success) {
+            console.log(chalk.green('✅ Contact added successfully'));
+          } else {
+            console.log(chalk.red('❌ Failed to add contact'));
+          }
+          break;
+
+        case 'remove':
+          if (contacts.length === 0) {
+            console.log(chalk.yellow('No contacts to remove'));
+            break;
+          }
+
+          const { contactToRemove } = await inquirer.prompt([
+            {
+              type: 'list',
+              name: 'contactToRemove',
+              message: 'Which contact would you like to remove?',
+              choices: contacts.map(c => ({ name: `${c.alias} (${c.address})`, value: c }))
+            }
+          ]);
+
+          const removed = ffi.removeContact(this.walletHandle, contactToRemove);
+          if (removed) {
+            console.log(chalk.green('✅ Contact removed'));
+          } else {
+            console.log(chalk.red('❌ Failed to remove contact'));
+          }
+          break;
+      }
+      
+    } catch (error) {
+      console.error(chalk.red('❌ Contact management error:'), error.message);
+    }
+  }
+
+  generateTestSeedWords() {
+    // Generate deterministic test seed words for demo
+    return [
+      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
+      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
+      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
+      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'art'
+    ].join(' ');
   }
 }
 
-// Handle Ctrl+C gracefully
-process.on('SIGINT', () => {
-  console.log(chalk.yellow('\n\n👋 Goodbye!'));
-  process.exit(0);
-});
-
-// Start the CLI
-const cli = new TariWalletCLI();
-cli.start().catch(error => {
-  console.error(chalk.red('Fatal error:'), error);
+// Start the wallet CLI
+const walletCLI = new SimpleTariWallet();
+walletCLI.start().catch(error => {
+  console.error('Fatal error:', error.message);
   process.exit(1);
 });

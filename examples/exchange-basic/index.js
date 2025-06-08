@@ -1,215 +1,242 @@
+// Simple exchange example using the new FFI-based SDK
+// This follows the same pattern as iOS/Android mobile wallets
+
 const {
-  TariWallet,
-  DepositManager,
-  formatTari,
-  parseTari,
-  WalletEvent,
-} = require('@tari-project/wallet');
-const { Network } = require('@tari-project/core');
+  ffi,
+  withWallet,
+  createTestnetWallet,
+  formatBalance,
+  parseBalance,
+  Network,
+  TariFFIError,
+} = require('@tari/sdk');
 require('dotenv').config();
 
+// =============================================================================
+// SIMPLE EXCHANGE BUSINESS LOGIC (Application Layer)
+// This is where your exchange implements its own business logic
+// =============================================================================
+
+class ExchangeDepositManager {
+  constructor() {
+    this.userAddresses = new Map(); // userId -> address mapping
+    this.deposits = new Map(); // address -> deposit info
+  }
+
+  // Generate a deposit address for a user
+  generateAddress(userId, walletHandle) {
+    const addressInfo = ffi.getAddress(walletHandle);
+    const address = addressInfo.emojiId;
+
+    this.userAddresses.set(userId, address);
+    this.deposits.set(address, {
+      userId,
+      totalReceived: BigInt(0),
+      transactions: [],
+    });
+
+    return address;
+  }
+
+  // Check if an address belongs to a user
+  getUserForAddress(address) {
+    const deposit = this.deposits.get(address);
+    return deposit ? deposit.userId : null;
+  }
+
+  // Get all deposit info
+  getAllDeposits() {
+    return Array.from(this.deposits.values());
+  }
+
+  // Record a deposit
+  recordDeposit(address, amount, txId) {
+    const deposit = this.deposits.get(address);
+    if (!deposit) return false;
+
+    deposit.totalReceived += amount;
+    deposit.transactions.push({ amount, txId, timestamp: new Date() });
+
+    console.log(
+      `💰 DEPOSIT: User ${deposit.userId} received ${formatBalance(amount)} (Total: ${formatBalance(deposit.totalReceived)})`
+    );
+    return true;
+  }
+}
+
+// =============================================================================
+// MAIN EXCHANGE APPLICATION
+// =============================================================================
+
 async function main() {
-  console.log('🏪 Starting Tari Basic Exchange Example...\n');
+  console.log('🏪 Starting Simple Tari Exchange (FFI-based SDK)...\n');
 
-  // Create hot wallet for the exchange
-  const wallet = TariWallet.builder()
-    .network(Network.Testnet)
-    .seedWords(process.env.SEED_WORDS || generateTestSeedWords())
-    .dataDirectory('./exchange-data')
-    .build();
+  // Exchange business logic
+  const depositManager = new ExchangeDepositManager();
 
-  let isShuttingDown = false;
+  // Network configuration
+  const networkName = process.env.TARI_NETWORK || 'testnet';
+  const network = networkName.toLowerCase() === 'mainnet' ? Network.Mainnet : Network.Testnet;
 
-  try {
-    // Connect to network
-    console.log('📡 Connecting to Tari network...');
-    await wallet.connect();
-    console.log('✅ Connected to Tari testnet\n');
+  // Wallet configuration (simple!)
+  const seedWords = process.env.SEED_WORDS || generateTestSeedWords();
 
-    // Show wallet info
-    const address = wallet.getReceiveAddress();
-    console.log('🏛️  Exchange Hot Wallet Information:');
-    console.log(`   Address: ${address}`);
-    console.log('');
+  console.log(`📡 Using ${networkName} network`);
+  console.log('🔑 Wallet seed loaded from environment\n');
 
-    // Check initial balance
-    const balance = await wallet.getBalance();
-    console.log('💰 Initial Wallet Balance:');
-    console.log(`   Available: ${formatTari(balance.available)}`);
-    console.log(`   Pending:   ${formatTari(balance.pending)}`);
-    console.log(`   Total:     ${formatTari(balance.total)}`);
-    console.log('');
+  // Use the simple FFI approach with automatic cleanup
+  await withWallet(
+    {
+      seedWords,
+      network,
+      dbPath: process.env.DATA_DIRECTORY || './exchange-data',
+      dbName: 'exchange_wallet',
+    },
+    async (walletHandle) => {
+      console.log('✅ Wallet created successfully');
 
-    // Set up deposit management
-    const deposits = new DepositManager(wallet);
-    deposits.initialize();
+      // Get wallet address
+      const addressInfo = ffi.getAddress(walletHandle);
+      console.log('🏛️ Exchange Hot Wallet:');
+      console.log(`   Address: ${addressInfo.emojiId}\n`);
 
-    // Simulate user onboarding
-    console.log('👥 Creating deposit addresses for users...');
-    const users = ['alice', 'bob', 'charlie', 'diana'];
+      // Check initial balance
+      const balance = ffi.getBalance(walletHandle);
+      console.log('💰 Initial Balance:');
+      console.log(`   Available: ${formatBalance(balance.available)}`);
+      console.log(`   Pending:   ${formatBalance(balance.pending)}`);
+      console.log(`   Total:     ${formatBalance(balance.total)}\n`);
 
-    for (const user of users) {
-      const addr = await deposits.generateAddress(user);
-      console.log(`   ${user.padEnd(8)}: ${addr.substring(0, 25)}...`);
-    }
-    console.log('');
+      // Create deposit addresses for demo users
+      console.log('👥 Creating deposit addresses...');
+      const users = ['alice', 'bob', 'charlie', 'diana'];
 
-    // Set up event listeners
-    setupWalletEvents(wallet);
-    setupDepositEvents(deposits);
+      users.forEach((user) => {
+        // In a real exchange, each user would get a unique address
+        // For this demo, we'll just use the main wallet address
+        const address = addressInfo.emojiId;
+        depositManager.userAddresses.set(user, address);
+        depositManager.deposits.set(address, {
+          userId: user,
+          totalReceived: BigInt(0),
+          transactions: [],
+        });
+        console.log(`   ${user.padEnd(8)}: ${address.substring(0, 25)}...`);
+      });
+      console.log('');
 
-    // Start periodic balance reporting
-    const balanceInterval = setInterval(async () => {
-      if (isShuttingDown) return;
+      // Monitor for transactions (simple polling approach)
+      console.log('🔄 Starting transaction monitoring...');
+      let lastTransactionCount = 0;
 
-      try {
-        const currentBalance = await wallet.getBalance();
-        const timestamp = new Date().toISOString();
-        console.log(`[${timestamp}] 💼 Current Balance: ${formatTari(currentBalance.available)}`);
+      const monitorTransactions = async () => {
+        try {
+          const transactions = ffi.getCompletedTransactions(walletHandle);
 
-        // Show deposit statistics
-        const stats = deposits.getStatistics();
-        if (stats.totalDeposits > 0) {
+          if (transactions.length > lastTransactionCount) {
+            const newTransactions = transactions.slice(lastTransactionCount);
+
+            newTransactions.forEach((tx) => {
+              if (!tx.isOutbound) {
+                // Only process incoming transactions
+                console.log('\n📥 New Incoming Transaction:');
+                console.log(`   Amount: ${formatBalance(tx.amount)}`);
+                console.log(`   ID: ${tx.id}`);
+                console.log(`   Message: ${tx.message || 'No message'}`);
+
+                // In a real exchange, you'd:
+                // 1. Map the transaction to a user based on the destination address
+                // 2. Wait for sufficient confirmations
+                // 3. Credit the user's account
+
+                // For demo, just record it
+                depositManager.recordDeposit(addressInfo.emojiId, tx.amount, tx.id);
+              }
+            });
+
+            lastTransactionCount = transactions.length;
+          }
+
+          // Show periodic balance update
+          const currentBalance = ffi.getBalance(walletHandle);
           console.log(
-            `[${timestamp}] 📊 Deposits: ${stats.totalDeposits} users, ${formatTari(stats.totalVolume)} total volume`
+            `[${new Date().toISOString()}] 💼 Balance: ${formatBalance(currentBalance.available)}`
           );
+        } catch (error) {
+          if (error instanceof TariFFIError) {
+            console.error(`FFI Error: ${error.message} (Code: ${error.code})`);
+          } else {
+            console.error('Monitor error:', error.message);
+          }
         }
-      } catch (error) {
-        console.error('Error checking balance:', error.message);
-      }
-    }, 30000); // Every 30 seconds
+      };
 
-    // Simulate some test transactions for demo
-    setTimeout(() => simulateTestActivity(wallet, deposits), 10000);
+      // Start monitoring
+      const monitorInterval = setInterval(monitorTransactions, 30000); // Every 30 seconds
 
-    // Keep running
-    console.log('🏪 Exchange is now running...');
-    console.log('📊 Balance updates every 30 seconds');
-    console.log('💰 Watching for incoming deposits');
-    console.log('⚡ Press Ctrl+C to stop\n');
+      // Demo: show how to send a transaction (if we have funds)
+      setTimeout(async () => {
+        try {
+          const balance = ffi.getBalance(walletHandle);
+          if (balance.available > parseBalance('0.1')) {
+            console.log('\n💸 Demo: Could send transaction');
+            console.log('   (Uncomment code below to actually send)');
 
-    // Handle shutdown gracefully
-    const shutdown = async () => {
-      if (isShuttingDown) return;
-      isShuttingDown = true;
+            // Example of how to send:
+            /*
+            const txId = ffi.sendTransaction(walletHandle, {
+              destination: 'recipient_emoji_address_here',
+              amount: parseBalance('0.01'),
+              message: 'Test from exchange'
+            });
+            console.log(`📤 Transaction sent: ${txId}`);
+            */
+          } else {
+            console.log('\nℹ️  No funds for demo transaction');
+            console.log('   Send some testnet Tari to see transaction processing');
+          }
+        } catch (error) {
+          console.log('Demo transaction error:', error.message);
+        }
+      }, 10000);
 
-      console.log('\n🛑 Shutting down exchange...');
-      clearInterval(balanceInterval);
+      // Keep running
+      console.log('🏪 Exchange is running...');
+      console.log('📊 Monitoring transactions every 30 seconds');
+      console.log('⚡ Press Ctrl+C to stop\n');
 
-      try {
-        deposits.teardown();
-        console.log('✅ Deposit manager cleaned up');
+      // Graceful shutdown
+      const shutdown = () => {
+        console.log('\n🛑 Shutting down exchange...');
+        clearInterval(monitorInterval);
 
-        await wallet.close();
-        console.log('✅ Wallet disconnected');
+        console.log('📊 Final deposit summary:');
+        depositManager.getAllDeposits().forEach((deposit) => {
+          if (deposit.totalReceived > 0) {
+            console.log(`   ${deposit.userId}: ${formatBalance(deposit.totalReceived)}`);
+          }
+        });
 
         console.log('👋 Exchange shutdown complete');
         process.exit(0);
-      } catch (error) {
-        console.error('Error during shutdown:', error.message);
-        process.exit(1);
-      }
-    };
+      };
 
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-  } catch (error) {
-    console.error('❌ Error starting exchange:', error.message);
-    if (error.code) {
-      console.error(`   Error code: ${error.code}`);
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
+
+      // Keep the process alive
+      await new Promise(() => {}); // Run forever until shutdown
     }
-    process.exit(1);
-  }
+  );
 }
 
-function setupWalletEvents(wallet) {
-  wallet.on(WalletEvent.Connected, (info) => {
-    console.log('🌐 Wallet connected to network');
-    if (info.baseNode) {
-      console.log(`   Base node: ${info.baseNode}`);
-    }
-  });
-
-  wallet.on(WalletEvent.Disconnected, (info) => {
-    console.log(`❌ Wallet disconnected: ${info.reason}`);
-  });
-
-  wallet.on(WalletEvent.BalanceUpdated, (balance) => {
-    console.log(`💰 Balance updated: ${formatTari(balance.available)} available`);
-  });
-
-  wallet.on(WalletEvent.TransactionReceived, (tx) => {
-    console.log('📥 Incoming transaction detected:');
-    console.log(`   Amount: ${formatTari(tx.amount)}`);
-    console.log(`   TX ID: ${tx.id}`);
-    console.log(`   Confirmations: ${tx.confirmations}`);
-  });
-
-  wallet.on(WalletEvent.TransactionConfirmed, (tx) => {
-    console.log(`✅ Transaction confirmed: ${tx.id} (${tx.confirmations} confirmations)`);
-  });
-}
-
-function setupDepositEvents(deposits) {
-  deposits.on('deposit', (event) => {
-    console.log('\n💰 DEPOSIT RECEIVED!');
-    console.log(`   User: ${event.userId}`);
-    console.log(`   Amount: ${formatTari(event.amount)}`);
-    console.log(`   TX ID: ${event.txId}`);
-    console.log(`   Confirmations: ${event.confirmations}`);
-
-    if (event.confirmations >= 6) {
-      console.log('   ✅ Fully confirmed - can credit user account');
-    } else {
-      console.log(`   ⏳ Waiting for confirmations (${event.confirmations}/6)`);
-    }
-    console.log('');
-  });
-
-  deposits.on('confirmed', (event) => {
-    console.log(`✅ Deposit confirmed for user ${event.userId}`);
-    console.log(`   Amount: ${formatTari(event.amount)}`);
-    console.log(`   Transaction: ${event.txId}`);
-    console.log('   💳 User account can now be credited\n');
-  });
-}
-
-async function simulateTestActivity(wallet, deposits) {
-  console.log('🎭 Simulating some test activity...\n');
-
-  try {
-    // Show how to check if we have funds to send
-    const balance = await wallet.getBalance();
-    if (balance.available > parseTari('0.1')) {
-      console.log('💸 Would send test transaction, but this is demo mode');
-      // console.log('   (Uncomment sendTransaction code to actually send)');
-      // Uncomment to actually send a transaction:
-
-      const tx = await wallet.sendTransaction({
-        destination: 'recipient_emoji_address_here',
-        amount: parseTari('0.01'),
-        message: 'Test transaction from exchange',
-      });
-      console.log(`📤 Test transaction sent: ${tx.id}`);
-    } else {
-      console.log('ℹ️  No funds available for test transactions');
-      console.log('   Send some testnet Tari to this wallet to see transaction handling');
-    }
-
-    // Show deposit address lookup
-    console.log('\n📋 Current deposit addresses:');
-    const allAddresses = deposits.getAllAddresses();
-    allAddresses.forEach((deposit) => {
-      console.log(`   ${deposit.userId}: ${formatTari(deposit.totalReceived)} received`);
-    });
-  } catch (error) {
-    console.error('Error in test simulation:', error.message);
-  }
-}
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
 
 function generateTestSeedWords() {
-  // Generate deterministic test seed words for demo
-  const words = [
+  // Deterministic test seed for demo
+  return [
     'abandon',
     'abandon',
     'abandon',
@@ -234,12 +261,14 @@ function generateTestSeedWords() {
     'abandon',
     'abandon',
     'art',
-  ];
-  return words.join(' ');
+  ].join(' ');
 }
 
-// Run the example
+// Run the exchange
 main().catch((error) => {
-  console.error('Fatal error:', error);
+  console.error('❌ Fatal error:', error.message);
+  if (error instanceof TariFFIError) {
+    console.error(`   Error code: ${error.code}`);
+  }
   process.exit(1);
 });
