@@ -205,25 +205,19 @@ impl RealWalletInstance {
     async fn initialize_wallet_components(&mut self) -> TariResult<()> {
         log::info!("Initializing wallet components for network: {:?}", self.network);
         
-        // Initialize consensus manager
-        self.consensus_manager = Some(
-            ConsensusManagerBuilder::new(self.tari_network).build()
-                .map_err(|e| TariError::WalletError(format!("Failed to build consensus manager: {}", e)))?
-        );
+        // Components are already initialized in new(), just verify they exist
+        if self.consensus_manager.is_none() {
+            return Err(TariError::WalletInitializationError("Consensus manager not initialized".to_string()));
+        }
         
-        // Initialize node identity
-        self.initialize_node_identity().await?;
+        if self.database_manager.is_none() {
+            return Err(TariError::WalletInitializationError("Database manager not initialized".to_string()));
+        }
         
-        // Initialize wallet database
+        // Initialize wallet database connections
         self.initialize_database().await?;
         
-        // Initialize key manager
-        self.initialize_key_manager().await?;
-        
-        // Initialize communication services
-        self.initialize_comms().await?;
-        
-        // Initialize wallet services
+        // Initialize wallet services with actual Tari components
         self.initialize_services().await?;
         
         log::info!("Wallet components initialized successfully");
@@ -250,26 +244,21 @@ impl RealWalletInstance {
     async fn initialize_database(&mut self) -> TariResult<()> {
         log::debug!("Initializing wallet database at: {:?}", self.wallet_db_path);
         
-        // Create database configuration
-        let db_config = DatabaseConfig::new(&self.data_path);
-        
-        // Ensure we have consensus manager and cipher seed
+        // Ensure we have consensus manager
         let consensus_manager = self.consensus_manager
             .as_ref()
             .ok_or_else(|| TariError::DatabaseError("Consensus manager not initialized".to_string()))?;
         
+        // Get database manager (already created in new())
+        let db_manager = self.database_manager
+            .as_mut()
+            .ok_or_else(|| TariError::DatabaseError("Database manager not initialized".to_string()))?;
+        
         // Create cipher seed for encryption
         let cipher_seed = CipherSeed::new();
         
-        // Initialize database manager
-        let mut db_manager = DatabaseManager::new(db_config)?;
+        // Initialize database connections
         db_manager.initialize_databases(consensus_manager, &cipher_seed).await?;
-        
-        // Database connections will be created by the wallet builder
-        // For now, just mark as prepared
-        
-        // Store database manager
-        self.database_manager = Some(db_manager);
         
         log::info!("Database connections initialized successfully");
         Ok(())
