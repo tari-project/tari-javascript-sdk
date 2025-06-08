@@ -113,6 +113,12 @@ impl ResilienceManager {
             TariError::InvalidArgument(_) => false,
             TariError::KeyManagerError(_) => false,
             TariError::NotImplemented(_) => false,
+            TariError::AddressError(_) => false,
+            TariError::TransactionBuilderError(_) => false,
+            TariError::NodeConnectionError(_) => true,
+            TariError::SyncError(_) => true,
+            TariError::ConfigError(_) => false,
+            TariError::ValidationError(_) => false,
             TariError::NeonError(_) => false,
         }
     }

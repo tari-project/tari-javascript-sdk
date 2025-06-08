@@ -40,6 +40,24 @@ pub enum TariError {
     
     #[error("Neon error: {0}")]
     NeonError(String),
+    
+    #[error("Address parsing error: {0}")]
+    AddressError(String),
+    
+    #[error("Transaction builder error: {0}")]
+    TransactionBuilderError(String),
+    
+    #[error("Node connection error: {0}")]
+    NodeConnectionError(String),
+    
+    #[error("Synchronization error: {0}")]
+    SyncError(String),
+    
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
+    
+    #[error("Validation error: {0}")]
+    ValidationError(String),
 }
 
 impl TariError {
@@ -115,6 +133,85 @@ impl From<std::io::Error> for TariError {
             std::io::ErrorKind::InvalidData => 
                 TariError::DatabaseError("Invalid database format".to_string()),
             _ => TariError::RuntimeError(format!("IO error: {}", err)),
+        }
+    }
+}
+
+/// Convert hex decode errors to TariError
+impl From<hex::FromHexError> for TariError {
+    fn from(err: hex::FromHexError) -> Self {
+        TariError::AddressError(format!("Invalid hex encoding: {}", err))
+    }
+}
+
+/// Convert address format errors to TariError
+impl TariError {
+    /// Create an address parsing error
+    pub fn address_parse_error(msg: &str) -> Self {
+        TariError::AddressError(msg.to_string())
+    }
+    
+    /// Create a transaction builder error
+    pub fn transaction_builder_error(msg: &str) -> Self {
+        TariError::TransactionBuilderError(msg.to_string())
+    }
+    
+    /// Create a node connection error
+    pub fn node_connection_error(msg: &str) -> Self {
+        TariError::NodeConnectionError(msg.to_string())
+    }
+    
+    /// Create a synchronization error
+    pub fn sync_error(msg: &str) -> Self {
+        TariError::SyncError(msg.to_string())
+    }
+    
+    /// Create a configuration error
+    pub fn config_error(msg: &str) -> Self {
+        TariError::ConfigError(msg.to_string())
+    }
+    
+    /// Create a validation error
+    pub fn validation_error(msg: &str) -> Self {
+        TariError::ValidationError(msg.to_string())
+    }
+    
+    /// Check if error is retryable (for resilience patterns)
+    pub fn is_retryable(&self) -> bool {
+        match self {
+            TariError::NetworkError(_) => true,
+            TariError::NodeConnectionError(_) => true,
+            TariError::SyncError(_) => true,
+            TariError::RuntimeError(_) => true,
+            TariError::DatabaseError(_) => false, // Usually not retryable
+            TariError::InvalidInput(_) => false,
+            TariError::InvalidArgument(_) => false,
+            TariError::AddressError(_) => false,
+            _ => false,
+        }
+    }
+    
+    /// Get error category for logging and metrics
+    pub fn category(&self) -> &'static str {
+        match self {
+            TariError::WalletError(_) => "wallet",
+            TariError::CryptoError(_) => "crypto",
+            TariError::TransactionError(_) => "transaction",
+            TariError::TransactionBuilderError(_) => "transaction_builder",
+            TariError::NetworkError(_) => "network",
+            TariError::NodeConnectionError(_) => "node_connection",
+            TariError::SyncError(_) => "sync",
+            TariError::DatabaseError(_) => "database",
+            TariError::ConfigError(_) => "config",
+            TariError::AddressError(_) => "address",
+            TariError::ValidationError(_) => "validation",
+            TariError::RuntimeError(_) => "runtime",
+            TariError::KeyManagerError(_) => "key_manager",
+            TariError::InvalidHandle(_) => "invalid_handle",
+            TariError::InvalidArgument(_) => "invalid_argument",
+            TariError::InvalidInput(_) => "invalid_input",
+            TariError::NotImplemented(_) => "not_implemented",
+            TariError::NeonError(_) => "neon",
         }
     }
 }
