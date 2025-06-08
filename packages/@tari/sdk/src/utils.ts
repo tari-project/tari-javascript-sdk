@@ -1,329 +1,351 @@
-/**
- * Utility functions for Tari core operations
- */
+import { 
+  WalletHandle, 
+  AddressHandle, 
+  WalletConfig, 
+  AddressInfo,
+  TariFFIError,
+  TariErrorCode
+} from './types';
+import { 
+  createWallet, 
+  destroyWallet, 
+  getAddress, 
+  destroyAddress 
+} from './ffi';
 
-import { TariErrorCode } from './ffi-types';
+// =============================================================================
+// MEMORY MANAGEMENT UTILITIES - Mirror iOS RAII Pattern
+// These utilities ensure proper resource cleanup like iOS does
+// =============================================================================
 
 /**
- * Convert a hex string to a Uint8Array
+ * Execute a function with a wallet handle, ensuring cleanup
+ * Mirrors iOS RAII pattern for automatic resource management
+ * 
+ * @param config Wallet configuration
+ * @param operation Function to execute with wallet handle
+ * @returns Result of the operation
  */
-export function hexToBytes(hex: string): Uint8Array {
-  const cleanHex = hex.replace(/^0x/, '');
-  if (cleanHex.length % 2 !== 0) {
-    throw new Error('Invalid hex string: must have even length');
+export function withWallet<T>(
+  config: WalletConfig, 
+  operation: (handle: WalletHandle) => T
+): T {
+  const handle = createWallet(config);
+  try {
+    return operation(handle);
+  } finally {
+    safeDestroyWallet(handle);
   }
+}
+
+/**
+ * Execute a function with an address handle, ensuring cleanup
+ * Mirrors iOS RAII pattern for address resource management
+ * 
+ * @param walletHandle Wallet handle to get address from
+ * @param operation Function to execute with address info
+ * @returns Result of the operation
+ */
+export function withAddress<T>(
+  walletHandle: WalletHandle,
+  operation: (addressInfo: AddressInfo) => T
+): T {
+  const addressInfo = getAddress(walletHandle);
+  try {
+    return operation(addressInfo);
+  } finally {
+    safeDestroyAddress(addressInfo.handle);
+  }
+}
+
+/**
+ * Safely destroy wallet with error handling
+ * Mirrors iOS safe cleanup pattern
+ * 
+ * @param handle Wallet handle to destroy
+ */
+export function safeDestroyWallet(handle: WalletHandle): void {
+  try {
+    destroyWallet(handle);
+  } catch (error) {
+    console.warn('Failed to destroy wallet:', error);
+    // Don't throw, just log - this is cleanup code
+  }
+}
+
+/**
+ * Safely destroy address handle with error handling
+ * Mirrors iOS safe cleanup pattern
+ * 
+ * @param handle Address handle to destroy
+ */
+export function safeDestroyAddress(handle: AddressHandle): void {
+  try {
+    destroyAddress(handle);
+  } catch (error) {
+    console.warn('Failed to destroy address:', error);
+    // Don't throw, just log - this is cleanup code
+  }
+}
+
+// =============================================================================
+// ERROR HANDLING UTILITIES
+// =============================================================================
+
+/**
+ * Handle FFI errors consistently
+ * Mirrors iOS/Android error handling pattern
+ * 
+ * @param errorCode Error code from FFI
+ * @param context Context for the error
+ * @throws TariFFIError with mapped message
+ */
+export function handleFFIError(errorCode: number, context: string): never {
+  const error = mapErrorCode(errorCode);
+  throw new TariFFIError(`${context}: ${error.message}`, error.code);
+}
+
+/**
+ * Map FFI error codes to human-readable messages
+ * Mirrors iOS/Android error mapping
+ * 
+ * @param code Numeric error code
+ * @returns Error information
+ */
+export function mapErrorCode(code: number): { message: string; code: TariErrorCode } {
+  switch (code) {
+    case TariErrorCode.Success:
+      return { message: 'Success', code: TariErrorCode.Success };
+    case TariErrorCode.InvalidArgument:
+      return { message: 'Invalid argument provided', code: TariErrorCode.InvalidArgument };
+    case TariErrorCode.InvalidSeed:
+      return { message: 'Invalid seed words', code: TariErrorCode.InvalidSeed };
+    case TariErrorCode.NetworkError:
+      return { message: 'Network connection error', code: TariErrorCode.NetworkError };
+    case TariErrorCode.InsufficientBalance:
+      return { message: 'Insufficient balance for transaction', code: TariErrorCode.InsufficientBalance };
+    case TariErrorCode.TransactionError:
+      return { message: 'Transaction processing error', code: TariErrorCode.TransactionError };
+    case TariErrorCode.DatabaseError:
+      return { message: 'Database operation error', code: TariErrorCode.DatabaseError };
+    case TariErrorCode.KeyError:
+      return { message: 'Cryptographic key error', code: TariErrorCode.KeyError };
+    case TariErrorCode.AddressError:
+      return { message: 'Address validation error', code: TariErrorCode.AddressError };
+    case TariErrorCode.EncryptionError:
+      return { message: 'Encryption/decryption error', code: TariErrorCode.EncryptionError };
+    case TariErrorCode.ValidationError:
+      return { message: 'Data validation error', code: TariErrorCode.ValidationError };
+    case TariErrorCode.ConnectionError:
+      return { message: 'Connection establishment error', code: TariErrorCode.ConnectionError };
+    case TariErrorCode.SyncError:
+      return { message: 'Wallet synchronization error', code: TariErrorCode.SyncError };
+    case TariErrorCode.ConfigError:
+      return { message: 'Configuration error', code: TariErrorCode.ConfigError };
+    default:
+      return { message: 'Unknown error occurred', code: TariErrorCode.UnknownError };
+  }
+}
+
+// =============================================================================
+// CONVENIENCE FUNCTIONS (Like iOS Helper Methods)
+// =============================================================================
+
+/**
+ * Create a wallet with sensible defaults
+ * Mirrors iOS convenience initializers
+ * 
+ * @param seedWords Seed words for wallet
+ * @param network Network to use (defaults to Testnet)
+ * @returns Wallet handle
+ */
+export function createDefaultWallet(seedWords: string, network = 0): WalletHandle {
+  const config: WalletConfig = {
+    seedWords,
+    network,
+    dbPath: './tari-wallet-db',
+    dbName: 'tari_wallet'
+  };
   
-  const bytes = new Uint8Array(cleanHex.length / 2);
-  for (let i = 0; i < cleanHex.length; i += 2) {
-    bytes[i / 2] = parseInt(cleanHex.substr(i, 2), 16);
-  }
-  return bytes;
+  return createWallet(config);
 }
 
 /**
- * Convert a Uint8Array to a hex string
+ * Validate seed words format
+ * Mirrors iOS validation helpers
+ * 
+ * @param seedWords Seed words to validate
+ * @returns True if valid format
  */
-export function bytesToHex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-/**
- * Validate a Tari emoji ID format
- */
-export function isValidEmojiId(emojiId: string): boolean {
-  // Basic validation for emoji ID format
-  // Should be emojis separated by spaces or no spaces
-  const emojiRegex = /^[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]+$/u;
-  return emojiRegex.test(emojiId.replace(/\s/g, ''));
-}
-
-/**
- * Validate a Tari address (emoji ID or hex format)
- */
-export function validateAddress(address: string): boolean {
-  if (!address || typeof address !== 'string') {
+export function validateSeedWords(seedWords: string): boolean {
+  if (!seedWords || typeof seedWords !== 'string') {
     return false;
   }
   
-  // Check if it's an emoji address
-  if (/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(address)) {
-    // Should have at least 8 emojis for a valid address
-    const emojiCount = [...address].filter(char => 
-      /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(char)
-    ).length;
-    return emojiCount >= 8;
+  const words = seedWords.trim().split(/\s+/);
+  
+  // Check word count (common BIP39 lengths)
+  const validLengths = [12, 15, 18, 21, 24];
+  if (!validLengths.includes(words.length)) {
+    return false;
   }
   
-  // Check if it's a hex address (at least 32 chars)
-  const cleanHex = address.replace(/^0x/, '');
-  return /^[0-9a-fA-F]{32,}$/.test(cleanHex);
+  // Check each word is not empty
+  return words.every(word => word.length > 0);
 }
 
 /**
- * Validate a hex public key
+ * Validate emoji ID format
+ * Mirrors iOS validation helpers
+ * 
+ * @param emojiId Emoji ID to validate
+ * @returns True if valid format
  */
-export function isValidPublicKey(publicKey: string): boolean {
-  const cleanKey = publicKey.replace(/^0x/, '');
-  return /^[0-9a-fA-F]{64}$/.test(cleanKey);
-}
-
-/**
- * Validate a hex private key
- */
-export function isValidPrivateKey(privateKey: string): boolean {
-  const cleanKey = privateKey.replace(/^0x/, '');
-  return /^[0-9a-fA-F]{64}$/.test(cleanKey);
-}
-
-/**
- * Convert BigInt to string with proper handling
- */
-export function bigIntToString(value: bigint): string {
-  return value.toString();
-}
-
-/**
- * Convert string to BigInt with validation
- */
-export function stringToBigInt(value: string): bigint {
-  try {
-    return BigInt(value);
-  } catch (error) {
-    throw new Error(`Invalid number format: ${value}`);
-  }
-}
-
-/**
- * Safe number conversion that handles potential overflow
- */
-export function safeNumberConversion(value: string | number | bigint): number {
-  if (typeof value === 'number') {
-    return value;
+export function validateEmojiId(emojiId: string): boolean {
+  if (!emojiId || typeof emojiId !== 'string') {
+    return false;
   }
   
-  if (typeof value === 'string') {
-    const num = parseInt(value, 10);
-    if (isNaN(num)) {
-      throw new Error(`Invalid number: ${value}`);
-    }
-    return num;
-  }
-  
-  if (typeof value === 'bigint') {
-    if (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER) {
-      throw new Error(`Number overflow: ${value}`);
-    }
-    return Number(value);
-  }
-  
-  throw new Error(`Unsupported type for number conversion: ${typeof value}`);
+  // Basic format validation - adjust based on actual Tari emoji ID format
+  return emojiId.length > 0 && /^[\u{1F000}-\u{1F9FF}]+$/u.test(emojiId);
 }
 
 /**
- * Format a Tari amount for display (microTari to Tari)
+ * Format balance for display
+ * Mirrors iOS display helpers
+ * 
+ * @param amount Amount in microTari
+ * @param decimals Number of decimal places (default 6)
+ * @returns Formatted string
  */
-export function formatTariAmount(microTari: bigint | string, decimals: number = 6): string {
-  const amount = typeof microTari === 'string' ? BigInt(microTari) : microTari;
+export function formatBalance(amount: bigint, decimals: number = 6): string {
   const divisor = BigInt(10 ** decimals);
-  const wholePart = amount / divisor;
-  const fractionalPart = amount % divisor;
+  const whole = amount / divisor;
+  const remainder = amount % divisor;
   
-  if (fractionalPart === 0n) {
-    return wholePart.toString();
+  if (remainder === 0n) {
+    return whole.toString();
   }
   
-  const fractionalStr = fractionalPart.toString().padStart(decimals, '0');
-  const trimmed = fractionalStr.replace(/0+$/, '');
+  const remainderStr = remainder.toString().padStart(decimals, '0');
+  const trimmedRemainder = remainderStr.replace(/0+$/, '');
   
-  return trimmed ? `${wholePart}.${trimmed}` : wholePart.toString();
+  return `${whole}.${trimmedRemainder}`;
 }
 
 /**
- * Format a Tari amount for display with XTR suffix (microTari to Tari)
+ * Parse balance from string
+ * Mirrors iOS parsing helpers
+ * 
+ * @param balanceStr Balance string (e.g., "1.234567")
+ * @param decimals Number of decimal places (default 6)
+ * @returns Amount in microTari
  */
-export function formatTari(microTari: bigint | string, decimals: number = 6): string {
-  const amount = typeof microTari === 'string' ? BigInt(microTari) : microTari;
-  // microTari always uses 6 decimal places (1 Tari = 1,000,000 microTari)
-  const divisor = BigInt(10 ** 6);
-  const wholePart = amount / divisor;
-  const fractionalPart = amount % divisor;
-  
-  // Convert fractional part to string with 6 digits, then truncate to desired decimals
-  const fullFractionalStr = fractionalPart.toString().padStart(6, '0');
-  const fractionalStr = fullFractionalStr.slice(0, decimals);
-  
-  return `${wholePart}.${fractionalStr} XTR`;
-}
-
-/**
- * Parse a Tari amount from string (Tari to microTari)
- */
-export function parseTariAmount(amount: string, decimals: number = 6): bigint {
-  const [wholePart, fractionalPart = ''] = amount.split('.');
-  
-  if (fractionalPart.length > decimals) {
-    throw new Error(`Too many decimal places: maximum ${decimals} allowed`);
+export function parseBalance(balanceStr: string, decimals: number = 6): bigint {
+  if (!balanceStr || typeof balanceStr !== 'string') {
+    throw new TariFFIError('Invalid balance string', TariErrorCode.InvalidArgument);
   }
   
-  const paddedFractional = fractionalPart.padEnd(decimals, '0');
-  const microTari = BigInt(wholePart + paddedFractional);
-  
-  return microTari;
-}
-
-/**
- * Parse a Tari amount from string (Tari to microTari) with validation
- */
-export function parseTari(amount: string, decimals: number = 6): bigint {
-  if (!amount || typeof amount !== 'string') {
-    throw new Error('Invalid Tari amount format');
-  }
-  
-  // Remove any whitespace
-  const cleanAmount = amount.trim();
-  
-  // Check for multiple decimal points
-  const parts = cleanAmount.split('.');
+  const parts = balanceStr.trim().split('.');
   if (parts.length > 2) {
-    throw new Error('Invalid Tari amount format');
+    throw new TariFFIError('Invalid balance format', TariErrorCode.InvalidArgument);
   }
   
-  // Validate numeric format
-  if (!/^\d+(\.\d+)?$/.test(cleanAmount)) {
-    throw new Error('Invalid Tari amount format');
+  const wholePart = BigInt(parts[0] || '0');
+  const decimalPart = parts[1] || '0';
+  
+  if (decimalPart.length > decimals) {
+    throw new TariFFIError(`Too many decimal places (max ${decimals})`, TariErrorCode.InvalidArgument);
   }
   
-  return parseTariAmount(cleanAmount, decimals);
+  const paddedDecimal = decimalPart.padEnd(decimals, '0');
+  const decimalValue = BigInt(paddedDecimal);
+  const multiplier = BigInt(10 ** decimals);
+  
+  return wholePart * multiplier + decimalValue;
+}
+
+// =============================================================================
+// ASYNC UTILITIES (for Promise-based operations)
+// =============================================================================
+
+/**
+ * Execute wallet operation asynchronously with cleanup
+ * Useful for operations that might be long-running
+ * 
+ * @param config Wallet configuration
+ * @param operation Async function to execute
+ * @returns Promise with result
+ */
+export async function withWalletAsync<T>(
+  config: WalletConfig,
+  operation: (handle: WalletHandle) => Promise<T>
+): Promise<T> {
+  const handle = createWallet(config);
+  try {
+    return await operation(handle);
+  } finally {
+    safeDestroyWallet(handle);
+  }
 }
 
 /**
- * Sleep for specified milliseconds
+ * Execute address operation asynchronously with cleanup
+ * 
+ * @param walletHandle Wallet handle
+ * @param operation Async function to execute
+ * @returns Promise with result
  */
-export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export async function withAddressAsync<T>(
+  walletHandle: WalletHandle,
+  operation: (addressInfo: AddressInfo) => Promise<T>
+): Promise<T> {
+  const addressInfo = getAddress(walletHandle);
+  try {
+    return await operation(addressInfo);
+  } finally {
+    safeDestroyAddress(addressInfo.handle);
+  }
 }
+
+// =============================================================================
+// RETRY UTILITIES (for network operations)
+// =============================================================================
 
 /**
  * Retry an operation with exponential backoff
+ * Useful for network operations that might fail temporarily
+ * 
+ * @param operation Function to retry
+ * @param maxRetries Maximum number of retries
+ * @param baseDelay Base delay in milliseconds
+ * @returns Promise with result
  */
-export async function retryWithBackoff<T>(
+export async function withRetry<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
-  initialDelay: number = 1000,
-  backoffFactor: number = 2
+  baseDelay: number = 1000
 ): Promise<T> {
   let lastError: Error;
   
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
       lastError = error as Error;
       
-      if (attempt === maxRetries - 1) {
+      if (attempt === maxRetries) {
         break;
       }
       
-      const delay = initialDelay * Math.pow(backoffFactor, attempt);
-      await sleep(delay);
+      const delay = baseDelay * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
-  throw lastError!;
-}
-
-/**
- * Create a timeout promise that rejects after specified time
- */
-export function createTimeout<T>(ms: number, message?: string): Promise<T> {
-  return new Promise((_, reject) => {
-    setTimeout(() => {
-      reject(new Error(message || `Operation timed out after ${ms}ms`));
-    }, ms);
-  });
-}
-
-/**
- * Race a promise against a timeout
- */
-export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message?: string): Promise<T> {
-  return Promise.race([
-    promise,
-    createTimeout<T>(timeoutMs, message)
-  ]);
-}
-
-/**
- * Convert error code to human readable message
- */
-export function getErrorMessage(code: TariErrorCode): string {
-  switch (code) {
-    case TariErrorCode.NoError:
-      return 'No error';
-    case TariErrorCode.InvalidArgument:
-      return 'Invalid argument provided';
-    case TariErrorCode.InvalidSeed:
-      return 'Invalid seed phrase';
-    case TariErrorCode.NetworkError:
-      return 'Network error occurred';
-    case TariErrorCode.InsufficientBalance:
-      return 'Insufficient balance for transaction';
-    case TariErrorCode.TransactionError:
-      return 'Transaction error';
-    case TariErrorCode.DatabaseError:
-      return 'Database error';
-    case TariErrorCode.KeyError:
-      return 'Cryptographic key error';
-    case TariErrorCode.AddressError:
-      return 'Address validation error';
-    case TariErrorCode.EncryptionError:
-      return 'Encryption/decryption error';
-    case TariErrorCode.ValidationError:
-      return 'Validation error';
-    case TariErrorCode.ConnectionError:
-      return 'Connection error';
-    case TariErrorCode.SyncError:
-      return 'Synchronization error';
-    case TariErrorCode.ConfigError:
-      return 'Configuration error';
-    case TariErrorCode.UnknownError:
-    default:
-      return 'Unknown error occurred';
-  }
-}
-
-// BIP39 word list subset for testing (in production this would be the full list)
-const BIP39_WORDLIST = [
-  'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
-  'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
-  'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual',
-  'adapt', 'add', 'addict', 'address', 'adjust', 'admit', 'adult', 'advance',
-  'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'age', 'agent',
-  'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm', 'album',
-  'alcohol', 'alert', 'alien', 'all', 'alley', 'allow', 'almost', 'alone',
-  'alpha', 'already', 'also', 'alter', 'always', 'amateur', 'amazing', 'among',
-  // ... would continue with full 2048 word list in production
-  'zone', 'zoo'
-];
-
-/**
- * Generate BIP39 seed words for wallet creation
- */
-export function generateSeedWords(wordCount: number = 24): string {
-  const validCounts = [12, 15, 18, 21, 24];
-  
-  if (!validCounts.includes(wordCount)) {
-    throw new Error('Invalid word count. Must be 12, 15, 18, 21, or 24');
-  }
-  
-  const words: string[] = [];
-  
-  for (let i = 0; i < wordCount; i++) {
-    const randomIndex = Math.floor(Math.random() * BIP39_WORDLIST.length);
-    words.push(BIP39_WORDLIST[randomIndex]);
-  }
-  
-  return words.join(' ');
+  throw new TariFFIError(
+    `Operation failed after ${maxRetries + 1} attempts: ${lastError.message}`,
+    TariErrorCode.NetworkError,
+    { originalError: lastError, attempts: maxRetries + 1 }
+  );
 }
