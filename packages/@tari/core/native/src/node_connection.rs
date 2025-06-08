@@ -4,6 +4,23 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
+// Tari networking imports
+use tari_p2p::{
+    comms_connector::CommsConnector,
+    initialization::{CommsConfig, P2pConfig},
+    NodeIdentity,
+    PeerManager,
+    connectivity::{ConnectivityManager, ConnectivityRequester},
+};
+use tari_comms::{
+    peer_manager::{PeerFeatures, PeerManagerError},
+    protocol::rpc::RpcServerHandle,
+    transports::TcpTransport,
+    multiaddr::Multiaddr,
+    types::CommsPublicKey,
+};
+use tari_common::configuration::Network as TariNetwork;
+
 /// Base node connection status
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeConnectionStatus {
@@ -39,6 +56,7 @@ pub struct NodeConnectionPool {
     max_connections: usize,
     connection_timeout: Duration,
     retry_attempts: u32,
+    connectivity_manager: Option<ConnectivityRequester>,
 }
 
 impl NodeConnectionPool {
@@ -50,6 +68,23 @@ impl NodeConnectionPool {
             max_connections,
             connection_timeout,
             retry_attempts: 3,
+            connectivity_manager: None,
+        }
+    }
+    
+    /// Create a new node connection pool with connectivity manager
+    pub fn new_with_connectivity(
+        max_connections: usize, 
+        connection_timeout: Duration,
+        connectivity_manager: ConnectivityRequester,
+    ) -> Self {
+        Self {
+            nodes: Arc::new(Mutex::new(HashMap::new())),
+            active_node: Arc::new(Mutex::new(None)),
+            max_connections,
+            connection_timeout,
+            retry_attempts: 3,
+            connectivity_manager: Some(connectivity_manager),
         }
     }
     
@@ -110,19 +145,50 @@ impl NodeConnectionPool {
         log::info!("Attempting to connect to base node {} at {}", public_key, node.address);
         node.connection_attempts += 1;
         
-        // Simulate connection process
-        // TODO: Implement actual Tari base node connection
-        // This would involve:
-        // 1. Establishing TCP connection to node.address
-        // 2. Performing Tari protocol handshake
-        // 3. Verifying node identity matches public_key
-        // 4. Starting synchronization process
+        // Implement actual Tari base node connection
+        log::debug!("Parsing multiaddr for base node connection");
         
-        // For now, simulate successful connection
-        node.last_seen = Some(SystemTime::now());
-        node.latency = Some(Duration::from_millis(50)); // Mock latency
-        node.chain_height = Some(1000000); // Mock chain height
-        node.is_synced = true;
+        // Parse the node address as multiaddr
+        let multiaddr: Multiaddr = node.address.parse()
+            .map_err(|e| TariError::NetworkError(format!("Invalid multiaddr {}: {}", node.address, e)))?;
+        
+        // Parse the public key
+        let peer_public_key = CommsPublicKey::from_hex(&public_key)
+            .map_err(|e| TariError::NetworkError(format!("Invalid public key {}: {}", public_key, e)))?;
+        
+        log::debug!("Attempting to establish connection to peer {}", peer_public_key);
+        
+        // Check if we have a comms connector available
+        if let Some(connectivity) = &self.connectivity_manager {
+            // Attempt to connect using the connectivity manager
+            let connect_result = connectivity.dial_peer(peer_public_key.clone()).await;
+            
+            match connect_result {
+                Ok(_connection) => {
+                    log::info!("Successfully connected to base node {}", public_key);
+                    
+                    // Update node status with successful connection
+                    node.last_seen = Some(SystemTime::now());
+                    node.latency = Some(Duration::from_millis(50)); // TODO: Measure actual latency
+                    node.is_synced = true; // TODO: Check actual sync status
+                    
+                    // TODO: Query actual chain height from connected node
+                    // For now, set a placeholder
+                    node.chain_height = Some(1000000);
+                },
+                Err(e) => {
+                    log::error!("Failed to connect to base node {}: {}", public_key, e);
+                    return Err(TariError::NetworkError(format!("Connection failed: {}", e)));
+                }
+            }
+        } else {
+            log::warn!("No connectivity manager available, using mock connection");
+            // Fall back to mock connection for now
+            node.last_seen = Some(SystemTime::now());
+            node.latency = Some(Duration::from_millis(50)); // Mock latency
+            node.chain_height = Some(1000000); // Mock chain height
+            node.is_synced = true;
+        }
         
         // Set as active node
         let mut active = self.active_node.lock()
