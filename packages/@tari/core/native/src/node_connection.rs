@@ -462,7 +462,7 @@ impl PeerDiscovery {
         use trust_dns_resolver::lookup::TxtLookup;
         
         // Query TXT records for Tari peer information
-        let txt_lookup = resolver.txt_lookup(seed).await
+        let txt_lookup = resolver.txt_lookup(seed)
             .map_err(|e| TariError::NetworkError(format!("DNS TXT lookup failed for {}: {}", seed, e)))?;
         
         let mut nodes = Vec::new();
@@ -730,13 +730,15 @@ impl NetworkSyncManager {
         
         // For now, simulate getting chain metadata
         // TODO: Replace with actual Tari P2P metadata request
-        let metadata = ChainMetadata::new(
-            1000, // best_block_height - simulated
-            Vec::new(), // best_block_hash
-            0, // pruned_height  
-            0, // timestamp
-            0, // accumulated_difficulty
-        );
+        
+        // Return basic simulated metadata for now
+        let metadata = match ChainMetadata::new(1000, [0u8; 32].into(), 0, 0, Default::default(), 0) {
+            Ok(meta) => meta,
+            Err(_) => {
+                // If construction fails, return error with message
+                return Err(TariError::NetworkError("Failed to create chain metadata".to_string()));
+            }
+        };
         
         Ok(metadata)
     }

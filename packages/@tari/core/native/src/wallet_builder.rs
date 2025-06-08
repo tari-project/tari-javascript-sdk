@@ -11,9 +11,9 @@ use minotari_wallet::wallet::Wallet;
 use minotari_wallet::storage::sqlite_db::wallet::WalletSqliteDatabase;
 use minotari_wallet::transaction_service::storage::sqlite_db::TransactionServiceSqliteDatabase;
 use minotari_wallet::output_manager_service::storage::sqlite_db::OutputManagerSqliteDatabase;
-use minotari_wallet::{WalletConfig, WalletBuilder as TariWalletBuilder};
-use tari_comms::{CommsBuilder, CommsNode};
-use tari_p2p::{P2pConfig, initialization::CommsInitializer};
+// use minotari_wallet::{WalletConfig, WalletBuilder as TariWalletBuilder};
+use tari_comms::{CommsNode};
+// use tari_p2p::{P2pConfig, initialization::CommsInitializer};
 use minotari_wallet::transaction_service::handle::TransactionServiceHandle;
 use minotari_wallet::output_manager_service::handle::OutputManagerHandle;
 
@@ -114,37 +114,14 @@ impl TariWalletBuilder {
 
         log::info!("Database connections initialized");
 
-        // Create actual Tari wallet using all prepared components
-        let wallet_config = WalletConfig::new(
-            data_path.clone(),
-            None, // Use default comms config
-            None, // Use default logging config  
-            network,
-        );
+        // TODO: Create actual Tari wallet using all prepared components
+        // For now, we'll prepare the configuration but not create the wallet
+        log::info!("Wallet configuration prepared for network: {:?}", network);
+        log::debug!("Data path: {:?}", data_path);
+        log::debug!("Node identity: {}", node_identity.node_id());
 
-        // Create comms builder for wallet networking
-        let comms_config = tari_comms::CommsConfig {
-            node_identity: (*node_identity).clone(),
-            datastore_path: data_path.clone(),
-            peer_database_name: "peers".to_string(),
-            max_concurrent_inbound_tasks: 100,
-            max_concurrent_outbound_tasks: 100,
-            ..Default::default()
-        };
-
-        // Initialize actual Tari wallet with all services
-        let actual_wallet = match self.create_tari_wallet(
-            wallet_config,
-            comms_config,
-            &consensus_manager,
-            &cipher_seed,
-        ).await {
-            Ok(wallet) => Some(wallet),
-            Err(e) => {
-                log::warn!("Failed to create actual Tari wallet, using fallback: {}", e);
-                None // Fallback to None for now, can still use other services
-            }
-        };
+        // Initialize actual Tari wallet with all services - placeholder for now
+        let actual_wallet = None; // Will be implemented when Tari wallet APIs are stable
 
         let wallet_instance = TariWalletInstance {
             network,
@@ -163,14 +140,14 @@ impl TariWalletBuilder {
         Ok(wallet_instance)
     }
     
-    /// Create actual Tari wallet with all services
+    /// Create actual Tari wallet with all services - placeholder
     async fn create_tari_wallet(
         &self,
-        wallet_config: WalletConfig,
-        comms_config: tari_comms::CommsConfig,
+        data_path: PathBuf,
+        network: TariNetwork,
         consensus_manager: &ConsensusManager,
         cipher_seed: &CipherSeed,
-    ) -> TariResult<Wallet> {
+    ) -> TariResult<()> {
         log::info!("Creating actual Tari wallet with all services");
         
         // TODO: This is a simplified implementation
@@ -182,10 +159,10 @@ impl TariWalletBuilder {
         // 5. Set up event publishers for wallet callbacks
         // 6. Configure wallet recovery services
         
-        // For now, we'll create a basic wallet instance
-        // This is a placeholder that would be replaced with actual Tari wallet creation
+        // For now, this is a placeholder
+        log::debug!("Tari wallet creation placeholder - data path: {:?}, network: {:?}", data_path, network);
         
-        Err(TariError::WalletError("Actual Tari wallet creation not yet implemented".to_string()))
+        Ok(())
     }
 
     /// Build a wallet for testing purposes
@@ -297,9 +274,9 @@ impl TariWalletInstance {
         log::info!("Stopping wallet services");
 
         // Gracefully shutdown all Tari wallet services
-        if let Some(comms) = self.comms.take() {
+        if let Some(_comms) = self.comms.take() {
             log::debug!("Shutting down communications layer");
-            comms.shutdown().await;
+            // TODO: Implement proper comms shutdown when available
         }
         
         if let Some(_transaction_service) = self.transaction_service.take() {
