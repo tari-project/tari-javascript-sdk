@@ -8,6 +8,7 @@
 
 import { TariError, ErrorCode } from '../errors/index.js';
 import type { WalletHandle } from './types.js';
+import { trackResource, untrackResource } from './tracker.js';
 
 /**
  * Type for resource disposal logic
@@ -66,12 +67,14 @@ export abstract class FFIResource implements Disposable {
   private readonly resourceType: ResourceType;
   private readonly createdAt: Date;
   private readonly creationStack?: string;
+  private readonly trackingId: string;
   private disposed = false;
 
   protected constructor(
     resourceType: ResourceType,
     disposalLogic: DisposalLogic,
-    captureStack = process.env.NODE_ENV === 'development'
+    captureStack = process.env.NODE_ENV === 'development',
+    tags?: string[]
   ) {
     this.resourceType = resourceType;
     this.disposalLogic = disposalLogic;
@@ -81,6 +84,9 @@ export abstract class FFIResource implements Disposable {
     if (captureStack) {
       this.creationStack = new Error().stack;
     }
+
+    // Register with global resource tracker
+    this.trackingId = trackResource(this, resourceType, this.getHandle?.(), tags);
 
     // Register with FinalizationRegistry for GC cleanup
     FFIResource.registry.register(
@@ -115,6 +121,9 @@ export abstract class FFIResource implements Disposable {
     this.disposed = true;
 
     try {
+      // Unregister from resource tracker
+      untrackResource(this);
+
       // Unregister from FinalizationRegistry to prevent double cleanup
       FFIResource.registry.unregister(this);
 
@@ -136,6 +145,7 @@ export abstract class FFIResource implements Disposable {
           resourceType: this.resourceType,
           handle: this.getHandle?.(),
           createdAt: this.createdAt,
+          trackingId: this.trackingId,
         }
       );
     }
@@ -211,6 +221,13 @@ export abstract class FFIResource implements Disposable {
       createdAt: this.createdAt,
       stack: this.creationStack ? this.creationStack.split('\n').slice(0, 10) : undefined,
     };
+  }
+
+  /**
+   * Get tracking ID for this resource
+   */
+  get trackingId(): string {
+    return this.trackingId;
   }
 
   /**

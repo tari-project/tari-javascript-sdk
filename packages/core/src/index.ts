@@ -23,6 +23,8 @@ export * from './utils/index';
 // FFI resource management (Task 4+)
 export * from './ffi/resource';
 export * from './ffi/handle';
+export * from './ffi/tracker';
+export * from './ffi/diagnostics';
 
 // Version information
 export const VERSION = '0.0.1';
