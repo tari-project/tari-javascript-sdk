@@ -4,7 +4,7 @@
  */
 
 import { TariError, ErrorCode } from '../errors/index.js';
-import { generateResourceDiagnostics } from './diagnostics.js';
+import { generateResourceReport } from './diagnostics.js';
 import { getPlatformOptimizations, getPlatformManager } from './platform-utils.js';
 import { getMemoryMonitor, checkMemoryPressure } from './memory.js';
 
@@ -31,6 +31,21 @@ export interface CallContext {
   startTime: number;
   /** Tags for categorization */
   tags?: string[];
+}
+
+/**
+ * Converts CallContext to a record for error metadata
+ */
+function callContextToRecord(context?: CallContext): Record<string, unknown> {
+  if (!context) return {};
+  
+  return {
+    requestId: context.requestId,
+    method: context.method,
+    startTime: context.startTime,
+    metadata: context.metadata,
+    tags: context.tags,
+  };
 }
 
 /**
@@ -97,7 +112,7 @@ export enum ErrorClassification {
 export class FFICallError extends TariError {
   public readonly classification: ErrorClassification;
   public readonly isRetryable: boolean;
-  public readonly context?: CallContext;
+  public readonly callContext?: CallContext;
 
   constructor(
     message: string,
@@ -110,12 +125,12 @@ export class FFICallError extends TariError {
       message,
       classification === ErrorClassification.Retryable,
       cause,
-      { classification, context }
+      { classification, context: callContextToRecord(context) }
     );
     
     this.classification = classification;
     this.isRetryable = classification === ErrorClassification.Retryable;
-    this.context = context;
+    this.callContext = context;
   }
 }
 
@@ -243,7 +258,8 @@ export class FFICallManager {
     // Get platform-specific optimizations
     const platformOpts = getPlatformOptimizations();
     
-    this.defaultOptions = {
+    // Create base defaults
+    const baseDefaults = {
       maxRetries: 3,
       backoffBase: 1000,
       maxBackoffDelay: 30000,
@@ -253,12 +269,18 @@ export class FFICallManager {
       timeout: 60000,
       context: {},
       tags: [],
-      // Apply platform-specific defaults
-      ...{
-        maxRetries: Math.min(5, Math.max(2, Math.floor(platformOpts.concurrencyLimit / 2))),
-        circuitBreakerThreshold: Math.max(3, Math.floor(platformOpts.concurrencyLimit * 0.8)),
-        timeout: Math.min(120000, platformOpts.memoryPressureThreshold * 100), // Scale with memory
-      },
+    };
+
+    // Apply platform-specific optimizations
+    const platformDefaults = {
+      maxRetries: Math.min(5, Math.max(2, Math.floor(platformOpts.concurrencyLimit / 2))),
+      circuitBreakerThreshold: Math.max(3, Math.floor(platformOpts.concurrencyLimit * 0.8)),
+      timeout: Math.min(120000, platformOpts.memoryPressureThreshold * 100), // Scale with memory
+    };
+
+    this.defaultOptions = {
+      ...baseDefaults,
+      ...platformDefaults,
       ...options,
     };
 
@@ -542,11 +564,11 @@ export class FFICallManager {
    */
   generateDiagnosticReport(): {
     callStats: ReturnType<FFICallManager['getStats']>;
-    resourceHealth: ReturnType<typeof generateResourceDiagnostics>;
+    resourceHealth: ReturnType<typeof generateResourceReport>;
     recommendations: string[];
   } {
     const callStats = this.getStats();
-    const resourceHealth = generateResourceDiagnostics();
+    const resourceHealth = generateResourceReport();
     const recommendations: string[] = [];
 
     // Generate recommendations based on metrics

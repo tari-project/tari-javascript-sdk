@@ -359,7 +359,7 @@ export class FFIDebug {
       recentErrors: errorLogs.slice(-10),
       slowCalls,
       systemInfo: {
-        platform: getPlatformManager().getConfig(),
+        platform: getPlatformManager().getConfig().platform,
         memory: getMemoryMonitor().getStats(),
         resources: getResourceTracker().getStats(),
         calls: getCallManager().getStats(),
@@ -539,35 +539,35 @@ export class FFIDebug {
  */
 export class DebugLogger {
   constructor(
-    private readonly debug: FFIDebug,
+    private readonly debugInstance: FFIDebug,
     private readonly namespace: string
   ) {}
 
   error(message: string, data?: unknown, requestId?: string): void {
-    this.debug.log(DebugLevel.Error, this.namespace, message, data, requestId);
+    this.debugInstance.log(DebugLevel.Error, this.namespace, message, data, requestId);
   }
 
   warn(message: string, data?: unknown, requestId?: string): void {
-    this.debug.log(DebugLevel.Warn, this.namespace, message, data, requestId);
+    this.debugInstance.log(DebugLevel.Warn, this.namespace, message, data, requestId);
   }
 
   info(message: string, data?: unknown, requestId?: string): void {
-    this.debug.log(DebugLevel.Info, this.namespace, message, data, requestId);
+    this.debugInstance.log(DebugLevel.Info, this.namespace, message, data, requestId);
   }
 
   debug(message: string, data?: unknown, requestId?: string): void {
-    this.debug.log(DebugLevel.Debug, this.namespace, message, data, requestId);
+    this.debugInstance.log(DebugLevel.Debug, this.namespace, message, data, requestId);
   }
 
   trace(message: string, data?: unknown, requestId?: string): void {
-    this.debug.log(DebugLevel.Trace, this.namespace, message, data, requestId);
+    this.debugInstance.log(DebugLevel.Trace, this.namespace, message, data, requestId);
   }
 
   /**
    * Create a child logger with extended namespace
    */
   child(suffix: string): DebugLogger {
-    return new DebugLogger(this.debug, `${this.namespace}:${suffix}`);
+    return new DebugLogger(this.debugInstance, `${this.namespace}:${suffix}`);
   }
 }
 

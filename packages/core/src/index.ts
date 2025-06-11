@@ -18,7 +18,16 @@
 // Re-export everything from submodules for clean API
 export * from './types/index';
 export * from './errors/index';
-export * from './utils/index';
+// Export utils but exclude conflicting exports
+export {
+  validateRequired,
+  validatePositive,
+  isHexString,
+  isBase58String,
+  withTimeout,
+  type Awaitable,
+  type Optional,
+} from './utils/index';
 
 // FFI resource management (Task 4+)
 export * from './ffi/resource';

@@ -6,7 +6,7 @@
 import { FFIResource, ResourceType } from './ffi/resource.js';
 import { HandleFactory, type ResourceHandle } from './ffi/handle.js';
 import { getFFIBindings } from './ffi/bindings.js';
-import { executeFFICall, type CallOptions } from './ffi/call-manager.js';
+import { FFICallManager, type CallOptions } from './ffi/call-manager.js';
 import { getRetryPolicyForOperation, policyToCallOptions } from './ffi/retry.js';
 import { TariError, ErrorCode } from './errors/index.js';
 import type { 
@@ -20,7 +20,7 @@ import {
   validateFFIWalletConfig,
   validateTransactionAmount,
   validateTariAddress,
-  createWalletHandle,
+  createWalletHandle as createWalletHandleType,
   unwrapWalletHandle 
 } from './ffi/types.js';
 
@@ -68,10 +68,15 @@ export interface WalletOperationResult<T> {
  * - Performance monitoring and diagnostics
  */
 export class WalletHandleWrapper extends FFIResource {
-  private readonly resourceHandle: ResourceHandle;
+  private readonly handle: WalletHandle;
   private readonly config: FFIWalletConfig;
   private readonly defaultCallOptions: Partial<CallOptions>;
   private readonly bindings = getFFIBindings();
+  private readonly handleWrapper: ResourceHandle;
+  
+  private get callManager() {
+    return FFICallManager.getInstance();
+  }
 
   private constructor(config: WalletHandleConfig) {
     // Initialize FFI resource with disposal logic
@@ -79,7 +84,7 @@ export class WalletHandleWrapper extends FFIResource {
       ResourceType.Wallet,
       async () => {
         try {
-          await this.bindings.destroyWallet(this.resourceHandle.getValue());
+          await this.bindings.destroyWallet(this.handle);
         } catch (error) {
           console.error('Error during wallet destruction:', error);
         }
@@ -88,15 +93,10 @@ export class WalletHandleWrapper extends FFIResource {
       config.tags
     );
 
+    this.handle = config.handle;
     this.config = { ...config.config };
     this.defaultCallOptions = config.callOptions || {};
-    
-    // Create resource handle for tracking
-    this.resourceHandle = HandleFactory.createWallet(
-      config.handle,
-      this.bindings,
-      true
-    );
+    this.handleWrapper = HandleFactory.createWallet(this.handle, this.bindings, true);
   }
 
   /**
@@ -151,7 +151,7 @@ export class WalletHandleWrapper extends FFIResource {
    */
   getHandle(): WalletHandle {
     this.ensureNotDisposed();
-    return this.resourceHandle.getValue();
+    return this.handle;
   }
 
   /**
@@ -171,14 +171,7 @@ export class WalletHandleWrapper extends FFIResource {
     const callOptions = this.mergeCallOptions('wallet_get_balance', options);
     const startTime = Date.now();
     
-    const result = await executeFFICall(
-      'walletGetBalance',
-      async (handle: number) => {
-        return this.bindings.getBalance(createWalletHandle(handle), callOptions);
-      },
-      [unwrapWalletHandle(this.getHandle())],
-      callOptions
-    );
+    const result = await this.bindings.getBalance(this.getHandle(), callOptions);
 
     return {
       result,
@@ -197,12 +190,10 @@ export class WalletHandleWrapper extends FFIResource {
     const callOptions = this.mergeCallOptions('wallet_get_address', options);
     const startTime = Date.now();
     
-    const result = await executeFFICall(
-      'walletGetAddress',
-      async (handle: number) => {
-        return this.bindings.getAddress(createWalletHandle(handle), callOptions);
-      },
-      [unwrapWalletHandle(this.getHandle())],
+    const result = await this.callManager.execute(
+      'wallet_get_address',
+      (handle: WalletHandle) => this.bindings.getAddress(handle),
+      [this.getHandle()],
       callOptions
     );
 
@@ -232,18 +223,11 @@ export class WalletHandleWrapper extends FFIResource {
     const mergedCallOptions = this.mergeCallOptions('send_transaction', callOptions);
     const startTime = Date.now();
     
-    const result = await executeFFICall(
-      'walletSendTransaction',
-      async (handle: number, address: string, amt: string, opts?: FFISendTransactionOptions) => {
-        return this.bindings.sendTransaction(
-          createWalletHandle(handle),
-          address,
-          amt,
-          opts,
-          mergedCallOptions
-        );
-      },
-      [unwrapWalletHandle(this.getHandle()), recipientAddress, amount, transactionOptions],
+    const result = await this.callManager.execute(
+      'send_transaction',
+      (handle: WalletHandle, addr: string, amt: string, opts?: FFISendTransactionOptions) => 
+        this.bindings.sendTransaction(handle, addr, amt, opts),
+      [this.getHandle(), recipientAddress, amount, transactionOptions],
       mergedCallOptions
     );
 
@@ -264,12 +248,10 @@ export class WalletHandleWrapper extends FFIResource {
     const callOptions = this.mergeCallOptions('wallet_get_seed_words', options);
     const startTime = Date.now();
     
-    const result = await executeFFICall(
-      'walletGetSeedWords',
-      async (handle: number) => {
-        return this.bindings.getSeedWords(createWalletHandle(handle), callOptions);
-      },
-      [unwrapWalletHandle(this.getHandle())],
+    const result = await this.callManager.execute(
+      'wallet_get_seed_words',
+      (handle: WalletHandle) => this.bindings.getSeedWords(handle),
+      [this.getHandle()],
       callOptions
     );
 
@@ -293,12 +275,10 @@ export class WalletHandleWrapper extends FFIResource {
     const callOptions = this.mergeCallOptions('base_node_connect', options);
     const startTime = Date.now();
     
-    const result = await executeFFICall(
-      'walletSetBaseNode',
-      async (handle: number, node: FFIBaseNodePeer) => {
-        return this.bindings.setBaseNode(createWalletHandle(handle), node, callOptions);
-      },
-      [unwrapWalletHandle(this.getHandle()), baseNode],
+    const result = await this.callManager.execute(
+      'wallet_set_base_node',
+      (handle: WalletHandle, node: FFIBaseNodePeer) => this.bindings.setBaseNode(handle, node),
+      [this.getHandle(), baseNode],
       callOptions
     );
 
@@ -321,12 +301,10 @@ export class WalletHandleWrapper extends FFIResource {
     try {
       const callOptions = this.mergeCallOptions('validate_handle', options);
       
-      return await executeFFICall(
-        'walletValidateHandle',
-        async (handle: number) => {
-          return this.bindings.validateHandle(createWalletHandle(handle));
-        },
-        [unwrapWalletHandle(this.getHandle())],
+      return await this.callManager.execute(
+        'wallet_validate_handle',
+        (handle: WalletHandle) => this.bindings.validateHandle(handle),
+        [this.getHandle()],
         callOptions
       );
     } catch {
@@ -335,9 +313,9 @@ export class WalletHandleWrapper extends FFIResource {
   }
 
   /**
-   * Get handle metadata and resource information
+   * Get extended wallet handle information (not overriding base class)
    */
-  getResourceInfo(): {
+  getWalletInfo(): {
     handle: WalletHandle;
     config: Omit<FFIWalletConfig, 'passphrase' | 'seedWords'>;
     metadata: ReturnType<ResourceHandle['getMetadata']>;
@@ -346,7 +324,7 @@ export class WalletHandleWrapper extends FFIResource {
     return {
       handle: this.getHandle(),
       config: this.getConfig(),
-      metadata: this.resourceHandle.getMetadata(),
+      metadata: this.handleWrapper.getMetadata(),
       resourceInfo: super.getResourceInfo(),
     };
   }
@@ -354,8 +332,8 @@ export class WalletHandleWrapper extends FFIResource {
   /**
    * Override getHandle for base class integration
    */
-  protected getHandle(): WalletHandle {
-    return this.resourceHandle.getValue();
+  protected getHandleForBase(): WalletHandle {
+    return this.handle;
   }
 
   /**

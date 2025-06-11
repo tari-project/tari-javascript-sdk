@@ -35,6 +35,7 @@ module.exports = {
   // Mock configuration for FFI testing
   moduleNameMapper: {
     '^../native\\.js$': '<rootDir>/src/ffi/__mocks__/native.ts',
+    '^(.*)\\.js$': '$1',
   },
   
   // Test timeout for FFI operations

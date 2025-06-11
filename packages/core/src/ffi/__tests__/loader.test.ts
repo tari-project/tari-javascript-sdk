@@ -2,8 +2,8 @@
  * Test suite for native module loader with mock integration
  */
 
-import { NativeModuleLoader, loadNativeModule, getNativeModule } from '../loader.js';
-import { getMockNativeBindings, resetMockNativeBindings } from '../__mocks__/native.js';
+import { NativeModuleLoader, loadNativeModule, getNativeModule } from '../loader';
+import { getMockNativeBindings, resetMockNativeBindings } from '../__mocks__/native';
 
 // Mock the native module loading
 jest.mock('../native.js', () => {

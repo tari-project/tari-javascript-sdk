@@ -65,9 +65,9 @@ export abstract class FFIResource implements Disposable {
 
   private readonly disposalLogic: DisposalLogic;
   private readonly resourceType: ResourceType;
-  private readonly createdAt: Date;
+  private readonly resourceCreatedAt: Date;
   private readonly creationStack?: string;
-  private readonly trackingId: string;
+  private readonly resourceTrackingId: string;
   private disposed = false;
 
   protected constructor(
@@ -78,7 +78,7 @@ export abstract class FFIResource implements Disposable {
   ) {
     this.resourceType = resourceType;
     this.disposalLogic = disposalLogic;
-    this.createdAt = new Date();
+    this.resourceCreatedAt = new Date();
     
     // Capture stack trace for leak debugging in development
     if (captureStack) {
@@ -86,7 +86,7 @@ export abstract class FFIResource implements Disposable {
     }
 
     // Register with global resource tracker
-    this.trackingId = trackResource(this, resourceType, this.getHandle?.(), tags);
+    this.resourceTrackingId = trackResource(this, resourceType, this.getHandle?.(), tags);
 
     // Register with FinalizationRegistry for GC cleanup
     FFIResource.registry.register(
@@ -144,8 +144,8 @@ export abstract class FFIResource implements Disposable {
         {
           resourceType: this.resourceType,
           handle: this.getHandle?.(),
-          createdAt: this.createdAt,
-          trackingId: this.trackingId,
+          createdAt: this.resourceCreatedAt,
+          trackingId: this.resourceTrackingId,
         }
       );
     }
@@ -169,7 +169,7 @@ export abstract class FFIResource implements Disposable {
    * Get creation timestamp
    */
   get createdAt(): Date {
-    return this.createdAt;
+    return this.resourceCreatedAt;
   }
 
   /**
@@ -218,7 +218,7 @@ export abstract class FFIResource implements Disposable {
       type: this.resourceType,
       handle: this.getHandle?.(),
       disposed: this.disposed,
-      createdAt: this.createdAt,
+      createdAt: this.resourceCreatedAt,
       stack: this.creationStack ? this.creationStack.split('\n').slice(0, 10) : undefined,
     };
   }
@@ -227,7 +227,7 @@ export abstract class FFIResource implements Disposable {
    * Get tracking ID for this resource
    */
   get trackingId(): string {
-    return this.trackingId;
+    return this.resourceTrackingId;
   }
 
   /**

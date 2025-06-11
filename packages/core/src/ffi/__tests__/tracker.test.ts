@@ -9,9 +9,9 @@ import {
   untrackResource,
   detectResourceLeaks,
   getResourceStats
-} from '../tracker.js';
-import { FFIResource, ResourceType } from '../resource.js';
-import type { WalletHandle } from '../types.js';
+} from '../tracker';
+import { FFIResource, ResourceType } from '../resource';
+import type { WalletHandle } from '../types';
 
 // Mock FFIResource for testing
 class MockResource extends FFIResource {

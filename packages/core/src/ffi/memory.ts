@@ -100,11 +100,11 @@ export interface MemoryStats {
  * Memory event types
  */
 export interface MemoryEvents {
-  'pressure-change': (info: MemoryPressureInfo) => void;
-  'gc-triggered': (usage: MemoryUsage) => void;
-  'cleanup-triggered': (resourceCount: number) => void;
-  'memory-leak-detected': (growthRate: number) => void;
-  'stats-updated': (stats: MemoryStats) => void;
+  'pressure-change': [info: MemoryPressureInfo];
+  'gc-triggered': [usage: MemoryUsage];
+  'cleanup-triggered': [resourceCount: number];
+  'memory-leak-detected': [growthRate: number];
+  'stats-updated': [stats: MemoryStats];
 }
 
 /**
@@ -551,7 +551,7 @@ export function getMemoryStats(): MemoryStats {
  * Start memory monitoring
  */
 export function startMemoryMonitoring(config?: Partial<MemoryMonitorConfig>): void {
-  const monitor = config ? new MemoryMonitor(config) : getMemoryMonitor();
+  const monitor = getMemoryMonitor();
   monitor.start();
 }
 

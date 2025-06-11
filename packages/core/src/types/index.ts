@@ -30,11 +30,6 @@ export interface BaseConfig {
 // FFI handle types (placeholders for now)
 export type NativeHandle = bigint;
 
-export interface FFIResource {
-  handle: NativeHandle;
-  destroyed: boolean;
-}
-
 // Utility types
 export type HexString = string;
 export type Base58String = string;

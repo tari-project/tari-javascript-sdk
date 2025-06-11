@@ -4,12 +4,12 @@
 
 import { 
   FFICallManager, 
-  getCallManager, 
+  getCallManager,
   executeFFICall,
   CircuitState,
   ErrorClassification 
-} from '../call-manager.js';
-import { RetryPolicies, getRetryPolicyForOperation } from '../retry.js';
+} from '../call-manager';
+import { RetryPolicies, getRetryPolicyForOperation } from '../retry';
 
 describe('FFICallManager', () => {
   let callManager: FFICallManager;

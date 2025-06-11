@@ -2,8 +2,8 @@
  * Test suite for FFI resource base class with disposal pattern
  */
 
-import { FFIResource, ResourceType, createNativeDisposal, disposeAll } from '../resource.js';
-import { TariError, ErrorCode } from '../../errors/index.js';
+import { FFIResource, ResourceType, createNativeDisposal, disposeAll } from '../resource';
+import { TariError, ErrorCode } from '../../errors/index';
 
 // Mock disposal logic for testing
 let disposalCalled = false;
