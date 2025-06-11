@@ -1,0 +1,38 @@
+# Rust build artifacts
+/target
+**/target
+Cargo.lock
+
+# Platform-specific binaries
+*.node
+*.dylib
+*.dll
+*.so
+
+# Build intermediates
+*.rlib
+*.pdb
+*.exp
+*.lib
+
+# Native compilation artifacts
+*.o
+*.obj
+*.a
+
+# IDE files
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tari source cache
+.tari-cache/
+
+# Build configuration
+.cargo/config.toml.local
+build-config.json
