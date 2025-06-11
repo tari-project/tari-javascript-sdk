@@ -5,6 +5,8 @@
 
 import { TariError, ErrorCode } from '../errors/index.js';
 import { generateResourceDiagnostics } from './diagnostics.js';
+import { getPlatformOptimizations, getPlatformManager } from './platform-utils.js';
+import { getMemoryMonitor, checkMemoryPressure } from './memory.js';
 
 /**
  * Circuit breaker states
@@ -238,6 +240,9 @@ export class FFICallManager {
   private callCounter = 0;
 
   private constructor(options: Partial<CallOptions> = {}) {
+    // Get platform-specific optimizations
+    const platformOpts = getPlatformOptimizations();
+    
     this.defaultOptions = {
       maxRetries: 3,
       backoffBase: 1000,
@@ -248,6 +253,12 @@ export class FFICallManager {
       timeout: 60000,
       context: {},
       tags: [],
+      // Apply platform-specific defaults
+      ...{
+        maxRetries: Math.min(5, Math.max(2, Math.floor(platformOpts.concurrencyLimit / 2))),
+        circuitBreakerThreshold: Math.max(3, Math.floor(platformOpts.concurrencyLimit * 0.8)),
+        timeout: Math.min(120000, platformOpts.memoryPressureThreshold * 100), // Scale with memory
+      },
       ...options,
     };
 
@@ -278,6 +289,17 @@ export class FFICallManager {
   ): Promise<R> {
     const callOptions = { ...this.defaultOptions, ...options };
     const context = this.createCallContext(method, callOptions);
+    
+    // Check memory pressure before executing
+    const memoryInfo = await checkMemoryPressure();
+    if (memoryInfo.level === 'critical') {
+      throw new FFICallError(
+        'Memory pressure too high - operation aborted',
+        ErrorClassification.CircuitBreaker,
+        undefined,
+        context
+      );
+    }
     
     let lastError: Error | undefined;
     let attempt = 0;
