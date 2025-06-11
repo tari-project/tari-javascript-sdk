@@ -118,8 +118,7 @@ export class CacheManager {
           tariCommit: '',
           buildConfig: {},
           checksums: {},
-          ...metadata,
-          sourcePath // Store original path for directories
+          ...metadata
         };
 
         await this.writeMetadata(key, fullMetadata);

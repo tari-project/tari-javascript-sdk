@@ -21,9 +21,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "fetch-tari": "./dist/scripts/fetch-tari.js",
-    "compile-ffi": "./dist/scripts/compile-ffi.js",
-    "package-variants": "./dist/scripts/package-variants.js"
+    "build-ffi": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -44,7 +42,8 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@tari-project/tarijs-core": "*"
+    "@tari-project/tarijs-core": "*",
+    "commander": "^11.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

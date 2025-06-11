@@ -563,7 +563,8 @@ export async function compileFFI(
   const compiler = createFFICompiler();
 
   // Import required types and functions
-  const { BUILD_TARGETS, NetworkType } = await import('./config.js');
+  const { BUILD_TARGETS } = await import('./config.js');
+  const { NetworkType } = await import('./types.js');
 
   const platform = getCurrentPlatform();
   const arch = getCurrentArchitecture();
@@ -578,7 +579,7 @@ export async function compileFFI(
   }
 
   const config: BuildConfig = {
-    network: network as NetworkType,
+    network: NetworkType[network as keyof typeof NetworkType],
     tariTag: `v4.3.1`, // This should be determined dynamically
     features: options.features || FEATURES.WALLET_DEFAULT,
     outputPath: options.outputPath || join(process.cwd(), 'dist'),
