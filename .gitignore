@@ -11,6 +11,9 @@ lib/
 build/
 *.tsbuildinfo
 
+# Allow packages/build directory (it's source code)
+!packages/build/
+
 # Native binaries
 *.node
 target/
