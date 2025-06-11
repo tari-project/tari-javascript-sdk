@@ -19,9 +19,9 @@ export {
 } from '@tari-project/tarijs-core';
 
 // Export wallet-specific modules
-export * from './types/index.js';
-export * from './wallet/index.js';
-export * from './models/index.js';
+export * from './types/index';
+export * from './wallet/index';
+export * from './models/index';
 
 // Version information
 export const WALLET_VERSION = '0.0.1';

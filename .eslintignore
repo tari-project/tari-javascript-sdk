@@ -8,3 +8,4 @@ coverage/
 native/
 target/
 .eslintrc.js
+packages/build/src/

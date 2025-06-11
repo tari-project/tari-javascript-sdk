@@ -31,7 +31,7 @@ export class TariError extends Error {
     details: string,
     recoverable = false,
     cause?: Error,
-    context?: Record<string, unknown>
+    context: Record<string, unknown> | undefined = undefined
   ) {
     super(`${TariError.getMessageForCode(code)}: ${details}`);
     this.name = 'TariError';

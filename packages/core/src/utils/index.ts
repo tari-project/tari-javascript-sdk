@@ -5,7 +5,7 @@
  * data validation, and helper functions used across packages.
  */
 
-import { TariError, ErrorCode } from '../errors/index.js';
+import { TariError, ErrorCode } from '../errors/index';
 
 // Validation utilities
 export const validateRequired = <T>(

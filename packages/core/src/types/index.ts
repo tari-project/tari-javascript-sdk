@@ -40,5 +40,4 @@ export type HexString = string;
 export type Base58String = string;
 export type EmojiId = string;
 
-// Export all types for easy importing
-export type { BaseConfig, FFIResource };
+// Types are already exported above - no need to re-export

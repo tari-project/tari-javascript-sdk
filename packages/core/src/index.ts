@@ -16,9 +16,9 @@
  */
 
 // Re-export everything from submodules for clean API
-export * from './types/index.js';
-export * from './errors/index.js';
-export * from './utils/index.js';
+export * from './types/index';
+export * from './errors/index';
+export * from './utils/index';
 
 // Version information
 export const VERSION = '0.0.1';
