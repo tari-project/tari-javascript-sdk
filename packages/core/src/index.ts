@@ -33,6 +33,10 @@ export * from './ffi/memory';
 // Wallet handle wrapper (Task 8)
 export * from './wallet-handle';
 
+// Debug utilities (Task 10) - conditional export for tree-shaking
+export * from './ffi/debug';
+export * from './ffi/trace';
+
 // Version information
 export const VERSION = '0.0.1';
 export const SDK_NAME = '@tari-project/tarijs-core';
