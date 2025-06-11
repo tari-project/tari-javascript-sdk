@@ -12,9 +12,13 @@ fn main() {
     println!("cargo:rerun-if-env-changed=TARI_SOURCE_PATH");
     println!("cargo:rerun-if-env-changed=TARI_WALLET_FFI_PATH");
 
-    // Get Tari source paths from environment
+    // Get Tari source paths from environment (optional for Phase 3)
     let tari_source = env::var("TARI_SOURCE_PATH")
-        .expect("TARI_SOURCE_PATH must be set by parent build script");
+        .unwrap_or_else(|_| {
+            // For Phase 3, use placeholder path
+            println!("cargo:warning=TARI_SOURCE_PATH not set, using placeholder");
+            "/placeholder/tari/source".to_string()
+        });
     
     let wallet_ffi_path = env::var("TARI_WALLET_FFI_PATH")
         .unwrap_or_else(|_| {
@@ -25,12 +29,12 @@ fn main() {
                 .to_string()
         });
 
-    // Verify wallet FFI exists
-    if !PathBuf::from(&wallet_ffi_path).exists() {
-        panic!("Tari wallet FFI path does not exist: {}", wallet_ffi_path);
+    // For Phase 3, skip validation since we're not using actual Tari yet
+    if PathBuf::from(&wallet_ffi_path).exists() {
+        println!("cargo:rustc-env=WALLET_FFI_PATH={}", wallet_ffi_path);
+    } else {
+        println!("cargo:warning=Tari wallet FFI path not found: {} (Phase 3 - using placeholder)", wallet_ffi_path);
     }
-
-    println!("cargo:rustc-env=WALLET_FFI_PATH={}", wallet_ffi_path);
 
     // Tell cargo about Tari dependency path
     // This will be used when the actual Tari dependency is uncommented
