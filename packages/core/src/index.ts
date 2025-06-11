@@ -20,9 +20,13 @@ export * from './types/index';
 export * from './errors/index';
 export * from './utils/index';
 
+// FFI resource management (Task 4+)
+export * from './ffi/resource';
+export * from './ffi/handle';
+
 // Version information
 export const VERSION = '0.0.1';
 export const SDK_NAME = '@tari-project/tarijs-core';
 
-// Placeholder for future FFI integration
-export const FFI_AVAILABLE = false;
+// FFI integration status
+export const FFI_AVAILABLE = true;
