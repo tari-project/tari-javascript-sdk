@@ -30,6 +30,9 @@ export * from './ffi/retry';
 export * from './ffi/platform-utils';
 export * from './ffi/memory';
 
+// Wallet handle wrapper (Task 8)
+export * from './wallet-handle';
+
 // Version information
 export const VERSION = '0.0.1';
 export const SDK_NAME = '@tari-project/tarijs-core';
