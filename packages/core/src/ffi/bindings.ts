@@ -5,6 +5,8 @@
 
 import { loadNativeModule } from './loader.js';
 import type { NativeBindings } from './native.js';
+import { executeFFICall, type CallOptions } from './call-manager.js';
+import { getRetryPolicyForOperation, policyToCallOptions } from './retry.js';
 import type {
   WalletHandle,
   FFIWalletConfig,
@@ -75,7 +77,7 @@ export class FFIBindings {
   /**
    * Create a new wallet instance
    */
-  public async createWallet(config: FFIWalletConfig): Promise<WalletHandle> {
+  public async createWallet(config: FFIWalletConfig, options?: Partial<CallOptions>): Promise<WalletHandle> {
     validateFFIWalletConfig(config);
     
     const native = this.getNativeModule();
@@ -90,16 +92,36 @@ export class FFIBindings {
       rolling_log_file_size: config.rollingLogFileSize,
     };
 
-    const handle = await native.walletCreate(nativeConfig);
+    // Use retry policy for wallet creation (critical operation)
+    const retryPolicy = getRetryPolicyForOperation('wallet_create');
+    const callOptions = { ...policyToCallOptions(retryPolicy), ...options };
+
+    const handle = await executeFFICall(
+      'walletCreate',
+      (config) => native.walletCreate(config),
+      [nativeConfig],
+      callOptions
+    );
+    
     return createWalletHandle(handle);
   }
 
   /**
    * Destroy a wallet instance
    */
-  public async destroyWallet(handle: WalletHandle): Promise<void> {
+  public async destroyWallet(handle: WalletHandle, options?: Partial<CallOptions>): Promise<void> {
     const native = this.getNativeModule();
-    await native.walletDestroy(unwrapWalletHandle(handle));
+    
+    // Use retry policy for wallet destruction (critical operation)
+    const retryPolicy = getRetryPolicyForOperation('wallet_destroy');
+    const callOptions = { ...policyToCallOptions(retryPolicy), ...options };
+
+    await executeFFICall(
+      'walletDestroy',
+      (handle) => native.walletDestroy(handle),
+      [unwrapWalletHandle(handle)],
+      callOptions
+    );
   }
 
   // Wallet operations
@@ -107,9 +129,19 @@ export class FFIBindings {
   /**
    * Get wallet balance
    */
-  public async getBalance(handle: WalletHandle): Promise<FFIBalance> {
+  public async getBalance(handle: WalletHandle, options?: Partial<CallOptions>): Promise<FFIBalance> {
     const native = this.getNativeModule();
-    const balance = await native.walletGetBalance(unwrapWalletHandle(handle));
+    
+    // Use retry policy for balance queries (standard operation)
+    const retryPolicy = getRetryPolicyForOperation('wallet_get_balance');
+    const callOptions = { ...policyToCallOptions(retryPolicy), ...options };
+
+    const balance = await executeFFICall(
+      'walletGetBalance',
+      (handle) => native.walletGetBalance(handle),
+      [unwrapWalletHandle(handle)],
+      callOptions
+    );
     
     return {
       available: balance.available,

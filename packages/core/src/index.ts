@@ -25,6 +25,8 @@ export * from './ffi/resource';
 export * from './ffi/handle';
 export * from './ffi/tracker';
 export * from './ffi/diagnostics';
+export * from './ffi/call-manager';
+export * from './ffi/retry';
 
 // Version information
 export const VERSION = '0.0.1';
