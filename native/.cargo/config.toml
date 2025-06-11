@@ -1,0 +1,91 @@
+# Cargo configuration for Tari JavaScript SDK native builds
+# This file provides default settings for cross-platform compilation
+
+[build]
+# Default settings (can be overridden by environment)
+rustflags = [
+    "-C", "link-arg=-Wl,-rpath,$ORIGIN",  # Linux/macOS: Set relative rpath
+]
+
+# Target-specific configurations
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined", 
+    "-C", "link-arg=dynamic_lookup",
+]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = [
+    "-C", "target-feature=+crt-static",
+]
+
+[target.x86_64-unknown-linux-gnu]
+linker = "gcc"
+
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+
+[target.x86_64-unknown-linux-musl]
+linker = "musl-gcc"
+rustflags = [
+    "-C", "target-feature=+crt-static",
+    "-C", "link-self-contained=yes",
+]
+
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-linux-musl-gcc"
+rustflags = [
+    "-C", "target-feature=+crt-static",
+    "-C", "link-self-contained=yes",
+]
+
+# Environment variables for NAPI-RS
+[env]
+# Ensure NAPI-RS uses the correct Node.js version
+NAPI_RS_CLI_VERSION = "2.16.0"
+
+# Build optimization settings
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+strip = false
+
+# Development build settings
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true
+
+# Registry configuration for corporate environments
+[registries.crates-io]
+protocol = "sparse"
+
+# Source replacement for offline builds or mirrors
+# [source.crates-io]
+# replace-with = "local-registry"
+#
+# [source.local-registry]
+# local-registry = "/path/to/local/registry"
+
+# Network configuration
+[net]
+retry = 3
+git-fetch-with-cli = true
+
+# Output configuration
+[term]
+verbose = false
+color = "auto"
