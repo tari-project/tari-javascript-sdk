@@ -1,0 +1,11 @@
+node_modules/
+dist/
+lib/
+build/
+coverage/
+*.min.js
+*.md
+CHANGELOG.md
+package-lock.json
+native/
+target/

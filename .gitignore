@@ -1,0 +1,73 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+lib/
+build/
+*.tsbuildinfo
+
+# Native binaries
+*.node
+target/
+native/tari/
+
+# Test coverage
+coverage/
+.nyc_output
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Cache directories
+.cache/
+.parcel-cache/
+.turbo/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Logs
+logs/
+*.log
+
+# Rust artifacts
+Cargo.lock
+target/
+
+# FFI build artifacts
+*.o
+*.a
+*.so
+*.dll
+*.dylib
+
+# Test artifacts
+test-wallets/
+manual-test-wallets/
+
+# Package-specific ignores
+packages/*/dist/
+packages/*/lib/
+packages/*/node_modules/

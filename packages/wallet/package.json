@@ -1,0 +1,59 @@
+{
+  "name": "@tari-project/tarijs-wallet",
+  "version": "0.0.1",
+  "description": "High-level Tari wallet API for JavaScript applications",
+  "keywords": [
+    "tari",
+    "wallet",
+    "cryptocurrency",
+    "blockchain",
+    "transactions"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tari-project/tari-javascript-sdk.git",
+    "directory": "packages/wallet"
+  },
+  "license": "BSD-3-Clause",
+  "author": "The Tari Community",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npm run build:ts",
+    "build:ts": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "dev": "npm run build:ts -- --watch",
+    "lint": "eslint src/**/*.ts",
+    "test": "jest",
+    "test:ci": "jest --ci --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@tari-project/tarijs-core": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

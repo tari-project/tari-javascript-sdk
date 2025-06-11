@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/wallet"
+    },
+    {
+      "path": "./packages/build"
+    }
+  ],
+  "compilerOptions": {
+    "noEmit": false,
+    "composite": true,
+    "incremental": true
+  }
+}

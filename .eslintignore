@@ -1,0 +1,10 @@
+node_modules/
+dist/
+lib/
+build/
+coverage/
+*.min.js
+*.d.ts
+native/
+target/
+.eslintrc.js
