@@ -1,0 +1,609 @@
+/**
+ * @fileoverview Transaction Service Core
+ * 
+ * Central service for managing all transaction operations including creation,
+ * tracking, and lifecycle management. Provides high-level abstractions over
+ * the FFI transaction functions.
+ */
+
+import { EventEmitter } from 'node:events';
+import {
+  getFFIBindings,
+  WalletError,
+  WalletErrorCode,
+  ErrorSeverity,
+  withErrorContext,
+  withRetry,
+  withRecovery,
+  type WalletHandle,
+  type MicroTari,
+  type TransactionId,
+  type TariAddressString
+} from '@tari-project/tarijs-core';
+import type {
+  TransactionInfo,
+  PendingInboundTransaction,
+  PendingOutboundTransaction,
+  CompletedTransaction,
+  CancelledTransaction,
+  Transaction,
+  TransactionFilter,
+  TransactionQueryOptions,
+  SendTransactionParams,
+  SendOneSidedParams,
+  TransactionStatusUpdate,
+  TransactionBuildResult,
+  FeeEstimate,
+  TransactionValidationResult,
+  TransactionStatistics
+} from '@tari-project/tarijs-core';
+import { TransactionStatus, TransactionDirection } from '@tari-project/tarijs-core';
+import { TariAddress } from '../models/index.js';
+import { TransactionRepository } from './transaction-repository.js';
+import { TransactionStateManager } from './transaction-state.js';
+
+/**
+ * Configuration for the transaction service
+ */
+export interface TransactionServiceConfig {
+  /** Wallet handle for FFI operations */
+  walletHandle: WalletHandle;
+  /** Default fee per gram for transactions */
+  defaultFeePerGram: MicroTari;
+  /** Maximum transaction history to keep in memory */
+  maxHistorySize: number;
+  /** Transaction timeout in seconds */
+  transactionTimeoutSeconds: number;
+  /** Whether to automatically refresh pending transactions */
+  autoRefreshPending: boolean;
+  /** Refresh interval for pending transactions in milliseconds */
+  refreshIntervalMs: number;
+  /** Maximum number of concurrent transaction operations */
+  maxConcurrentOperations: number;
+}
+
+/**
+ * Transaction service events
+ */
+export interface TransactionServiceEvents {
+  'transaction:created': (transaction: PendingOutboundTransaction) => void;
+  'transaction:updated': (update: TransactionStatusUpdate) => void;
+  'transaction:confirmed': (transaction: CompletedTransaction) => void;
+  'transaction:cancelled': (transaction: CancelledTransaction) => void;
+  'transaction:received': (transaction: PendingInboundTransaction) => void;
+  'transaction:error': (error: WalletError, transactionId?: TransactionId) => void;
+  'balance:changed': (newBalance: MicroTari, reason: string) => void;
+}
+
+/**
+ * Core transaction service providing centralized transaction management
+ */
+export class TransactionService extends EventEmitter<TransactionServiceEvents> {
+  private readonly config: TransactionServiceConfig;
+  private readonly repository: TransactionRepository;
+  private readonly stateManager: TransactionStateManager;
+  private readonly ffi = getFFIBindings();
+  private isDisposed = false;
+  private refreshTimer?: NodeJS.Timeout;
+  private operationSemaphore: number = 0;
+
+  constructor(config: TransactionServiceConfig) {
+    super();
+    
+    this.config = config;
+    this.repository = new TransactionRepository({
+      maxHistorySize: config.maxHistorySize,
+      walletHandle: config.walletHandle
+    });
+    this.stateManager = new TransactionStateManager({
+      timeoutSeconds: config.transactionTimeoutSeconds
+    });
+
+    // Set up event forwarding
+    this.repository.on('transaction:updated', (update) => {
+      this.emit('transaction:updated', update);
+    });
+
+    this.stateManager.on('transaction:timeout', (transactionId) => {
+      this.handleTransactionTimeout(transactionId);
+    });
+
+    // Start auto-refresh if enabled
+    if (config.autoRefreshPending) {
+      this.startPendingRefresh();
+    }
+  }
+
+  /**
+   * Get the wallet handle
+   */
+  get walletHandle(): WalletHandle {
+    return this.config.walletHandle;
+  }
+
+  /**
+   * Check if service is disposed
+   */
+  get disposed(): boolean {
+    return this.isDisposed;
+  }
+
+  /**
+   * Send a standard transaction
+   */
+  @withErrorContext('send_transaction', 'transaction_service')
+  @withRetry({ maxAttempts: 3, backoffMs: 1000 })
+  @withRecovery(2)
+  async sendTransaction(params: SendTransactionParams): Promise<TransactionId> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    try {
+      this.operationSemaphore++;
+
+      // Validate parameters
+      const validation = this.validateSendParams(params);
+      if (!validation.valid) {
+        throw new WalletError(
+          WalletErrorCode.ValidationFailed,
+          `Transaction validation failed: ${validation.errors.map(e => e.message).join(', ')}`,
+          ErrorSeverity.Error,
+          { validation }
+        );
+      }
+
+      // Resolve recipient address
+      const recipientAddress = await this.resolveAddress(params.recipient);
+
+      // Call FFI to send transaction
+      const transactionIdStr = await this.ffi.wallet_send_transaction(
+        this.config.walletHandle,
+        recipientAddress.toString(),
+        params.amount.toString(),
+        {
+          fee_per_gram: params.feePerGram.toString(),
+          message: params.message || '',
+          is_one_sided: params.isOneSided || false
+        }
+      );
+
+      const transactionId = transactionIdStr as TransactionId;
+
+      // Create pending transaction record
+      const pendingTx: PendingOutboundTransaction = {
+        id: transactionId,
+        amount: params.amount,
+        fee: params.feePerGram * BigInt(250), // Estimated size in grams
+        status: TransactionStatus.Pending,
+        direction: TransactionDirection.Outbound,
+        message: params.message || '',
+        timestamp: Date.now() as any,
+        address: params.recipient,
+        isOneSided: params.isOneSided || false,
+        isCoinbase: false,
+        pendingId: transactionId as any, // For outbound, pending ID same as transaction ID initially
+        cancellable: true
+      };
+
+      // Store in repository and state manager
+      await this.repository.addTransaction(pendingTx);
+      this.stateManager.trackTransaction(transactionId, TransactionStatus.Pending);
+
+      // Emit events
+      this.emit('transaction:created', pendingTx);
+      this.emit('balance:changed', await this.getCurrentBalance(), 'transaction_sent');
+
+      return transactionId;
+
+    } finally {
+      this.operationSemaphore--;
+    }
+  }
+
+  /**
+   * Send a one-sided transaction
+   */
+  @withErrorContext('send_one_sided_transaction', 'transaction_service')
+  @withRetry({ maxAttempts: 3, backoffMs: 1000 })
+  @withRecovery(2)
+  async sendOneSidedTransaction(params: SendOneSidedParams): Promise<TransactionId> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    try {
+      this.operationSemaphore++;
+
+      // Convert to standard send params with one-sided flag
+      const sendParams: SendTransactionParams = {
+        recipient: params.recipient,
+        amount: params.amount,
+        feePerGram: params.feePerGram,
+        message: params.message,
+        isOneSided: true
+      };
+
+      return await this.sendTransaction(sendParams);
+
+    } finally {
+      this.operationSemaphore--;
+    }
+  }
+
+  /**
+   * Cancel a pending outbound transaction
+   */
+  @withErrorContext('cancel_transaction', 'transaction_service')
+  @withRetry({ maxAttempts: 2, backoffMs: 500 })
+  async cancelTransaction(transactionId: TransactionId): Promise<void> {
+    this.ensureNotDisposed();
+
+    const transaction = await this.repository.getTransaction(transactionId);
+    if (!transaction) {
+      throw new WalletError(
+        WalletErrorCode.TransactionNotFound,
+        `Transaction ${transactionId} not found`,
+        ErrorSeverity.Error
+      );
+    }
+
+    // Validate transaction can be cancelled
+    if (transaction.status !== TransactionStatus.Pending) {
+      throw new WalletError(
+        WalletErrorCode.TransactionNotCancellable,
+        `Transaction ${transactionId} is not in pending state`,
+        ErrorSeverity.Error,
+        { currentStatus: transaction.status }
+      );
+    }
+
+    if (transaction.direction !== TransactionDirection.Outbound) {
+      throw new WalletError(
+        WalletErrorCode.TransactionNotCancellable,
+        `Cannot cancel inbound transaction ${transactionId}`,
+        ErrorSeverity.Error
+      );
+    }
+
+    const pendingTx = transaction as PendingOutboundTransaction;
+    if (!pendingTx.cancellable) {
+      throw new WalletError(
+        WalletErrorCode.TransactionNotCancellable,
+        `Transaction ${transactionId} is not cancellable`,
+        ErrorSeverity.Error
+      );
+    }
+
+    // Call FFI to cancel transaction (placeholder - will be implemented when FFI function exists)
+    // await this.ffi.wallet_cancel_pending_transaction(this.config.walletHandle, transactionId);
+
+    // Update transaction status
+    const cancelledTx: CancelledTransaction = {
+      ...transaction,
+      status: TransactionStatus.Cancelled,
+      cancellationReason: 'user_cancelled' as any,
+      cancelledAt: Date.now() as any
+    };
+
+    await this.repository.updateTransaction(cancelledTx);
+    this.stateManager.updateTransactionStatus(transactionId, TransactionStatus.Cancelled);
+
+    // Emit events
+    this.emit('transaction:cancelled', cancelledTx);
+    this.emit('balance:changed', await this.getCurrentBalance(), 'transaction_cancelled');
+  }
+
+  /**
+   * Get all transactions with optional filtering
+   */
+  @withErrorContext('get_transactions', 'transaction_service')
+  async getTransactions(
+    filter?: TransactionFilter,
+    options?: TransactionQueryOptions
+  ): Promise<TransactionInfo[]> {
+    this.ensureNotDisposed();
+
+    return await this.repository.getTransactions(filter, options);
+  }
+
+  /**
+   * Get a specific transaction by ID
+   */
+  @withErrorContext('get_transaction', 'transaction_service')
+  async getTransaction(transactionId: TransactionId): Promise<TransactionInfo | null> {
+    this.ensureNotDisposed();
+
+    return await this.repository.getTransaction(transactionId);
+  }
+
+  /**
+   * Get pending transactions (both inbound and outbound)
+   */
+  @withErrorContext('get_pending_transactions', 'transaction_service')
+  async getPendingTransactions(): Promise<{
+    inbound: PendingInboundTransaction[];
+    outbound: PendingOutboundTransaction[];
+  }> {
+    this.ensureNotDisposed();
+
+    const allPending = await this.repository.getTransactions({
+      status: [TransactionStatus.Pending]
+    });
+
+    const inbound: PendingInboundTransaction[] = [];
+    const outbound: PendingOutboundTransaction[] = [];
+
+    for (const tx of allPending) {
+      if (tx.direction === TransactionDirection.Inbound) {
+        inbound.push(tx as PendingInboundTransaction);
+      } else {
+        outbound.push(tx as PendingOutboundTransaction);
+      }
+    }
+
+    return { inbound, outbound };
+  }
+
+  /**
+   * Get transaction statistics
+   */
+  @withErrorContext('get_transaction_statistics', 'transaction_service')
+  async getTransactionStatistics(filter?: TransactionFilter): Promise<TransactionStatistics> {
+    this.ensureNotDisposed();
+
+    const transactions = await this.repository.getTransactions(filter);
+    return this.calculateStatistics(transactions);
+  }
+
+  /**
+   * Refresh pending transactions from the FFI
+   */
+  @withErrorContext('refresh_pending_transactions', 'transaction_service')
+  async refreshPendingTransactions(): Promise<void> {
+    this.ensureNotDisposed();
+
+    try {
+      // Get current pending transactions from FFI
+      // Note: These FFI functions will need to be implemented
+      // const [inboundFFI, outboundFFI] = await Promise.all([
+      //   this.ffi.wallet_get_pending_inbound_transactions(this.config.walletHandle),
+      //   this.ffi.wallet_get_pending_outbound_transactions(this.config.walletHandle)
+      // ]);
+
+      // For now, just refresh our internal state
+      const pending = await this.getPendingTransactions();
+      
+      // Check for status updates (placeholder logic)
+      for (const tx of [...pending.inbound, ...pending.outbound]) {
+        // In real implementation, we'd compare with FFI results
+        // and update status if changed
+        this.stateManager.checkTransactionTimeout(tx.id);
+      }
+
+    } catch (error) {
+      this.emit('transaction:error', 
+        error instanceof WalletError ? error : new WalletError(
+          WalletErrorCode.UnknownError,
+          `Failed to refresh pending transactions: ${error}`,
+          ErrorSeverity.Warning
+        )
+      );
+    }
+  }
+
+  /**
+   * Start automatic refresh of pending transactions
+   */
+  private startPendingRefresh(): void {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+    }
+
+    this.refreshTimer = setInterval(() => {
+      if (!this.isDisposed) {
+        this.refreshPendingTransactions().catch(() => {
+          // Error already handled in refreshPendingTransactions
+        });
+      }
+    }, this.config.refreshIntervalMs);
+  }
+
+  /**
+   * Stop automatic refresh
+   */
+  private stopPendingRefresh(): void {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = undefined;
+    }
+  }
+
+  /**
+   * Handle transaction timeout
+   */
+  private async handleTransactionTimeout(transactionId: TransactionId): Promise<void> {
+    try {
+      const transaction = await this.repository.getTransaction(transactionId);
+      if (transaction && transaction.status === TransactionStatus.Pending) {
+        this.emit('transaction:error', 
+          new WalletError(
+            WalletErrorCode.TransactionTimeout,
+            `Transaction ${transactionId} has timed out`,
+            ErrorSeverity.Warning,
+            { transactionId }
+          ),
+          transactionId
+        );
+      }
+    } catch (error) {
+      // Ignore errors in timeout handling
+    }
+  }
+
+  /**
+   * Validate send transaction parameters
+   */
+  private validateSendParams(params: SendTransactionParams): TransactionValidationResult {
+    const errors: any[] = [];
+    const warnings: any[] = [];
+
+    // Validate amount
+    if (params.amount <= 0n) {
+      errors.push({
+        code: 'INVALID_AMOUNT',
+        message: 'Transaction amount must be positive',
+        field: 'amount'
+      });
+    }
+
+    // Validate fee
+    if (params.feePerGram <= 0n) {
+      errors.push({
+        code: 'INVALID_FEE',
+        message: 'Fee per gram must be positive',
+        field: 'feePerGram'
+      });
+    }
+
+    // Check for dust amount
+    if (params.amount > 0n && params.amount < 100n) {
+      warnings.push({
+        code: 'DUST_AMOUNT',
+        message: 'Transaction amount is below dust threshold',
+        field: 'amount',
+        recommendation: 'Consider using at least 100 MicroTari'
+      });
+    }
+
+    // Validate message length
+    if (params.message && params.message.length > 512) {
+      errors.push({
+        code: 'MESSAGE_TOO_LONG',
+        message: 'Transaction message exceeds maximum length of 512 characters',
+        field: 'message'
+      });
+    }
+
+    // Validate recipient address format
+    if (!params.recipient || params.recipient.length === 0) {
+      errors.push({
+        code: 'INVALID_RECIPIENT',
+        message: 'Recipient address is required',
+        field: 'recipient'
+      });
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
+   * Resolve address string to TariAddress
+   */
+  private async resolveAddress(address: TariAddressString): Promise<TariAddress> {
+    try {
+      return await TariAddress.fromString(address);
+    } catch (error) {
+      throw new WalletError(
+        WalletErrorCode.InvalidAddress,
+        `Invalid recipient address: ${address}`,
+        ErrorSeverity.Error,
+        { address, originalError: error }
+      );
+    }
+  }
+
+  /**
+   * Get current wallet balance
+   */
+  private async getCurrentBalance(): Promise<MicroTari> {
+    // This would typically call the balance service
+    // For now, return a placeholder
+    return BigInt(0) as MicroTari;
+  }
+
+  /**
+   * Calculate transaction statistics
+   */
+  private calculateStatistics(transactions: TransactionInfo[]): TransactionStatistics {
+    // Implementation will use the TransactionUtils.calculateStatistics method
+    return {
+      total: transactions.length,
+      byStatus: {} as any,
+      byDirection: {} as any,
+      totalSent: BigInt(0) as MicroTari,
+      totalReceived: BigInt(0) as MicroTari,
+      totalFees: BigInt(0) as MicroTari,
+      averageAmount: BigInt(0) as MicroTari,
+      averageFee: BigInt(0) as MicroTari,
+      dateRange: {
+        earliest: Date.now() as any,
+        latest: Date.now() as any
+      }
+    };
+  }
+
+  /**
+   * Check operation limit to prevent resource exhaustion
+   */
+  private async checkOperationLimit(): Promise<void> {
+    if (this.operationSemaphore >= this.config.maxConcurrentOperations) {
+      throw new WalletError(
+        WalletErrorCode.ResourceExhausted,
+        'Too many concurrent transaction operations',
+        ErrorSeverity.Error,
+        { currentOperations: this.operationSemaphore, limit: this.config.maxConcurrentOperations }
+      );
+    }
+  }
+
+  /**
+   * Ensure service is not disposed
+   */
+  private ensureNotDisposed(): void {
+    if (this.isDisposed) {
+      throw new WalletError(
+        WalletErrorCode.ResourceDisposed,
+        'Transaction service has been disposed',
+        ErrorSeverity.Error
+      );
+    }
+  }
+
+  /**
+   * Dispose of the service and clean up resources
+   */
+  async dispose(): Promise<void> {
+    if (this.isDisposed) {
+      return;
+    }
+
+    this.isDisposed = true;
+    this.stopPendingRefresh();
+    
+    await this.repository.dispose();
+    await this.stateManager.dispose();
+    
+    this.removeAllListeners();
+  }
+
+  /**
+   * AsyncDisposable implementation
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.dispose();
+  }
+}
+
+/**
+ * Default configuration for transaction service
+ */
+export const DEFAULT_TRANSACTION_SERVICE_CONFIG: Partial<TransactionServiceConfig> = {
+  maxHistorySize: 10000,
+  transactionTimeoutSeconds: 3600, // 1 hour
+  autoRefreshPending: true,
+  refreshIntervalMs: 30000, // 30 seconds
+  maxConcurrentOperations: 10
+};
