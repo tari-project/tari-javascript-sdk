@@ -187,6 +187,26 @@ export const enum WalletErrorCode {
   // Resource errors
   ResourceDisposed = 6017,
   
+  // Additional missing error codes referenced in wallet package
+  OperationInProgress = 9015,
+  FFIError = 5017,
+  TransactionProcessingFailed = 2029,
+  AutoCancellationFailed = 2030,
+  AutoRefreshFailed = 2031,
+  INSUFFICIENT_FUNDS = 2000, // Alias for InsufficientFunds
+  INSUFFICIENT_FUNDS_WITH_MARGIN = 2032,
+  INVALID_PARAMETERS = 5011, // Alias for InvalidParameters
+  INVALID_AMOUNT = 2002, // Alias for InvalidAmount
+  AMOUNT_BELOW_DUST_LIMIT = 2033,
+  AMOUNT_EXCEEDS_MAXIMUM = 2034,
+  INSUFFICIENT_UTXOS = 2035,
+  UTXO_VALIDATION_FAILED = 2036,
+  BALANCE_QUERY_FAILED = 2037,
+  INVALID_ADDRESS = 2001, // Alias for InvalidAddress
+  SELF_SEND_NOT_ALLOWED = 2025, // Alias for SelfSendNotAllowed
+  ADDRESS_RESOLUTION_FAILED = 2026, // Alias for AddressResolutionFailed
+  DUPLICATE_RECIPIENTS = 2027, // Alias for DuplicateRecipients
+  
   // Legacy aliases for compatibility
   UnknownError = 9000, // Alias for Unknown
   FEE_ESTIMATION_FAILED = 2023, // Alias for FeeEstimationFailed
@@ -254,6 +274,15 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.AddressResolutionFailed]: ErrorCategory.Transaction,
   [WalletErrorCode.DuplicateRecipients]: ErrorCategory.Transaction,
   [WalletErrorCode.BalanceFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.TransactionProcessingFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.AutoCancellationFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.AutoRefreshFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.INSUFFICIENT_FUNDS_WITH_MARGIN]: ErrorCategory.Transaction,
+  [WalletErrorCode.AMOUNT_BELOW_DUST_LIMIT]: ErrorCategory.Transaction,
+  [WalletErrorCode.AMOUNT_EXCEEDS_MAXIMUM]: ErrorCategory.Transaction,
+  [WalletErrorCode.INSUFFICIENT_UTXOS]: ErrorCategory.Transaction,
+  [WalletErrorCode.UTXO_VALIDATION_FAILED]: ErrorCategory.Transaction,
+  [WalletErrorCode.BALANCE_QUERY_FAILED]: ErrorCategory.Transaction,
   
   // Network errors (3000-3099)
   [WalletErrorCode.NetworkUnavailable]: ErrorCategory.Network,
@@ -305,6 +334,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.CallbackFailed]: ErrorCategory.FFI,
   [WalletErrorCode.ThreadingError]: ErrorCategory.FFI,
   [WalletErrorCode.AsyncOperationFailed]: ErrorCategory.FFI,
+  [WalletErrorCode.FFIError]: ErrorCategory.FFI,
   
   // Resource errors (6000-6099)
   [WalletErrorCode.ResourceExhausted]: ErrorCategory.Resource,
@@ -376,6 +406,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.FeatureDisabled]: ErrorCategory.General,
   [WalletErrorCode.QuotaExceeded]: ErrorCategory.General,
   [WalletErrorCode.InternalError]: ErrorCategory.General,
+  [WalletErrorCode.OperationInProgress]: ErrorCategory.General,
 };
 
 /**

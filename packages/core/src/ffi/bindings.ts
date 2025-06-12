@@ -461,6 +461,117 @@ export class FFIBindings {
     
     return native.emojiIdToPublicKey(emojiId);
   }
+
+  /**
+   * Get current transaction status from FFI
+   */
+  public async walletGetTransactionStatus(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    
+    return native.walletGetTransactionStatus(
+      unwrapWalletHandle(handle),
+      transactionId
+    );
+  }
+
+  /**
+   * Get pending inbound transactions
+   */
+  public async walletGetPendingInboundTransactions(handle: WalletHandle): Promise<any[]> {
+    const native = this.getNativeModule();
+    
+    return native.walletGetPendingInboundTransactions(unwrapWalletHandle(handle));
+  }
+
+  /**
+   * Get pending outbound transactions
+   */
+  public async walletGetPendingOutboundTransactions(handle: WalletHandle): Promise<any[]> {
+    const native = this.getNativeModule();
+    
+    return native.walletGetPendingOutboundTransactions(unwrapWalletHandle(handle));
+  }
+
+  /**
+   * Get wallet balance information
+   */
+  public async walletGetBalance(handle: WalletHandle): Promise<FFIBalance> {
+    const native = this.getNativeModule();
+    
+    const nativeBalance = await native.walletGetBalance(unwrapWalletHandle(handle));
+    
+    return {
+      available: nativeBalance.available,
+      pendingIncoming: nativeBalance.pending_incoming,
+      pendingOutgoing: nativeBalance.pending_outgoing,
+      timelocked: nativeBalance.timelocked
+    };
+  }
+
+  /**
+   * Get fee per gram statistics for fee estimation
+   */
+  public async walletGetFeePerGramStats(handle: WalletHandle): Promise<{
+    min: string;
+    avg: string;
+    max: string;
+  }> {
+    const native = this.getNativeModule();
+    
+    const stats = await native.walletGetFeePerGramStats(unwrapWalletHandle(handle));
+    return {
+      min: stats.min_fee_per_gram,
+      avg: stats.avg_fee_per_gram,
+      max: stats.max_fee_per_gram
+    };
+  }
+
+  /**
+   * Send a transaction
+   */
+  public async walletSendTransaction(
+    handle: WalletHandle,
+    recipientAddress: string,
+    amount: string,
+    feePerGram?: string,
+    message?: string,
+    isOneSided: boolean = false
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    validateTariAddress(recipientAddress);
+    
+    const options: FFISendTransactionOptions = {
+      feePerGram,
+      message,
+      isOneSided
+    };
+    
+    return native.walletSendTransaction(
+      unwrapWalletHandle(handle),
+      recipientAddress,
+      amount,
+      options
+    );
+  }
+
+  /**
+   * Generate stealth address for one-sided transactions
+   */
+  public async walletGenerateStealthAddress(
+    handle: WalletHandle,
+    recipientAddress: string
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    validateTariAddress(recipientAddress);
+    
+    return native.walletGenerateStealthAddress(
+      unwrapWalletHandle(handle),
+      recipientAddress
+    );
+  }
 }
 
 // Singleton instance

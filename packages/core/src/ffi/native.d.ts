@@ -160,6 +160,17 @@ export interface NativeBindings {
     tip_height: number;
   }>;
 
+  // Transaction status and pending transaction methods
+  walletGetTransactionStatus(handle: WalletHandle, transactionId: string): Promise<string>;
+  walletGetPendingInboundTransactions(handle: WalletHandle): Promise<any[]>;
+  walletGetPendingOutboundTransactions(handle: WalletHandle): Promise<any[]>;
+  walletGetFeePerGramStats(handle: WalletHandle): Promise<{
+    min_fee_per_gram: string;
+    avg_fee_per_gram: string;
+    max_fee_per_gram: string;
+  }>;
+  walletGenerateStealthAddress(handle: WalletHandle, recipientAddress: string): Promise<string>;
+
   // Event callbacks (Phase 8)
   walletSetEventCallback(handle: WalletHandle, callback: (payload: string) => void): Promise<void>;
   walletRemoveEventCallback(handle: WalletHandle): Promise<void>;

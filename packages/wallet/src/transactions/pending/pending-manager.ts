@@ -6,7 +6,7 @@
  * pending transactions with different capabilities.
  */
 
-import { EventEmitter } from 'node:events';
+import { TypedEventEmitter } from '@tari-project/tarijs-core';
 import {
   getFFIBindings,
   WalletError,
@@ -60,6 +60,7 @@ export interface PendingManagerEvents {
   'pending:refreshed': (inboundCount: number, outboundCount: number) => void;
   'pending:error': (error: WalletError, transactionId?: TransactionId) => void;
   'pending:auto_cancelled': (transactionId: TransactionId, reason: string) => void;
+  [key: string]: (...args: any[]) => void;
 }
 
 /**
@@ -110,7 +111,7 @@ export interface RefreshResult {
  * - Detailed refresh statistics and error reporting
  * - Event emission for all state changes
  */
-export class PendingManager extends EventEmitter<PendingManagerEvents> {
+export class PendingManager extends TypedEventEmitter {
   private readonly config: PendingManagerConfig;
   private readonly repository: TransactionRepository;
   private readonly tracker: PendingTracker;

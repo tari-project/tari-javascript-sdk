@@ -351,6 +351,95 @@ class MockNativeBindings implements NativeBindings {
     };
   }
 
+  async walletGetTransactionStatus(handle: number, transactionId: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock transaction status retrieval failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    // Mock transaction status
+    const statuses = ['pending', 'broadcast', 'mined_unconfirmed', 'mined_confirmed', 'cancelled'];
+    return statuses[Math.floor(Math.random() * statuses.length)];
+  }
+
+  async walletGetPendingInboundTransactions(handle: number): Promise<any[]> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock pending inbound transactions retrieval failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    // Mock pending inbound transactions
+    return [
+      {
+        id: 'mock_pending_in_1',
+        amount: '1000000',
+        fee: '5000',
+        sender_public_key: 'mock_sender_key',
+        message: 'Mock inbound transaction',
+        timestamp: Date.now() - 60000,
+        status: 'pending'
+      }
+    ];
+  }
+
+  async walletGetPendingOutboundTransactions(handle: number): Promise<any[]> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock pending outbound transactions retrieval failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    // Mock pending outbound transactions
+    return [
+      {
+        id: 'mock_pending_out_1',
+        amount: '500000',
+        fee: '3000',
+        recipient_address: 'mock_recipient_address',
+        message: 'Mock outbound transaction',
+        timestamp: Date.now() - 30000,
+        status: 'pending'
+      }
+    ];
+  }
+
+  async walletGetFeePerGramStats(handle: number): Promise<{
+    min_fee_per_gram: string;
+    avg_fee_per_gram: string;
+    max_fee_per_gram: string;
+  }> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock fee stats retrieval failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    return {
+      min_fee_per_gram: '1000',
+      avg_fee_per_gram: '5000',
+      max_fee_per_gram: '50000'
+    };
+  }
+
+  async walletGenerateStealthAddress(handle: number, recipientAddress: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock stealth address generation failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    // Generate mock stealth address
+    const hash = recipientAddress.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return `stealth_${hash.toString(16).padStart(8, '0')}_mock`;
+  }
+
   // Mock control methods (not part of NativeBindings interface)
   setFailureMode(shouldFail: boolean): void {
     this.shouldFail = shouldFail;
