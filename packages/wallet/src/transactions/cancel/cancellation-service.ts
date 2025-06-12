@@ -289,7 +289,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       const cancellable: PendingOutboundTransaction[] = [];
       
       for (const transaction of pendingTransactions) {
-        const canCancel = await this.canCancelTransaction(transaction.txId);
+        const canCancel = await this.canCancelTransaction(transaction.id);
         if (canCancel.canCancel) {
           cancellable.push(transaction);
         }
@@ -396,7 +396,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
     try {
       const result = await this.ffiBindings.wallet_cancel_pending_transaction(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       return result === true || result === 'true' || result === 1;

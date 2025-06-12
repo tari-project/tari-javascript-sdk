@@ -234,8 +234,8 @@ describe('CancellationService', () => {
       const cancellable = await service.getCancellableTransactions();
       
       expect(cancellable).toHaveLength(2);
-      expect(cancellable[0].txId).toBe('test_tx_123');
-      expect(cancellable[1].txId).toBe('test_tx_456');
+      expect(cancellable[0].id).toBe('test_tx_123');
+      expect(cancellable[1].id).toBe('test_tx_456');
     });
 
     it('should filter out non-cancellable transactions', async () => {

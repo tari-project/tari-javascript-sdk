@@ -140,11 +140,11 @@ describe('Transaction Integration Tests', () => {
       // Step 2: Check transaction appears in pending
       const pending = await transactionAPI.getPendingTransactions();
       expect(pending.outbound).toHaveLength(1);
-      expect(pending.outbound[0].txId).toBe('tx_integration_001');
+      expect(pending.outbound[0].id).toBe('tx_integration_001');
 
       // Step 3: Get transaction details
       const details = await transactionAPI.getTransactionDetails(txId);
-      expect(details.transaction.txId).toBe(txId);
+      expect(details.transaction.id).toBe(txId);
       expect(details.confirmations).toBeDefined();
       expect(details.feeBreakdown).toBeDefined();
 
@@ -184,7 +184,7 @@ describe('Transaction Integration Tests', () => {
       // Step 3: Get cancellable transactions
       const cancellable = await transactionAPI.getCancellableTransactions();
       expect(cancellable).toHaveLength(1);
-      expect(cancellable[0].txId).toBe(txId);
+      expect(cancellable[0].id).toBe(txId);
 
       // Step 4: Cancel the transaction
       const cancellationResult = await transactionAPI.cancelTransaction(txId);

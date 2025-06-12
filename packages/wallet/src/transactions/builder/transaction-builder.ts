@@ -88,9 +88,9 @@ export class TransactionBuilder {
     this.ensureNotBuilt();
     
     if (recipient instanceof TariAddress) {
-      this.state.recipient = recipient.toString();
+      this.state.recipient = recipient.toString() as TariAddressString;
     } else {
-      this.state.recipient = recipient;
+      this.state.recipient = recipient as TariAddressString;
     }
     
     return this;
@@ -427,7 +427,7 @@ export class TransactionBuilder {
     const missing = fields.filter(field => this.state[field] === undefined);
     if (missing.length > 0) {
       throw new WalletError(
-        WalletErrorCode.ValidationFailed,
+        WalletErrorCode.UtxoValidationFailed,
         `Missing required fields: ${missing.join(', ')}`,
         ErrorSeverity.Error,
         { missingFields: missing, currentState: this.state }
@@ -441,7 +441,7 @@ export class TransactionBuilder {
   private ensureNotBuilt(): void {
     if (this.isBuilt) {
       throw new WalletError(
-        WalletErrorCode.InvalidOperation,
+        WalletErrorCode.InvalidStateTransition,
         'Transaction builder has already been built and cannot be modified',
         ErrorSeverity.Error
       );
@@ -519,7 +519,7 @@ export class BuilderUtils {
   static createParams(state: BuilderState): SendTransactionParams | SendOneSidedParams {
     if (!state.recipient || !state.amount || !state.feePerGram) {
       throw new WalletError(
-        WalletErrorCode.ValidationFailed,
+        WalletErrorCode.UtxoValidationFailed,
         'Incomplete transaction parameters',
         ErrorSeverity.Error
       );

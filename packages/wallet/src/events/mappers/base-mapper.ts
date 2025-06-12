@@ -199,7 +199,7 @@ export class EventMapperRegistry {
     if (!mapper) {
       throw new Error(`No mapper registered for event type: ${eventType}`);
     }
-    return mapper.mapSafe(data);
+    return mapper.map(data);
   }
 
   /**

@@ -173,8 +173,8 @@ describe('PendingTransactionManager', () => {
 
       expect(result.inbound).toHaveLength(2);
       expect(result.outbound).toHaveLength(2);
-      expect(result.inbound[0].txId).toBe('tx_inbound_1');
-      expect(result.outbound[0].txId).toBe('tx_outbound_1');
+      expect(result.inbound[0].id).toBe('tx_inbound_1');
+      expect(result.outbound[0].id).toBe('tx_outbound_1');
     });
 
     it('should refresh data when forceRefresh is true', async () => {
@@ -210,7 +210,7 @@ describe('PendingTransactionManager', () => {
       const transaction = await manager.getPendingTransaction('tx_inbound_1' as TransactionId);
       
       expect(transaction).toBeDefined();
-      expect(transaction?.txId).toBe('tx_inbound_1');
+      expect(transaction?.id).toBe('tx_inbound_1');
       expect(transaction?.amount).toBe(BigInt(1000000));
     });
 

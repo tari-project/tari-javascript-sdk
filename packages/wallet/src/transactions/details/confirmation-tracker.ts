@@ -350,7 +350,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
     try {
       const confirmationsJson = await this.ffiBindings.wallet_get_transaction_confirmations?.(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       if (!confirmationsJson) {
@@ -372,7 +372,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
     try {
       const transactionJson = await this.ffiBindings.wallet_get_transaction(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       if (!transactionJson) {

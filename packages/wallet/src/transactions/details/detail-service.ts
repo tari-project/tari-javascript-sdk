@@ -532,9 +532,9 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
     if (this.config.enableRichMetadata) {
       // Get transaction inputs, outputs, and kernels
       [inputs, outputs, kernels] = await Promise.all([
-        this.getTransactionInputs(transaction.txId),
-        this.getTransactionOutputs(transaction.txId),
-        this.getTransactionKernels(transaction.txId)
+        this.getTransactionInputs(transaction.id),
+        this.getTransactionOutputs(transaction.id),
+        this.getTransactionKernels(transaction.id)
       ]);
       
       // Calculate fee breakdown
@@ -548,11 +548,11 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
     
     // Get confirmation count
     const confirmations = this.config.enableConfirmationTracking ?
-      await this.confirmationTracker.getConfirmationCount(transaction.txId) : 0;
+      await this.confirmationTracker.getConfirmationCount(transaction.id) : 0;
     
     // Get memo if enabled
     const memo = this.config.enableMemoManagement ?
-      await this.memoService.getMemo(transaction.txId) : undefined;
+      await this.memoService.getMemo(transaction.id) : undefined;
     
     // Calculate metadata
     const metadata = this.calculateTransactionMetadata(transaction, inputs, outputs, kernels);

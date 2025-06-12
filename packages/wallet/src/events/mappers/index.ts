@@ -63,6 +63,13 @@ export {
   calculateBalanceChange
 } from './balance-mapper.js';
 
+// Import the register functions and registry for internal use
+import { defaultMapperRegistry } from './base-mapper.js';
+import { registerTransactionMappers } from './transaction-mapper.js';
+import { registerConnectivityMappers } from './connectivity-mapper.js';
+import { registerSyncMappers } from './sync-mapper.js';
+import { registerBalanceMappers } from './balance-mapper.js';
+
 /**
  * Register all mappers with the default registry
  */

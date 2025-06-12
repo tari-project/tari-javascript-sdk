@@ -720,7 +720,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
   private ensureInitialized(): void {
     if (!this.isInitialized) {
       throw new WalletError(
-        WalletErrorCode.NotInitialized,
+        WalletErrorCode.InitializationFailed,
         'Transaction API not initialized. Call initialize() first.'
       );
     }
