@@ -28,11 +28,11 @@ export class TariAddress {
   private readonly _format: AddressFormat;
   private readonly _normalized: string;
   private readonly _publicKey?: PublicKey;
-  private _cached?: {
+  private _cached: {
     emoji?: EmojiId;
     base58?: Base58Address;
     hex?: HexAddress;
-  };
+  } = {};
 
   constructor(address: string) {
     // Validate the address

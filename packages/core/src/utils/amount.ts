@@ -10,11 +10,15 @@ export {
   AmountUtils,
   AmountSerializer,
   Amount,
+  MIN_AMOUNT
+} from '../types/amount.js';
+
+// Re-export constants from constants.js
+export {
   TARI_PRECISION,
   MAX_TARI_SUPPLY,
-  MIN_AMOUNT,
   DUST_THRESHOLD
-} from '../types/amount.js';
+} from '../types/constants.js';
 
 export type {
   AmountValidationResult,

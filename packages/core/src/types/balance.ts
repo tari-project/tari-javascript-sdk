@@ -400,7 +400,7 @@ export class BalanceInfoImpl implements BalanceInfo {
 // Balance snapshot implementation
 export class BalanceSnapshotImpl implements BalanceSnapshot {
   constructor(
-    public readonly balance: BalanceInfo,
+    public readonly balance: BalanceInfoImpl,
     public readonly blockHeight: bigint,
     public readonly timestamp: UnixTimestamp = Date.now() as UnixTimestamp,
     public readonly change?: BalanceChange
@@ -410,7 +410,7 @@ export class BalanceSnapshotImpl implements BalanceSnapshot {
    * Create snapshot with change from previous
    */
   static withChange(
-    balance: BalanceInfo,
+    balance: BalanceInfoImpl,
     blockHeight: bigint,
     previous?: BalanceSnapshot
   ): BalanceSnapshotImpl {

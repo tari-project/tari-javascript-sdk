@@ -14,10 +14,11 @@ import type {
   Hash,
   WalletHandle
 } from './branded.js';
-import type {
+import {
   TransactionStatus,
   ConnectivityStatus,
-  SyncStatus
+  SyncStatus,
+  LogLevel
 } from './enums.js';
 import type {
   Transaction,
@@ -410,15 +411,7 @@ export interface LogEvent extends BaseEvent {
   readonly metadata?: Record<string, any>;
 }
 
-export const LogLevel = {
-  Trace: 'trace',
-  Debug: 'debug',
-  Info: 'info',
-  Warn: 'warn',
-  Error: 'error'
-} as const;
-
-export type LogLevel = typeof LogLevel[keyof typeof LogLevel];
+// LogLevel is imported from enums.js to avoid conflicts
 
 // Union type for all events
 export type WalletEvent = 

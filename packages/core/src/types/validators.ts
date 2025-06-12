@@ -18,7 +18,7 @@ import {
   isTransactionInfo,
   isContact,
   isUtxoInfo,
-  isWalletConfig,
+
   isObject,
   isNonEmptyString,
   isPositiveNumber,
@@ -26,8 +26,10 @@ import {
   isStringArray
 } from './guards.js';
 
+import { isWalletConfig } from './wallet-config.js';
+
 // Validation result types
-export interface ValidationResult {
+export interface ValidatorResult {
   /** Whether validation passed */
   readonly valid: boolean;
   /** Validation errors */
@@ -95,7 +97,7 @@ export abstract class BaseValidator<T> {
   /**
    * Validate a value
    */
-  abstract validate(value: unknown): ValidationResult;
+  abstract validate(value: unknown): ValidatorResult;
 
   /**
    * Create validation error
@@ -134,7 +136,7 @@ export abstract class BaseValidator<T> {
   /**
    * Create successful validation result
    */
-  protected createSuccess(warnings: ValidationWarning[] = []): ValidationResult {
+  protected createSuccess(warnings: ValidationWarning[] = []): ValidatorResult {
     return {
       valid: true,
       errors: [],
@@ -149,7 +151,7 @@ export abstract class BaseValidator<T> {
   protected createFailure(
     errors: ValidationError[],
     warnings: ValidationWarning[] = []
-  ): ValidationResult {
+  ): ValidatorResult {
     return {
       valid: false,
       errors,
@@ -182,7 +184,7 @@ export class StringValidator extends BaseValidator<string> {
     super(path, options);
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -276,7 +278,7 @@ export class NumberValidator extends BaseValidator<number> {
     super(path, options);
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -367,7 +369,7 @@ export class BigIntValidator extends BaseValidator<bigint> {
     super(path, options);
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -431,7 +433,7 @@ export class ArrayValidator<T> extends BaseValidator<T[]> {
     super(path, options);
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -533,7 +535,7 @@ export class ObjectValidator<T extends Record<string, unknown>> extends BaseVali
     super(path, options);
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -618,7 +620,7 @@ export class MicroTariValidator extends BigIntValidator {
     );
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const result = super.validate(value);
     
     if (result.valid && typeof value === 'bigint') {
@@ -647,7 +649,7 @@ export class TariAddressValidator extends StringValidator {
     }, path, options);
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const stringResult = super.validate(value);
     if (!stringResult.valid) {
       return stringResult;
@@ -712,7 +714,7 @@ export class TimestampValidator extends NumberValidator {
     );
   }
 
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     const result = super.validate(value);
     
     if (result.valid && typeof value === 'number') {
@@ -747,7 +749,7 @@ export class TimestampValidator extends NumberValidator {
 // Composite validators for complex types
 
 export class BalanceValidator extends BaseValidator<any> {
-  validate(value: unknown): ValidationResult {
+  validate(value: unknown): ValidatorResult {
     if (!isBalance(value)) {
       return this.createFailure([
         this.createError(
@@ -823,7 +825,7 @@ export class ValidationUtils {
       name: string;
     }>,
     options: ValidationOptions = {}
-  ): ValidationResult {
+  ): ValidatorResult {
     const allErrors: ValidationError[] = [];
     const allWarnings: ValidationWarning[] = [];
 
@@ -866,7 +868,7 @@ export class ValidationUtils {
     defaultValidator?: BaseValidator<any>
   ): BaseValidator<T | any> {
     return new (class extends BaseValidator<T | any> {
-      validate(value: unknown): ValidationResult {
+      validate(value: unknown): ValidatorResult {
         if (condition(value)) {
           return validator.validate(value);
         } else if (defaultValidator) {
@@ -885,7 +887,7 @@ export class ValidationUtils {
     ...validators: { [K in keyof T]: BaseValidator<T[K]> }
   ): BaseValidator<T[number]> {
     return new (class extends BaseValidator<T[number]> {
-      validate(value: unknown): ValidationResult {
+      validate(value: unknown): ValidatorResult {
         const results = validators.map(v => v.validate(value));
         
         // If any validator passes, the union passes
@@ -908,7 +910,7 @@ export class ValidationUtils {
    */
   static optional<T>(validator: BaseValidator<T>): BaseValidator<T | undefined> {
     return new (class extends BaseValidator<T | undefined> {
-      validate(value: unknown): ValidationResult {
+      validate(value: unknown): ValidatorResult {
         if (value === undefined) {
           return this.createSuccess();
         }
@@ -922,7 +924,7 @@ export class ValidationUtils {
    */
   static nullable<T>(validator: BaseValidator<T>): BaseValidator<T | null> {
     return new (class extends BaseValidator<T | null> {
-      validate(value: unknown): ValidationResult {
+      validate(value: unknown): ValidatorResult {
         if (value === null) {
           return this.createSuccess();
         }

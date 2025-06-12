@@ -296,7 +296,7 @@ export type EventNames<T> = keyof T;
 /**
  * Extract handler type for a specific event
  */
-export type EventHandler<T, K extends keyof T> = T[K];
+export type HandlerType<T, K extends keyof T> = T[K];
 
 /**
  * Create a typed event emitter interface
@@ -349,10 +349,8 @@ export type WalletConfigLike<Required extends Record<string, any>, Optional exte
  */
 export type SafeHandler<T extends any[], R = void> = (...args: T) => R | Promise<R>;
 
-/**
- * Callback with optional error parameter
- */
-export type NodeCallback<T> = (error?: Error | null, result?: T) => void;
+// Import NodeCallback from callbacks.js to avoid conflicts
+import type { NodeCallback } from './callbacks.js';
 
 /**
  * Convert callback-style to promise-style
@@ -363,10 +361,8 @@ export type Promisify<T extends (...args: any[]) => any> = T extends (...args: [
 
 // Brand-aware utilities
 
-/**
- * Check if a type is branded
- */
-export type IsBranded<T> = T extends { readonly [__brand: symbol]: any } ? true : false;
+// Import IsBranded from branded types
+import type { IsBranded } from './branded.js';
 
 /**
  * Extract all branded types from an object

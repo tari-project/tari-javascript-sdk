@@ -58,7 +58,7 @@ export interface FFIMonitoringConfig {
 /**
  * Default monitoring configuration
  */
-const DEFAULT_MONITORING_CONFIG: FFIFFIMonitoringConfig = {
+const DEFAULT_MONITORING_CONFIG: FFIMonitoringConfig = {
   leakThreshold: 300000, // 5 minutes
   resourceCountWarning: 100,
   resourceCountCritical: 500,

@@ -168,21 +168,7 @@ export function isEmojiId(value: unknown): value is EmojiId {
          emojiArray.every(char => /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(char));
 }
 
-/**
- * Check if value is a valid Base58Address
- */
-export function isBase58Address(value: unknown): value is Base58Address {
-  return typeof value === 'string' && 
-         /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,64}$/.test(value);
-}
-
-/**
- * Check if value is a valid HexAddress
- */
-export function isHexAddress(value: unknown): value is HexAddress {
-  return typeof value === 'string' && 
-         /^(0x)?[0-9a-fA-F]{64}$/.test(value);
-}
+// Address validation functions are available in address.js
 
 /**
  * Check if value is a valid UnixTimestamp
@@ -329,14 +315,7 @@ export function isUtxoInfo(value: unknown): value is UtxoInfo {
          isUnixTimestamp(value.updatedAt);
 }
 
-/**
- * Check if value is a valid WalletConfig object
- */
-export function isWalletConfig(value: unknown): value is WalletConfig {
-  return isObject(value) &&
-         isNetworkType(value.network) &&
-         typeof value.storagePath === 'string';
-}
+// WalletConfig validation function is available in wallet-config.js
 
 /**
  * Check if value is a valid WalletEvent object

@@ -8,11 +8,11 @@
 import type { MicroTari, Tari } from './branded.js';
 import type { BalanceFormatOptions } from './balance.js';
 
-// Amount conversion constants
-export const TARI_PRECISION = 1_000_000n; // 1 Tari = 1,000,000 MicroTari
-export const MAX_TARI_SUPPLY = 21_000_000_000_000_000n; // 21 billion Tari in MicroTari
+// Import constants to avoid conflicts
+import { TARI_PRECISION, MAX_TARI_SUPPLY, DUST_THRESHOLD } from './constants.js';
+
+// Amount-specific constants
 export const MIN_AMOUNT = 1n; // Minimum 1 MicroTari
-export const DUST_THRESHOLD = 100n; // 100 MicroTari dust threshold
 
 // Amount validation result
 export interface AmountValidationResult {

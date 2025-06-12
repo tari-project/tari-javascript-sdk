@@ -367,25 +367,27 @@ export class TransactionStatusManager {
    * Check if state is final (no further transitions)
    */
   static isFinalState(state: TransactionState): boolean {
-    return [
+    const finalStates = [
       TransactionState.Completed,
       TransactionState.Cancelled,
       TransactionState.Failed,
       TransactionState.Imported,
       TransactionState.Coinbase
-    ].includes(state);
+    ] as TransactionState[];
+    return finalStates.includes(state);
   }
 
   /**
    * Check if transaction can be cancelled in this state
    */
   static isCancellable(state: TransactionState): boolean {
-    return [
+    const cancellableStates = [
       TransactionState.Created,
       TransactionState.Validating,
       TransactionState.PendingOutbound,
       TransactionState.Broadcasting
-    ].includes(state);
+    ] as TransactionState[];
+    return cancellableStates.includes(state);
   }
 
   /**

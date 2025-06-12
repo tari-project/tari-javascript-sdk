@@ -629,7 +629,7 @@ export class ContactUtils {
       verified: 0,
       byType: {} as Record<ContactType, number>,
       bySource: {} as Record<ContactSource, number>,
-      topTags: [],
+      topTags: [] as Array<{ tag: string; count: number }>,
       activity: {
         withTransactions: 0,
         recentlyUsed: 0,
@@ -637,7 +637,9 @@ export class ContactUtils {
       },
       dateRanges: {
         earliestCreated: Date.now() as UnixTimestamp,
-        latestCreated: 0 as UnixTimestamp
+        latestCreated: 0 as UnixTimestamp,
+        earliestSeen: undefined as UnixTimestamp | undefined,
+        latestSeen: undefined as UnixTimestamp | undefined
       }
     };
 

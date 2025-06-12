@@ -325,7 +325,7 @@ export const DEFAULT_CONFIG: Required<CoreConfig> = {
     enableTracing: false,
     memoryThreshold: 0.8
   },
-  network: {
+  networkConfig: {
     type: NetworkType.Testnet,
     baseNodePeers: [],
     dnsSeeds: [],
