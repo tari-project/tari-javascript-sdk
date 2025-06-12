@@ -18,6 +18,12 @@ import { TariWallet } from './tari-wallet.js';
 import { validateWalletConfig, validateRequiredFields } from './config/validator.js';
 import { createWalletConfig, mergeConfig } from './config/defaults.js';
 import { SeedManager, type SeedValidationResult } from './seed/index.js';
+import { 
+  WalletRestorationService,
+  type RestorationOptions,
+  type RestorationResult,
+  type RestorationEventHandlers
+} from './restore/index.js';
 
 /**
  * Factory options for wallet creation
@@ -236,6 +242,105 @@ export class WalletFactory {
     ]);
 
     return wallet;
+  }
+
+  /**
+   * Restore a wallet with advanced progress tracking and monitoring
+   * 
+   * This method provides comprehensive restoration with real-time progress updates,
+   * enhanced error recovery, and detailed validation. Use this for production
+   * applications that need user feedback during restoration.
+   * 
+   * @param seedWords - Array of 12, 15, 18, 21, or 24 seed words
+   * @param userConfig - Partial wallet configuration
+   * @param restorationOptions - Advanced restoration options
+   * @param factoryOptions - Factory options
+   * @returns Promise resolving to restoration result
+   */
+  static async restoreWithProgress(
+    seedWords: string[],
+    userConfig: Partial<WalletConfig>,
+    restorationOptions: RestorationOptions = {},
+    factoryOptions: WalletFactoryOptions = {}
+  ): Promise<{ wallet: TariWallet; result: RestorationResult }> {
+    await this.ensureInitialized();
+
+    const opts = { ...DEFAULT_FACTORY_OPTIONS, ...factoryOptions };
+    
+    // Merge config but don't include seed words yet (restoration service handles them)
+    const config = createWalletConfig(userConfig);
+
+    // Validate configuration (without seed words)
+    if (opts.validateConfig) {
+      const validation = await validateWalletConfig(config, {
+        checkPaths: opts.checkResources,
+        checkDiskSpace: opts.checkResources,
+        validateSeedWords: false, // Let restoration service handle this
+      });
+
+      if (!validation.isValid) {
+        const errorMessages = validation.errors.map(e => e.message).join('; ');
+        throw new WalletError(
+          WalletErrorCode.InvalidConfig,
+          `Wallet restoration configuration validation failed: ${errorMessages}`,
+          { severity: ErrorSeverity.Error }
+        );
+      }
+    } else {
+      validateRequiredFields(config);
+    }
+
+    // Create restoration service
+    const restorationService = new WalletRestorationService();
+
+    try {
+      // Perform restoration with progress tracking
+      const restorationResult = await restorationService.restoreWallet(
+        seedWords,
+        config,
+        restorationOptions
+      );
+
+      if (!restorationResult.success || !restorationResult.walletHandle) {
+        throw restorationResult.error || new WalletError(
+          WalletErrorCode.InitializationFailed,
+          'Wallet restoration failed'
+        );
+      }
+
+      // Create wallet instance from restored handle
+      const wallet = new TariWallet(
+        restorationResult.walletHandle,
+        { ...config, seedWords: [...seedWords] } // Include validated seed words
+      );
+
+      // Register for cleanup tracking
+      if (opts.trackResources) {
+        WalletResourceTracker.register(wallet, () => wallet.destroy());
+      }
+
+      return { wallet, result: restorationResult };
+
+    } catch (error) {
+      // Cleanup restoration service
+      restorationService.destroy();
+      throw error;
+    } finally {
+      // Always cleanup restoration service
+      restorationService.destroy();
+    }
+  }
+
+  /**
+   * Create a restoration service for custom restoration workflows
+   * 
+   * This method allows applications to manage the restoration process directly
+   * with full control over progress monitoring and error handling.
+   * 
+   * @returns New WalletRestorationService instance
+   */
+  static createRestorationService(): WalletRestorationService {
+    return new WalletRestorationService();
   }
 
   /**

@@ -120,6 +120,7 @@ export const enum WalletErrorCode {
   ResourceTimeout = 6013,
   ResourceUnavailable = 6014,
   ResourceCleanupFailed = 6015,
+  ResourceNotFound = 6016,
   
   // Security errors (7000-7099)
   AuthenticationFailed = 7000,
@@ -294,6 +295,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.ResourceTimeout]: ErrorCategory.Resource,
   [WalletErrorCode.ResourceUnavailable]: ErrorCategory.Resource,
   [WalletErrorCode.ResourceCleanupFailed]: ErrorCategory.Resource,
+  [WalletErrorCode.ResourceNotFound]: ErrorCategory.Resource,
   
   // Security errors (7000-7099)
   [WalletErrorCode.AuthenticationFailed]: ErrorCategory.Security,
