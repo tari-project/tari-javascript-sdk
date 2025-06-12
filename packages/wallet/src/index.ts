@@ -25,6 +25,7 @@ export type {
 export * from './types/index';
 export * from './wallet/index';
 export * from './models/index';
+export * from './seed/index';
 
 // Version information
 export const WALLET_VERSION = '0.0.1';

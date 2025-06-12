@@ -17,6 +17,7 @@ import type { WalletConfig } from './types/index.js';
 import { TariWallet } from './tari-wallet.js';
 import { validateWalletConfig, validateRequiredFields } from './config/validator.js';
 import { createWalletConfig, mergeConfig } from './config/defaults.js';
+import { SeedManager, type SeedValidationResult } from './seed/index.js';
 
 /**
  * Factory options for wallet creation
@@ -168,7 +169,12 @@ export class WalletFactory {
   }
 
   /**
-   * Restore a wallet from seed words
+   * Restore a wallet from seed words with BIP39 validation
+   * 
+   * @param seedWords - Array of 12, 15, 18, 21, or 24 seed words
+   * @param userConfig - Partial wallet configuration
+   * @param options - Factory options
+   * @returns Promise resolving to restored TariWallet instance
    */
   static async restore(
     seedWords: string[], 
@@ -177,22 +183,25 @@ export class WalletFactory {
   ): Promise<TariWallet> {
     await this.ensureInitialized();
 
-    if (!seedWords || !Array.isArray(seedWords) || seedWords.length !== 24) {
+    // Validate seed words using BIP39 standards
+    const validationResult = await SeedManager.validateSeedPhrase(seedWords);
+    if (!validationResult.isValid) {
       throw new WalletError(
-        WalletErrorCode.InvalidFormat,
-        'Seed words must be an array of exactly 24 words',
-        {
-          severity: ErrorSeverity.Error
-        }
+        WalletErrorCode.CryptoError,
+        `Invalid seed words: ${validationResult.errors.join(', ')}`,
+        { severity: ErrorSeverity.Error }
       );
     }
 
+    // Use normalized seed words
+    const normalizedSeedWords = validationResult.normalizedWords!;
+
     const opts = { ...DEFAULT_FACTORY_OPTIONS, ...options };
     
-    // Merge config with seed words
+    // Merge config with normalized seed words
     const configWithSeed = createWalletConfig({
       ...userConfig,
-      seedWords: [...seedWords] // Create copy to avoid mutation
+      seedWords: [...normalizedSeedWords] // Use validated and normalized words
     });
 
     // Validate configuration including seed words
@@ -227,6 +236,59 @@ export class WalletFactory {
     ]);
 
     return wallet;
+  }
+
+  /**
+   * Generate a new seed phrase using BIP39 standards
+   * 
+   * @param wordCount - Number of words (12, 15, 18, 21, or 24)
+   * @param language - BIP39 language (default: 'english')
+   * @returns Promise resolving to new seed phrase
+   */
+  static async generateSeedPhrase(
+    wordCount: 12 | 15 | 18 | 21 | 24 = 24,
+    language: 'english' = 'english'
+  ): Promise<string[]> {
+    const seedPhrase = await SeedManager.generateSeedPhrase({ 
+      wordCount,
+      language
+    });
+    return Array.from(seedPhrase);
+  }
+
+  /**
+   * Validate seed words against BIP39 standards
+   * 
+   * @param seedWords - Array of seed words to validate
+   * @returns Promise resolving to validation result
+   */
+  static async validateSeedWords(seedWords: string[]): Promise<SeedValidationResult> {
+    return SeedManager.validateSeedPhrase(seedWords);
+  }
+
+  /**
+   * Create a new wallet with generated seed phrase
+   * 
+   * @param userConfig - Partial wallet configuration
+   * @param options - Factory options including seed generation preferences
+   * @returns Promise resolving to new TariWallet instance and seed phrase
+   */
+  static async createWithGeneratedSeed(
+    userConfig: Partial<WalletConfig> = {},
+    options: WalletFactoryOptions & { 
+      wordCount?: 12 | 15 | 18 | 21 | 24;
+      language?: 'english';
+    } = {}
+  ): Promise<{ wallet: TariWallet; seedPhrase: string[] }> {
+    const { wordCount = 24, language = 'english' as const, ...factoryOptions } = options;
+    
+    // Generate new seed phrase
+    const seedPhrase = await this.generateSeedPhrase(wordCount, language);
+    
+    // Create wallet using the generated seed phrase
+    const wallet = await this.restore(seedPhrase, userConfig, factoryOptions);
+    
+    return { wallet, seedPhrase };
   }
 
   /**

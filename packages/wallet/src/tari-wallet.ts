@@ -34,6 +34,11 @@ import {
   type LifecycleHooks,
   createAsyncDisposableResource 
 } from './lifecycle.js';
+import {
+  SeedManager,
+  SecureBuffer,
+  type SeedValidationResult
+} from './seed/index.js';
 
 /**
  * Main Tari wallet class providing high-level wallet operations
@@ -172,15 +177,55 @@ export class TariWallet implements AsyncDisposable {
   }
 
   /**
-   * Get wallet seed words (requires passphrase if set)
+   * Get wallet seed words with BIP39 validation and secure handling
+   * 
+   * @param passphrase - Optional passphrase for encrypted wallets
+   * @returns Promise resolving to array of seed words
    */
-  async getSeedWords(_passphrase?: string): Promise<string[]> {
+  async getSeedWords(passphrase?: string): Promise<string[]> {
+    this.ensureNotDestroyed();
+
+    const secureBuffer = await this.getSeedWordsSecure(passphrase);
+    try {
+      return secureBuffer.toWords();
+    } finally {
+      // Always clean up the secure buffer
+      secureBuffer.destroy();
+    }
+  }
+
+  /**
+   * Get wallet seed words in a secure buffer for advanced handling
+   * 
+   * @param passphrase - Optional passphrase for encrypted wallets
+   * @returns Promise resolving to SecureBuffer containing seed words
+   */
+  async getSeedWordsSecure(passphrase?: string): Promise<SecureBuffer> {
+    this.ensureNotDestroyed();
+
     try {
       const bindings = getFFIBindings();
+      
+      // Get raw seed words from FFI
       const seedWords = await bindings.getSeedWords(this.handle);
       
-      return seedWords;
+      // Validate the seed words using our BIP39 system
+      const validationResult = await SeedManager.validateSeedPhrase(seedWords);
+      if (!validationResult.isValid) {
+        throw new WalletError(
+          WalletErrorCode.CryptoError,
+          `Retrieved seed words failed validation: ${validationResult.errors.join(', ')}`,
+          { severity: ErrorSeverity.Error }
+        );
+      }
+
+      // Create secure buffer with normalized words
+      return SeedManager.createSecureBuffer(validationResult.normalizedWords!);
     } catch (error) {
+      if (error instanceof WalletError) {
+        throw error;
+      }
+      
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve wallet seed words',
@@ -190,6 +235,27 @@ export class TariWallet implements AsyncDisposable {
         }
       );
     }
+  }
+
+  /**
+   * Validate wallet seed words against BIP39 standards
+   * 
+   * @param words - Seed words to validate
+   * @returns Promise resolving to validation result
+   */
+  static async validateSeedWords(words: string[]): Promise<SeedValidationResult> {
+    return SeedManager.validateSeedPhrase(words);
+  }
+
+  /**
+   * Generate a new BIP39 seed phrase
+   * 
+   * @param wordCount - Number of words (12, 15, 18, 21, or 24)
+   * @returns Promise resolving to new seed phrase
+   */
+  static async generateSeedPhrase(wordCount: 12 | 15 | 18 | 21 | 24 = 24): Promise<string[]> {
+    const seedPhrase = await SeedManager.generateSeedPhrase({ wordCount });
+    return Array.from(seedPhrase);
   }
 
   /**
@@ -429,6 +495,19 @@ export class TariWallet implements AsyncDisposable {
    */
   get id(): string {
     return this.instanceId;
+  }
+
+  /**
+   * Ensure wallet is not destroyed before operations
+   */
+  private ensureNotDestroyed(): void {
+    if (this.isDestroyed) {
+      throw new WalletError(
+        WalletErrorCode.UseAfterFree,
+        'Cannot use wallet after it has been destroyed',
+        { severity: ErrorSeverity.Error }
+      );
+    }
   }
 
   /**
