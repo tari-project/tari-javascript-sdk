@@ -88,7 +88,7 @@ export class RecipientValidator {
       throw new WalletError(
         WalletErrorCode.INVALID_PARAMETERS,
         'At least one recipient is required',
-        { operation: 'validateMultipleRecipients' }
+        { context: { operation: 'validateMultipleRecipients' } }
       );
     }
 
@@ -99,10 +99,12 @@ export class RecipientValidator {
           error.code || WalletErrorCode.INVALID_ADDRESS,
           `Invalid recipient at index ${index}: ${error.message}`,
           { 
-            operation: 'validateMultipleRecipients',
-            recipientIndex: index,
-            recipient: recipient.toString(),
-            cause: error
+            cause: error,
+            context: {
+              operation: 'validateMultipleRecipients',
+              recipientIndex: index,
+              recipient: recipient.toString()
+            }
           }
         );
       })
@@ -202,8 +204,10 @@ export class RecipientValidator {
         WalletErrorCode.SELF_SEND_NOT_ALLOWED,
         'Sending to own address is not allowed',
         { 
-          operation: 'validateTariAddress',
-          address: address.toDisplayString()
+          context: {
+            operation: 'validateTariAddress',
+            address: address.toDisplayString()
+          }
         }
       );
     }
@@ -240,9 +244,11 @@ export class RecipientValidator {
         WalletErrorCode.ADDRESS_RESOLUTION_FAILED,
         `Unable to resolve address: ${addressStr}`,
         { 
-          operation: 'resolveAddress',
-          address: addressStr,
-          cause: directError
+          cause: directError,
+          context: {
+            operation: 'resolveAddress',
+            address: addressStr
+          }
         }
       );
     }
@@ -258,9 +264,11 @@ export class RecipientValidator {
         WalletErrorCode.INVALID_ADDRESS,
         `Invalid emoji ID: ${emojiId}`,
         { 
-          operation: 'resolveEmojiAddress',
-          emojiId,
-          cause: error
+          cause: error,
+          context: {
+            operation: 'resolveEmojiAddress',
+            emojiId
+          }
         }
       );
     }
@@ -274,9 +282,11 @@ export class RecipientValidator {
         WalletErrorCode.INVALID_ADDRESS,
         `Invalid base58 address: ${base58}`,
         { 
-          operation: 'resolveBase58Address',
-          base58,
-          cause: error
+          cause: error,
+          context: {
+            operation: 'resolveBase58Address',
+            base58
+          }
         }
       );
     }
@@ -290,9 +300,11 @@ export class RecipientValidator {
         WalletErrorCode.INVALID_ADDRESS,
         `Invalid hex address: ${hex}`,
         { 
-          operation: 'resolveHexAddress',
-          hex,
-          cause: error
+          cause: error,
+          context: {
+            operation: 'resolveHexAddress',
+            hex
+          }
         }
       );
     }
@@ -328,9 +340,11 @@ export class RecipientValidator {
         WalletErrorCode.DUPLICATE_RECIPIENTS,
         'Duplicate recipient addresses are not allowed',
         { 
-          operation: 'checkForDuplicates',
-          totalRecipients: addresses.length,
-          uniqueRecipients: uniqueAddresses.size
+          context: {
+            operation: 'checkForDuplicates',
+            totalRecipients: addresses.length,
+            uniqueRecipients: uniqueAddresses.size
+          }
         }
       );
     }

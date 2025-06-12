@@ -412,7 +412,7 @@ export class FeeCalculator {
       throw new WalletError(
         WalletErrorCode.ResourceDisposed,
         'Fee calculator has been disposed',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
   }

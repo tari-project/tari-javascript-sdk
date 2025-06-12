@@ -114,9 +114,11 @@ export class OneSidedValidator {
         WalletErrorCode.InvalidAmount,
         'One-sided transaction amount must be positive',
         { 
-          operation: 'validateOneSidedTransaction',
-          amount: amount.toString(),
-          field: 'amount'
+          context: {
+            operation: 'validateOneSidedTransaction',
+            amount: amount.toString(),
+            field: 'amount'
+          }
         }
       );
     }
@@ -128,9 +130,11 @@ export class OneSidedValidator {
           WalletErrorCode.InvalidFee,
           'Fee per gram must be positive for one-sided transactions',
           { 
-            operation: 'validateOneSidedTransaction',
-            feePerGram: feePerGram.toString(),
-            field: 'feePerGram'
+            context: {
+              operation: 'validateOneSidedTransaction',
+              feePerGram: feePerGram.toString(),
+              field: 'feePerGram'
+            }
           }
         );
       }
@@ -148,10 +152,12 @@ export class OneSidedValidator {
         WalletErrorCode.InvalidAmount,
         `One-sided transaction amount below minimum threshold of ${this.config.minOneSidedAmount}`,
         {
-          operation: 'validateOneSidedTransaction',
-          amount: amount.toString(),
-          minimum: this.config.minOneSidedAmount.toString(),
-          field: 'amount'
+          context: {
+            operation: 'validateOneSidedTransaction',
+            amount: amount.toString(),
+            minimum: this.config.minOneSidedAmount.toString(),
+            field: 'amount'
+          }
         }
       );
     }
@@ -162,10 +168,12 @@ export class OneSidedValidator {
         WalletErrorCode.InvalidAmount,
         `One-sided transaction amount exceeds maximum threshold of ${this.config.maxOneSidedAmount}`,
         {
-          operation: 'validateOneSidedTransaction',
-          amount: amount.toString(),
-          maximum: this.config.maxOneSidedAmount.toString(),
-          field: 'amount'
+          context: {
+            operation: 'validateOneSidedTransaction',
+            amount: amount.toString(),
+            maximum: this.config.maxOneSidedAmount.toString(),
+            field: 'amount'
+          }
         }
       );
     }

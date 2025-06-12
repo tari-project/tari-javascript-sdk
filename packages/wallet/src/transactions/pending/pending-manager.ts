@@ -319,7 +319,10 @@ export class PendingManager extends TypedEventEmitter {
       const walletError = error instanceof WalletError ? error : new WalletError(
         WalletErrorCode.FFIError,
         `Failed to refresh transaction ${transactionId}`,
-        { transactionId: transactionId.toString(), cause: error }
+        { 
+          cause: error,
+          context: { transactionId: transactionId.toString() }
+        }
       );
       
       this.emit('pending:error', walletError, transactionId);
@@ -575,7 +578,10 @@ export class PendingManager extends TypedEventEmitter {
     return error instanceof WalletError ? error : new WalletError(
       WalletErrorCode.TransactionProcessingFailed,
       `Failed to process pending transaction ${transactionId}`,
-      { transactionId: transactionId.toString(), cause: error }
+      { 
+        cause: error,
+        context: { transactionId: transactionId.toString() }
+      }
     );
   }
 
@@ -596,7 +602,10 @@ export class PendingManager extends TypedEventEmitter {
         error instanceof WalletError ? error : new WalletError(
           WalletErrorCode.AutoCancellationFailed,
           `Failed to auto-cancel transaction ${transactionId}`,
-          { transactionId: transactionId.toString(), reason, cause: error }
+          { 
+            cause: error,
+            context: { transactionId: transactionId.toString(), reason }
+          }
         ),
         transactionId
       );

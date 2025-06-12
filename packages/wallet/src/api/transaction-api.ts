@@ -248,7 +248,7 @@ export class TransactionAPI extends EventEmitter<TransactionAPIEvents> {
       throw new WalletError(
         WalletErrorCode.InitializationFailed,
         `Failed to initialize transaction API: ${error}`,
-        { originalError: error }
+        { cause: error }
       );
     }
   }

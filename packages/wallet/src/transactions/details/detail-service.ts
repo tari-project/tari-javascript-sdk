@@ -357,7 +357,10 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       throw new WalletError(
         WalletErrorCode.TransactionDetailRetrievalFailed,
         `Failed to get transaction details for ${transactionId}: ${error}`,
-        { originalError: error, transactionId }
+        { 
+          cause: error,
+          context: { transactionId: transactionId.toString() }
+        }
       );
     }
   }
@@ -505,7 +508,10 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       throw new WalletError(
         WalletErrorCode.FFIOperationFailed,
         `Failed to get basic transaction info: ${error}`,
-        { originalError: error, transactionId }
+        { 
+          cause: error,
+          context: { transactionId: transactionId.toString() }
+        }
       );
     }
   }

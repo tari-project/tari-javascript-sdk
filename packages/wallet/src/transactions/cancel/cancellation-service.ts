@@ -300,7 +300,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       throw new WalletError(
         WalletErrorCode.TransactionQueryFailed,
         `Failed to get cancellable transactions: ${error}`,
-        { originalError: error }
+        { cause: error }
       );
     }
   }
@@ -404,7 +404,10 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       throw new WalletError(
         WalletErrorCode.FFIOperationFailed,
         `FFI cancellation failed: ${error}`,
-        { originalError: error, transactionId }
+        { 
+          cause: error,
+          context: { transactionId: transactionId.toString() }
+        }
       );
     }
   }

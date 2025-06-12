@@ -381,7 +381,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       throw new WalletError(
         WalletErrorCode.TransactionNotFound,
         `Transaction ${transactionId} not found`,
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
 
@@ -390,8 +390,10 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       throw new WalletError(
         WalletErrorCode.TransactionNotCancellable,
         `Transaction ${transactionId} is not in pending state`,
-        ErrorSeverity.Error,
-        { currentStatus: transaction.status }
+        { 
+          severity: ErrorSeverity.Error,
+          context: { currentStatus: transaction.status }
+        }
       );
     }
 
@@ -399,7 +401,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       throw new WalletError(
         WalletErrorCode.TransactionNotCancellable,
         `Cannot cancel inbound transaction ${transactionId}`,
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
 
@@ -408,7 +410,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       throw new WalletError(
         WalletErrorCode.TransactionNotCancellable,
         `Transaction ${transactionId} is not cancellable`,
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
 
@@ -572,7 +574,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
         error instanceof WalletError ? error : new WalletError(
           WalletErrorCode.UnknownError,
           `Failed to refresh pending transactions: ${error}`,
-          ErrorSeverity.Warning
+          { severity: ErrorSeverity.Warning }
         )
       );
     }
@@ -616,8 +618,10 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
           new WalletError(
             WalletErrorCode.TransactionTimeout,
             `Transaction ${transactionId} has timed out`,
-            ErrorSeverity.Warning,
-            { transactionId }
+            { 
+              severity: ErrorSeverity.Warning,
+              context: { transactionId: transactionId.toString() }
+            }
           ),
           transactionId
         );
@@ -697,8 +701,11 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,
         `Invalid recipient address: ${address}`,
-        ErrorSeverity.Error,
-        { address, originalError: error }
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error,
+          context: { address }
+        }
       );
     }
   }
@@ -741,8 +748,10 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       throw new WalletError(
         WalletErrorCode.ResourceExhausted,
         'Too many concurrent transaction operations',
-        ErrorSeverity.Error,
-        { currentOperations: this.operationSemaphore, limit: this.config.maxConcurrentOperations }
+        { 
+          severity: ErrorSeverity.Error,
+          context: { currentOperations: this.operationSemaphore, limit: this.config.maxConcurrentOperations }
+        }
       );
     }
   }
@@ -755,7 +764,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       throw new WalletError(
         WalletErrorCode.ResourceDisposed,
         'Transaction service has been disposed',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
   }

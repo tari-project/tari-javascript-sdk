@@ -206,7 +206,10 @@ export class ConfirmationTracker extends EventEmitter<ConfirmationTrackerEvents>
       throw new WalletError(
         WalletErrorCode.ConfirmationTrackingFailed,
         `Failed to start tracking transaction ${transactionId}: ${error}`,
-        { originalError: error, transactionId }
+        { 
+          cause: error,
+          context: { transactionId: transactionId.toString() }
+        }
       );
     }
   }

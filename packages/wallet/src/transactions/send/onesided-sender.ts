@@ -117,7 +117,7 @@ export class OneSidedSender {
       throw new WalletError(
         WalletErrorCode.InvalidAmount,
         'One-sided transaction amount must be greater than zero',
-        { operation: 'sendOneSidedTransaction', amount: amount.toString() }
+        { context: { operation: 'sendOneSidedTransaction', amount: amount.toString() } }
       );
     }
 
@@ -165,11 +165,13 @@ export class OneSidedSender {
           WalletErrorCode.FEE_ESTIMATION_FAILED,
           'Failed to estimate one-sided transaction fee',
           { 
-            operation: 'sendOneSidedTransaction',
-            amount: amount.toString(),
-            recipient: targetAddress.toDisplayString(),
-            useStealth: options.useStealth,
-            cause: error
+            cause: error,
+            context: {
+              operation: 'sendOneSidedTransaction',
+              amount: amount.toString(),
+              recipient: targetAddress.toDisplayString(),
+              useStealth: options.useStealth
+            }
           }
         );
       }
@@ -197,13 +199,15 @@ export class OneSidedSender {
         WalletErrorCode.TransactionFailed,
         'Failed to send one-sided transaction via FFI',
         {
-          operation: 'sendOneSidedTransaction',
-          amount: amount.toString(),
-          recipient: targetAddress.toString(),
-          feePerGram: feePerGram.toString(),
-          message: options.message || '',
-          useStealth: options.useStealth,
-          cause: error
+          cause: error,
+          context: {
+            operation: 'sendOneSidedTransaction',
+            amount: amount.toString(),
+            recipient: targetAddress.toString(),
+            feePerGram: feePerGram.toString(),
+            message: options.message || '',
+            useStealth: options.useStealth
+          }
         }
       );
     }
@@ -350,9 +354,11 @@ export class OneSidedSender {
         WalletErrorCode.InvalidAddress,
         'Failed to generate stealth address for one-sided transaction',
         {
-          operation: 'generateStealthAddress',
-          recipient: recipientAddress.toString(),
-          cause: error
+          cause: error,
+          context: {
+            operation: 'generateStealthAddress',
+            recipient: recipientAddress.toString()
+          }
         }
       );
     }

@@ -350,8 +350,10 @@ export class NetworkFeesService extends EventEmitter<NetworkFeesServiceEvents> {
       throw new WalletError(
         WalletErrorCode.NetworkError,
         `Failed to fetch network fee statistics: ${error}`,
-        ErrorSeverity.Warning,
-        { originalError: error }
+        { 
+          severity: ErrorSeverity.Warning,
+          cause: error
+        }
       );
     }
   }
@@ -458,8 +460,10 @@ export class NetworkFeesService extends EventEmitter<NetworkFeesServiceEvents> {
     const walletError = new WalletError(
       WalletErrorCode.NetworkError,
       `Network fee service error: ${error}`,
-      ErrorSeverity.Warning,
-      { originalError: error }
+      { 
+        severity: ErrorSeverity.Warning,
+        cause: error
+      }
     );
 
     this.emit('stats:error', walletError);
@@ -502,7 +506,7 @@ export class NetworkFeesService extends EventEmitter<NetworkFeesServiceEvents> {
       throw new WalletError(
         WalletErrorCode.ResourceDisposed,
         'Network fees service has been disposed',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
   }

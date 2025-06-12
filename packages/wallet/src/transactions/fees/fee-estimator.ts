@@ -183,8 +183,11 @@ export class FeeEstimator {
       throw new WalletError(
         WalletErrorCode.FeeEstimationFailed,
         `Failed to estimate transaction fee: ${error}`,
-        ErrorSeverity.Error,
-        { amount, options, originalError: error }
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error,
+          context: { amount: amount.toString(), options }
+        }
       );
     }
   }
@@ -515,7 +518,7 @@ export class FeeEstimator {
       throw new WalletError(
         WalletErrorCode.ResourceDisposed,
         'Fee estimator has been disposed',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
   }

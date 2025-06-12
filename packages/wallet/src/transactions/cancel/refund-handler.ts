@@ -338,7 +338,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
       throw new WalletError(
         WalletErrorCode.BalanceQueryFailed,
         `Failed to get current balance: ${error}`,
-        { originalError: error }
+        { cause: error }
       );
     }
   }

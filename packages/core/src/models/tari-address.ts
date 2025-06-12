@@ -280,14 +280,18 @@ export class TariAddress {
   /**
    * Create from hex address
    */
-  static fromHex(hex: HexAddress): TariAddress {
+  static async fromHex(hex: string): Promise<TariAddress> {
+    // Validate that it's a valid hex string
+    if (!/^[0-9a-fA-F]+$/.test(hex)) {
+      throw new Error('Invalid hex address format');
+    }
     return new TariAddress(hex);
   }
 
   /**
    * Create from public key
    */
-  static fromPublicKey(publicKey: PublicKey): TariAddress {
+  static async fromPublicKey(publicKey: string): Promise<TariAddress> {
     // Implementation would convert public key to address
     // This requires FFI to get the proper address format
     return new TariAddress(publicKey);
@@ -296,7 +300,7 @@ export class TariAddress {
   /**
    * Parse from any string format
    */
-  static fromString(address: string): TariAddress {
+  static async fromString(address: string): Promise<TariAddress> {
     return new TariAddress(address);
   }
 
@@ -348,8 +352,8 @@ export class TariAddress {
   }
 
   /**
-   * Normalize address string
-   */
+  * Normalize address string
+  */
   static normalize(address: string): string | null {
     return AddressParser.normalize(address);
   }

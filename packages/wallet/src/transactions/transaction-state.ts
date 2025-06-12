@@ -148,7 +148,7 @@ export class TransactionStateManager extends EventEmitter<TransactionStateManage
       throw new WalletError(
         WalletErrorCode.TransactionNotFound,
         `Transaction ${transactionId} is not being tracked`,
-        ErrorSeverity.Warning
+        { severity: ErrorSeverity.Warning }
       );
     }
 
@@ -161,8 +161,10 @@ export class TransactionStateManager extends EventEmitter<TransactionStateManage
       throw new WalletError(
         WalletErrorCode.InvalidStateTransition,
         `Invalid state transition for transaction ${transactionId}: ${oldStatus} -> ${newStatus}. Reason: ${transitionResult.reason}`,
-        ErrorSeverity.Error,
-        { transactionId, oldStatus, newStatus, reason: transitionResult.reason }
+        { 
+          severity: ErrorSeverity.Error,
+          context: { transactionId: transactionId.toString(), oldStatus, newStatus, reason: transitionResult.reason }
+        }
       );
     }
 
@@ -288,7 +290,7 @@ export class TransactionStateManager extends EventEmitter<TransactionStateManage
       throw new WalletError(
         WalletErrorCode.TransactionNotFound,
         `Transaction ${transactionId} is not being tracked`,
-        ErrorSeverity.Warning
+        { severity: ErrorSeverity.Warning }
       );
     }
 
@@ -544,7 +546,7 @@ export class TransactionStateManager extends EventEmitter<TransactionStateManage
       throw new WalletError(
         WalletErrorCode.ResourceDisposed,
         'Transaction state manager has been disposed',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
   }

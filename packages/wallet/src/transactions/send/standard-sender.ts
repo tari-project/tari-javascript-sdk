@@ -94,7 +94,7 @@ export class StandardSender {
       throw new WalletError(
         WalletErrorCode.INVALID_AMOUNT,
         'Transaction amount must be greater than zero',
-        { operation: 'sendTransaction', amount: amount.toString() }
+        { context: { operation: 'sendTransaction', amount: amount.toString() } }
       );
     }
 
@@ -131,10 +131,12 @@ export class StandardSender {
           WalletErrorCode.FEE_ESTIMATION_FAILED,
           'Failed to estimate transaction fee',
           { 
-            operation: 'sendTransaction',
-            amount: amount.toString(),
-            recipient: recipientAddress.toDisplayString(),
-            cause: error
+            cause: error,
+            context: {
+              operation: 'sendTransaction',
+              amount: amount.toString(),
+              recipient: recipientAddress.toDisplayString()
+            }
           }
         );
       }
@@ -162,12 +164,14 @@ export class StandardSender {
         WalletErrorCode.TRANSACTION_SEND_FAILED,
         'Failed to send transaction via FFI',
         {
-          operation: 'sendTransaction',
-          amount: amount.toString(),
-          recipient: recipientAddress.toDisplayString(),
-          feePerGram: feePerGram.toString(),
-          message: options.message || '',
-          cause: error
+          cause: error,
+          context: {
+            operation: 'sendTransaction',
+            amount: amount.toString(),
+            recipient: recipientAddress.toDisplayString(),
+            feePerGram: feePerGram.toString(),
+            message: options.message || ''
+          }
         }
       );
     }

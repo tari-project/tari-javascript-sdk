@@ -147,7 +147,7 @@ export class TransactionRepository extends TypedEventEmitter {
       throw new WalletError(
         WalletErrorCode.TransactionNotFound,
         `Transaction ${transaction.id} not found`,
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
 
@@ -629,7 +629,7 @@ export class TransactionRepository extends TypedEventEmitter {
       throw new WalletError(
         WalletErrorCode.ResourceDisposed,
         'Transaction repository has been disposed',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
   }
