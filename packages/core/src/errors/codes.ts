@@ -27,7 +27,7 @@ export const enum WalletErrorCode {
   MigrationFailed = 1005,
   InvalidNetworkType = 1006,
   InvalidDataDir = 1007,
-  PermissionDenied = 1008,
+  PermissionDeniedInit = 1008,
   DiskSpaceInsufficient = 1009,
   
   // Transaction errors (2000-2099)
@@ -175,7 +175,7 @@ export const enum WalletErrorCode {
 /**
  * Error categories for grouping related error codes
  */
-export const enum ErrorCategory {
+export enum ErrorCategory {
   Initialization = 'Initialization',
   Transaction = 'Transaction',
   Network = 'Network',
@@ -200,7 +200,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.MigrationFailed]: ErrorCategory.Initialization,
   [WalletErrorCode.InvalidNetworkType]: ErrorCategory.Initialization,
   [WalletErrorCode.InvalidDataDir]: ErrorCategory.Initialization,
-  [WalletErrorCode.PermissionDenied]: ErrorCategory.Initialization,
+  [WalletErrorCode.PermissionDeniedInit]: ErrorCategory.Initialization,
   [WalletErrorCode.DiskSpaceInsufficient]: ErrorCategory.Initialization,
   
   // Transaction errors (2000-2099)

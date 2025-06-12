@@ -123,9 +123,11 @@ export class FFICallError extends TariError {
     super(
       ErrorCode.FFICallFailed,
       message,
-      classification === ErrorClassification.Retryable,
-      cause,
-      { classification, context: callContextToRecord(context) }
+      {
+        recoverable: classification === ErrorClassification.Retryable,
+        cause,
+        context: { classification, ...callContextToRecord(context) }
+      }
     );
     
     this.classification = classification;

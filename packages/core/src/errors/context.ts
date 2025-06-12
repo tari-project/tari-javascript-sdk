@@ -6,7 +6,7 @@
  */
 
 import { AsyncLocalStorage } from 'async_hooks';
-import { ErrorContext } from './wallet-error.js';
+import type { ErrorContext } from './wallet-error.js';
 
 /**
  * Context storage for tracking error context across async operations
@@ -224,7 +224,7 @@ export class ErrorContextManager {
 /**
  * Global instance of error context manager
  */
-export const ErrorContext = ErrorContextManager.getInstance();
+export const ErrorContextInstance = ErrorContextManager.getInstance();
 
 /**
  * Decorator for automatically adding operation context
@@ -238,13 +238,13 @@ export function withErrorContext(operation: string, component?: string) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = function (...args: T): R {
+    descriptor.value = function (this: any, ...args: T): R {
       const context: Record<string, unknown> = { operation };
       if (component) {
         context.component = component;
       }
 
-      return ErrorContext.enhanceContext(context, () =>
+      return ErrorContextInstance.enhanceContext(context, () =>
         originalMethod.apply(this, args)
       );
     } as (...args: T) => R;
@@ -265,13 +265,13 @@ export function withAsyncErrorContext(operation: string, component?: string) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: T): Promise<R> {
       const context: Record<string, unknown> = { operation };
       if (component) {
         context.component = component;
       }
 
-      return ErrorContext.enhanceContextAsync(context, () =>
+      return ErrorContextInstance.enhanceContextAsync(context, () =>
         originalMethod.apply(this, args)
       );
     } as (...args: T) => Promise<R>;
@@ -284,9 +284,9 @@ export function withAsyncErrorContext(operation: string, component?: string) {
  * Utility function to add operation context
  */
 export function addOperationContext(operation: string, component?: string): void {
-  ErrorContext.addContext('operation', operation);
+  ErrorContextInstance.addContext('operation', operation);
   if (component) {
-    ErrorContext.addContext('component', component);
+    ErrorContextInstance.addContext('component', component);
   }
 }
 
@@ -294,16 +294,16 @@ export function addOperationContext(operation: string, component?: string): void
  * Utility function to add transaction context
  */
 export function addTransactionContext(transactionId: string): void {
-  ErrorContext.addContext('transactionId', transactionId);
+  ErrorContextInstance.addContext('transactionId', transactionId);
 }
 
 /**
  * Utility function to add wallet context
  */
 export function addWalletContext(walletId: string, network?: string): void {
-  ErrorContext.addContext('walletId', walletId);
+  ErrorContextInstance.addContext('walletId', walletId);
   if (network) {
-    ErrorContext.addContext('network', network);
+    ErrorContextInstance.addContext('network', network);
   }
 }
 
@@ -311,14 +311,14 @@ export function addWalletContext(walletId: string, network?: string): void {
  * Utility function to add request context
  */
 export function addRequestContext(requestId: string): void {
-  ErrorContext.addContext('requestId', requestId);
+  ErrorContextInstance.addContext('requestId', requestId);
 }
 
 /**
  * Utility function to add session context
  */
 export function addSessionContext(sessionId: string): void {
-  ErrorContext.addContext('sessionId', sessionId);
+  ErrorContextInstance.addContext('sessionId', sessionId);
 }
 
 /**
@@ -451,7 +451,7 @@ export const contextEnricher = new ContextEnricher();
 export function createEnrichedErrorContext(
   baseContext?: Partial<ErrorContext>
 ): ErrorContext {
-  const currentContext = ErrorContext.createErrorContext();
+  const currentContext = ErrorContextInstance.createErrorContext();
   const mergedContext = { ...currentContext, ...baseContext };
   return contextEnricher.enrichContext(mergedContext);
 }

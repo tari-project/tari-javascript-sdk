@@ -146,7 +146,8 @@ export class DatabaseRecoveryStrategy extends BaseRecoveryStrategy {
   }
 
   async execute(error: WalletError, context?: Record<string, unknown>): Promise<RecoveryResult> {
-    const walletId = context?.walletId || error.context?.walletId;
+    const walletIdValue = context?.walletId || error.context?.walletId;
+    const walletId = typeof walletIdValue === 'string' ? walletIdValue : undefined;
     
     try {
       switch (error.code) {
@@ -351,7 +352,8 @@ export class FFIRecoveryStrategy extends BaseRecoveryStrategy {
   }
 
   async execute(error: WalletError, context?: Record<string, unknown>): Promise<RecoveryResult> {
-    const walletId = context?.walletId || error.context?.walletId;
+    const walletIdValue = context?.walletId || error.context?.walletId;
+    const walletId = typeof walletIdValue === 'string' ? walletIdValue : undefined;
     
     try {
       switch (error.code) {
@@ -646,7 +648,7 @@ export function withRecovery(maxRecoveryAttempts = 1) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: T): Promise<R> {
       return executeWithRecovery(
         () => originalMethod.apply(this, args),
         { operation: propertyKey, component: target.constructor.name },
@@ -670,7 +672,7 @@ export function withRecoveryAndRetry() {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: T): Promise<R> {
       return executeWithRecoveryAndRetry(
         () => originalMethod.apply(this, args),
         { operation: propertyKey, component: target.constructor.name }

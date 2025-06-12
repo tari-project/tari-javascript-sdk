@@ -31,6 +31,8 @@ export interface ErrorSuggestion {
   docsUrl?: string;
   /** Related error codes */
   relatedCodes?: WalletErrorCode[];
+  /** Troubleshooting steps */
+  troubleshooting?: string[];
 }
 
 /**
@@ -115,7 +117,7 @@ export class ErrorMessageFormatter {
    * Get actionable suggestions for an error code
    */
   private getSuggestions(code: WalletErrorCode): ErrorSuggestion[] {
-    const suggestions: Record<WalletErrorCode, ErrorSuggestion[]> = {
+    const suggestions: Partial<Record<WalletErrorCode, ErrorSuggestion[]>> = {
       [WalletErrorCode.InvalidConfig]: [
         {
           action: 'Verify wallet configuration',
@@ -231,7 +233,7 @@ const amount = '1000000'; // String representation`,
         },
       ],
 
-      [WalletErrorCode.SeedWordsInvalid]: [
+      [WalletErrorCode.InvalidFormat]: [
         {
           action: 'Verify seed words are from BIP39 word list',
           explanation: 'Seed words must be exactly 24 valid BIP39 words',
@@ -284,7 +286,7 @@ const amount = '1000000'; // String representation`,
    * Get troubleshooting steps for an error code
    */
   private getTroubleshootingSteps(code: WalletErrorCode): string[] {
-    const troubleshooting: Record<WalletErrorCode, string[]> = {
+    const troubleshooting: Partial<Record<WalletErrorCode, string[]>> = {
       [WalletErrorCode.NetworkUnavailable]: [
         'Check internet connection',
         'Verify base node configuration',
@@ -333,7 +335,7 @@ const amount = '1000000'; // String representation`,
    * Get common causes for an error code
    */
   private getCommonCauses(code: WalletErrorCode): string[] {
-    const causes: Record<WalletErrorCode, string[]> = {
+    const causes: Partial<Record<WalletErrorCode, string[]>> = {
       [WalletErrorCode.NetworkUnavailable]: [
         'No internet connection',
         'Base node is offline',

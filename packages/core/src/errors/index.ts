@@ -31,6 +31,9 @@ export * from './messages.js';
 // Legacy exports for backward compatibility
 export {
   WalletErrorCode as ErrorCode,
+} from './codes.js';
+
+export {
   WalletError as TariError,
   createWalletError as createError,
 } from './wallet-error.js';

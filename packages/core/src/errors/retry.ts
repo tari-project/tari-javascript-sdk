@@ -6,8 +6,9 @@
  */
 
 import { WalletError, isWalletError, createWalletError } from './wallet-error.js';
+import type { ErrorContext } from './wallet-error.js';
 import { WalletErrorCode } from './codes.js';
-import { createEnrichedErrorContext, ErrorContext } from './context.js';
+import { createEnrichedErrorContext, ErrorContextInstance } from './context.js';
 
 /**
  * Retry configuration options
@@ -333,7 +334,7 @@ export class RetryManager {
         attemptInfo.delay = delay;
 
         // Add context for retry
-        ErrorContext.addContextValues({
+        ErrorContextInstance.addContextValues({
           retryAttempt: attempt,
           maxAttempts: retryConfig.maxAttempts,
           nextDelayMs: delay,
@@ -542,7 +543,7 @@ export function withRetry(config?: Partial<RetryConfig>) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: T): Promise<R> {
       return retry(
         () => originalMethod.apply(this, args),
         config,
@@ -569,7 +570,7 @@ export function withCircuitBreaker(
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: T): Promise<R> {
       return retryWithCircuitBreaker(
         () => originalMethod.apply(this, args),
         circuitBreakerKey,

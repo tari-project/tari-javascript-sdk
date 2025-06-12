@@ -15,8 +15,29 @@
  * @license BSD-3-Clause
  */
 
-// Re-export everything from submodules for clean API
-export * from './types/index';
+// Re-export types (excluding validation types that conflict with errors)
+export * from './types/constants';
+export * from './types/branded';
+export * from './types/utils';
+export * from './types/config';
+export * from './types/wallet-config';
+export * from './types/balance';
+export * from './types/amount';
+export * from './types/address';
+export * from './types/transaction';
+export * from './types/transaction-status';
+export * from './types/contact';
+export * from './types/metadata';
+export * from './types/utxo';
+export * from './types/output-features';
+export * from './types/callbacks';
+export * from './types/guards';
+
+// Re-export specific types from enums/events without conflicts
+export type { NetworkType, LogLevel, TransactionStatus } from './types/enums';
+export type { WalletEventType, TransactionEventType } from './types/events';
+
+// Re-export error system (takes precedence over types for validation)
 export * from './errors/index';
 // Export utils but exclude conflicting exports
 export {

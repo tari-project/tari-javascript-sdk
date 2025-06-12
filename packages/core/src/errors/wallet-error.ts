@@ -27,12 +27,14 @@ export interface ErrorContext {
   timestamp?: Date;
   /** Request/correlation ID for tracing */
   requestId?: string;
+  /** Allow additional properties for extensibility */
+  [key: string]: unknown;
 }
 
 /**
  * Error severity levels for categorizing impact
  */
-export const enum ErrorSeverity {
+export enum ErrorSeverity {
   /** Informational error, operation can continue */
   Info = 'info',
   /** Warning error, degraded functionality */

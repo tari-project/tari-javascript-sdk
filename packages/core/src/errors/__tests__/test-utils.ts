@@ -552,7 +552,7 @@ export const ErrorMatchers = {
       } catch (assertionError) {
         return {
           pass: false,
-          message: () => assertionError.message,
+          message: () => assertionError instanceof Error ? assertionError.message : String(assertionError),
         };
       }
     }
@@ -582,7 +582,7 @@ export const ErrorMatchers = {
       } catch (assertionError) {
         return {
           pass: false,
-          message: () => assertionError.message,
+          message: () => assertionError instanceof Error ? assertionError.message : String(assertionError),
         };
       }
     }

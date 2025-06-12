@@ -138,7 +138,7 @@ export interface ErrorReporter {
  */
 export class LocalErrorReporter implements ErrorReporter {
   private reports: Map<string, ErrorReport> = new Map();
-  private config: TelemetryConfig;
+  protected config: TelemetryConfig;
 
   constructor(config: Partial<TelemetryConfig> = {}) {
     this.config = { ...DEFAULT_TELEMETRY_CONFIG, ...config };
@@ -333,7 +333,7 @@ export class LocalErrorReporter implements ErrorReporter {
   /**
    * Sanitize error message to remove sensitive data
    */
-  private sanitizeMessage(message: string): string {
+  protected sanitizeMessage(message: string): string {
     // Remove potential addresses, keys, or other sensitive data
     return message
       .replace(/\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, '[ADDRESS]') // Bitcoin-style addresses
@@ -347,7 +347,7 @@ export class LocalErrorReporter implements ErrorReporter {
   /**
    * Sanitize context data
    */
-  private sanitizeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
+  protected sanitizeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
     if (!context || !this.config.includeContext) return undefined;
     
     const sanitized: Record<string, unknown> = {};
@@ -403,7 +403,7 @@ export class LocalErrorReporter implements ErrorReporter {
   /**
    * Get platform information
    */
-  private getPlatformInfo(): PlatformInfo {
+  protected getPlatformInfo(): PlatformInfo {
     return {
       os: process.platform,
       arch: process.arch,
@@ -415,7 +415,7 @@ export class LocalErrorReporter implements ErrorReporter {
   /**
    * Get SDK version
    */
-  private getSDKVersion(): string {
+  protected getSDKVersion(): string {
     // This would be set from package.json in real implementation
     return '1.0.0';
   }
