@@ -248,7 +248,14 @@ export class HistoryFilters {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         `Invalid regular expression pattern: ${pattern}`,
-        { pattern, error: error instanceof Error ? error.message : 'Unknown error' }
+        { 
+          context: { 
+            metadata: { 
+              pattern, 
+              error: error instanceof Error ? error.message : 'Unknown error' 
+            } 
+          } 
+        }
       );
     }
   }
@@ -429,7 +436,11 @@ export class HistoryFilters {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         `Unknown filter preset: ${presetName}`,
-        { availablePresets: Object.keys(FILTER_PRESETS) }
+        { 
+          context: { 
+            metadata: { availablePresets: Object.keys(FILTER_PRESETS) } 
+          } 
+        }
       );
     }
 

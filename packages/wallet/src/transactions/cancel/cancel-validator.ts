@@ -100,8 +100,10 @@ export class CancelValidator {
         errorCode,
         `Cannot cancel transaction ${transactionId}: ${errorMessage}`,
         {
-          transactionId,
-          validationResult: result
+          context: {
+            transactionId: transactionId.toString(),
+            metadata: { validationResult: result }
+          }
         }
       );
     }

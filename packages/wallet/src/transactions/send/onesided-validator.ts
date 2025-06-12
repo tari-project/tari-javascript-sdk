@@ -207,11 +207,15 @@ export class OneSidedValidator {
           WalletErrorCode.InsufficientFunds,
           `Insufficient funds for one-sided transaction. Required: ${totalCost}, Available: ${balance.available}`,
           {
-            operation: 'validateOneSidedTransaction',
-            required: totalCost.toString(),
-            available: balance.available.toString(),
-            amount: amount.toString(),
-            estimatedFee: estimatedFee.toString()
+            context: {
+              operation: 'validateOneSidedTransaction',
+              metadata: {
+                required: totalCost.toString(),
+                available: balance.available.toString(),
+                amount: amount.toString(),
+                estimatedFee: estimatedFee.toString()
+              }
+            }
           }
         );
       }
@@ -298,10 +302,14 @@ export class OneSidedValidator {
           WalletErrorCode.InvalidAddress,
           'Cannot construct TariScript for one-sided transaction to this recipient',
           {
-            operation: 'validateOneSidedTransaction',
-            recipient: recipient.toString(),
-            scriptType: 'CheckPubKey',
-            reason: scriptValidation.error || 'Unknown script validation error'
+            context: {
+              operation: 'validateOneSidedTransaction',
+              metadata: {
+                recipient: recipient.toString(),
+                scriptType: 'CheckPubKey',
+                reason: scriptValidation.error || 'Unknown script validation error'
+              }
+            }
           }
         );
       }
@@ -312,10 +320,14 @@ export class OneSidedValidator {
           WalletErrorCode.InvalidAmount,
           `TariScript complexity (${scriptValidation.complexity}) exceeds maximum allowed (${this.config.maxScriptComplexity})`,
           {
-            operation: 'validateOneSidedTransaction',
-            complexity: scriptValidation.complexity,
-            maxComplexity: this.config.maxScriptComplexity,
-            recipient: recipient.toString()
+            context: {
+              operation: 'validateOneSidedTransaction',
+              metadata: {
+                complexity: scriptValidation.complexity,
+                maxComplexity: this.config.maxScriptComplexity,
+                recipient: recipient.toString()
+              }
+            }
           }
         );
       }
@@ -376,10 +388,14 @@ export class OneSidedValidator {
         WalletErrorCode.InvalidAmount,
         `One-sided transaction amount exceeds mainnet limit of ${mainnetMaxAmount}`,
         {
-          operation: 'validateOneSidedTransaction',
-          amount: amount.toString(),
-          networkLimit: mainnetMaxAmount.toString(),
-          network: 'mainnet'
+          context: {
+            operation: 'validateOneSidedTransaction',
+            metadata: {
+              amount: amount.toString(),
+              networkLimit: mainnetMaxAmount.toString(),
+              network: 'mainnet'
+            }
+          }
         }
       );
     }

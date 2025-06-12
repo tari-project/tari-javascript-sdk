@@ -343,7 +343,11 @@ export class HistoryService extends TypedEventEmitter {
         throw new WalletError(
           WalletErrorCode.InvalidInput,
           `Unsupported export format: ${format}`,
-          { format, supportedFormats: ['csv', 'json', 'xlsx'] }
+          { 
+            context: { 
+              metadata: { format, supportedFormats: ['csv', 'json', 'xlsx'] } 
+            } 
+          }
         );
     }
   }

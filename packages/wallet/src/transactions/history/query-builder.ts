@@ -304,7 +304,11 @@ export class HistoryQueryBuilder {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         'Start date cannot be after end date',
-        { startDate: filter.startDate, endDate: filter.endDate }
+        { 
+          context: { 
+            metadata: { startDate: filter.startDate, endDate: filter.endDate } 
+          } 
+        }
       );
     }
 
@@ -313,7 +317,11 @@ export class HistoryQueryBuilder {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         'Minimum amount cannot be greater than maximum amount',
-        { minAmount: filter.minAmount.toString(), maxAmount: filter.maxAmount.toString() }
+        { 
+          context: { 
+            metadata: { minAmount: filter.minAmount.toString(), maxAmount: filter.maxAmount.toString() } 
+          } 
+        }
       );
     }
 
@@ -322,7 +330,11 @@ export class HistoryQueryBuilder {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         'Offset cannot be negative',
-        { offset: options.offset }
+        { 
+          context: { 
+            metadata: { offset: options.offset } 
+          } 
+        }
       );
     }
 
@@ -330,7 +342,11 @@ export class HistoryQueryBuilder {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         'Limit must be positive',
-        { limit: options.limit }
+        { 
+          context: { 
+            metadata: { limit: options.limit } 
+          } 
+        }
       );
     }
 
@@ -338,7 +354,11 @@ export class HistoryQueryBuilder {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         `Limit cannot exceed maximum page size of ${this.config.maxPageSize}`,
-        { limit: options.limit, maxPageSize: this.config.maxPageSize }
+        { 
+          context: { 
+            metadata: { limit: options.limit, maxPageSize: this.config.maxPageSize } 
+          } 
+        }
       );
     }
   }
