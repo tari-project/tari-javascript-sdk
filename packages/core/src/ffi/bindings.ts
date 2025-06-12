@@ -195,6 +195,50 @@ export class FFIBindings {
   }
 
   /**
+   * Sign a message with wallet's private key
+   */
+  public async signMessage(handle: WalletHandle, message: string): Promise<string> {
+    // TODO: Implement when FFI method is available
+    throw new Error('Message signing not yet implemented in FFI');
+  }
+
+  /**
+   * Get wallet's public key
+   */
+  public async getPublicKey(handle: WalletHandle): Promise<string> {
+    // TODO: Implement when FFI method is available
+    throw new Error('Public key retrieval not yet implemented in FFI');
+  }
+
+  /**
+   * Verify a message signature
+   */
+  public async verifyMessageSignature(
+    message: string, 
+    signature: string, 
+    publicKey: string
+  ): Promise<boolean> {
+    // TODO: Implement when FFI method is available
+    throw new Error('Message signature verification not yet implemented in FFI');
+  }
+
+  /**
+   * Convert public key to wallet address
+   */
+  public async publicKeyToAddress(publicKey: string): Promise<string> {
+    // TODO: Implement when FFI method is available
+    throw new Error('Public key to address conversion not yet implemented in FFI');
+  }
+
+  /**
+   * Recover public key from signature (if supported)
+   */
+  public async recoverPublicKey(message: string, signature: string): Promise<string> {
+    // TODO: Implement when FFI method is available
+    throw new Error('Public key recovery not yet implemented in FFI');
+  }
+
+  /**
    * Set base node for the wallet
    */
   public async setBaseNode(handle: WalletHandle, baseNode: FFIBaseNodePeer): Promise<void> {

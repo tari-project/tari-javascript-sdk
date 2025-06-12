@@ -74,6 +74,14 @@ import {
   type WalletCapabilities,
   type WalletMetrics
 } from './info/index.js';
+import {
+  MessageSigner,
+  SignatureVerifier,
+  type MessageSigningOptions,
+  type SignedMessage,
+  type SignatureVerificationOptions,
+  type SignatureVerificationResult
+} from './signing/index.js';
 
 /**
  * Main Tari wallet class providing high-level wallet operations
@@ -97,6 +105,8 @@ export class TariWallet implements AsyncDisposable {
   private readonly instanceId: string;
   private readonly resourceManager: ResourceManager;
   private readonly finalizerUnregister?: () => void;
+  private readonly messageSigner: MessageSigner;
+  private readonly signatureVerifier: SignatureVerifier;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
@@ -170,6 +180,10 @@ export class TariWallet implements AsyncDisposable {
     this.walletInfoService = new WalletInfoService(defaultWalletInfoConfig);
     this.networkInfoService = new NetworkInfoService();
     this.versionInfoService = new VersionInfoService();
+
+    // Initialize signing services
+    this.messageSigner = new MessageSigner(handle, this.instanceId);
+    this.signatureVerifier = new SignatureVerifier();
 
     // Initialize lifecycle
     this.initializeLifecycle();
@@ -634,32 +648,73 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Sign a message with wallet's private key
    */
-  async signMessage(message: string): Promise<string> {
-    if (!message || typeof message !== 'string') {
-      throw new WalletError(
-        WalletErrorCode.InvalidFormat,
-        'Message must be a non-empty string',
-        { severity: ErrorSeverity.Error }
-      );
-    }
+  async signMessage(
+    message: string, 
+    options: MessageSigningOptions = {}
+  ): Promise<string> {
+    this.ensureNotDestroyed();
+    
+    const signedMessage = await this.messageSigner.signMessage(message, options);
+    return signedMessage.signature;
+  }
 
-    try {
-      // TODO: Implement when message signing FFI is available
-      throw new WalletError(
-        WalletErrorCode.NotImplemented,
-        'Message signing not yet implemented'
-      );
-    } catch (error) {
-      throw new WalletError(
-        WalletErrorCode.SigningFailed,
-        'Failed to sign message',
-        {
-          severity: ErrorSeverity.Error,
-          cause: error as Error,
-          
-        }
-      );
-    }
+  /**
+   * Sign a message and return full signed message object
+   */
+  async signMessageDetailed(
+    message: string,
+    options: MessageSigningOptions = {}
+  ): Promise<SignedMessage> {
+    this.ensureNotDestroyed();
+    
+    return this.messageSigner.signMessage(message, options);
+  }
+
+  /**
+   * Sign multiple messages in batch
+   */
+  async signMessages(
+    messages: string[],
+    options: MessageSigningOptions = {}
+  ): Promise<SignedMessage[]> {
+    this.ensureNotDestroyed();
+    
+    return this.messageSigner.signMessages(messages, options);
+  }
+
+  /**
+   * Verify a message signature
+   */
+  async verifySignature(
+    message: string,
+    signature: string,
+    publicKey: string,
+    options: SignatureVerificationOptions = {}
+  ): Promise<SignatureVerificationResult> {
+    this.ensureNotDestroyed();
+    
+    return this.signatureVerifier.verifySignature(message, signature, publicKey, options);
+  }
+
+  /**
+   * Verify a signed message object
+   */
+  async verifySignedMessage(
+    signedMessage: SignedMessage,
+    options: SignatureVerificationOptions = {}
+  ): Promise<SignatureVerificationResult> {
+    this.ensureNotDestroyed();
+    
+    return this.signatureVerifier.verifySignedMessage(signedMessage, options);
+  }
+
+  /**
+   * Get public key for message verification
+   */
+  async getPublicKey(): Promise<string> {
+    this.ensureNotDestroyed();
+    
+    return this.messageSigner.getPublicKey();
   }
 
   // Transaction and history operations
