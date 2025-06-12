@@ -321,6 +321,11 @@ export class CompositeValidator<T> extends BaseValidator<T> {
  * Tari address validator
  */
 export class TariAddressValidator extends BaseValidator<string> {
+  private static readonly EMOJI_PATTERN = /^[\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]{33}$/u;
+  private static readonly BASE58_PATTERN = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/;
+  private static readonly HEX_PATTERN = /^[0-9a-fA-F]+$/;
+  private static readonly VALID_NETWORKS = ['mainnet', 'testnet', 'nextnet'];
+
   constructor(private network?: string) {
     super('tari-address');
   }
@@ -334,8 +339,8 @@ export class TariAddressValidator extends BaseValidator<string> {
       );
     }
 
-    // Check for empty or whitespace-only
-    if (!value.trim()) {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
       return this.createError(
         WalletErrorCode.InvalidAddress,
         'Address cannot be empty',
@@ -343,29 +348,90 @@ export class TariAddressValidator extends BaseValidator<string> {
       );
     }
 
-    // Check for emoji ID format (33 emojis)
-    const emojiPattern = /^[\u{1F300}-\u{1F9FF}]{33}$/u;
-    if (emojiPattern.test(value)) {
-      return this.createSuccess({ format: 'emoji' });
+    // Check for emoji ID format (exactly 33 emojis from Tari emoji set)
+    if (TariAddressValidator.EMOJI_PATTERN.test(trimmedValue)) {
+      return this.validateEmojiAddress(trimmedValue);
     }
 
-    // Check for base58 format
-    const base58Pattern = /^[1-9A-HJ-NP-Za-km-z]+$/;
-    if (base58Pattern.test(value) && value.length >= 32 && value.length <= 44) {
-      return this.createSuccess({ format: 'base58' });
+    // Check for base58 format (52-97 characters for Tari addresses)
+    if (TariAddressValidator.BASE58_PATTERN.test(trimmedValue) && 
+        trimmedValue.length >= 50 && 
+        trimmedValue.length <= 100) {
+      return this.validateBase58Address(trimmedValue);
     }
 
-    // Check for hex format
-    const hexPattern = /^[0-9a-fA-F]+$/;
-    if (hexPattern.test(value) && value.length === 64) {
-      return this.createSuccess({ format: 'hex' });
+    // Check for hex format (76 or 140 characters for 38 or 70 bytes)
+    if (TariAddressValidator.HEX_PATTERN.test(trimmedValue) && 
+        (trimmedValue.length === 76 || trimmedValue.length === 140)) {
+      return this.validateHexAddress(trimmedValue);
     }
 
     return this.createError(
       WalletErrorCode.InvalidAddress,
       'Invalid Tari address format',
-      'Provide a valid address (33 emojis, base58, or 64-character hex)'
+      'Provide a valid address: 33 emojis (Emoji ID), 50-100 characters (Base58), or 76/140 characters (hex)'
     );
+  }
+
+  private validateEmojiAddress(address: string): ValidationResult {
+    // Emoji ID: 33 emojis representing network + features + spend key
+    // Network validation could be added here if network is specified
+    if (this.network && this.isValidNetwork(this.network)) {
+      // First emoji represents network - this would need emoji-to-network mapping
+      // For now, we just validate the format is correct
+    }
+
+    return this.createSuccess({ 
+      format: 'emoji',
+      length: address.length,
+      estimatedBytes: 33
+    });
+  }
+
+  private validateBase58Address(address: string): ValidationResult {
+    // Base58 addresses include network, features, optional view key, spend key, and checksum
+    // Actual checksum validation would require the DammSum algorithm implementation
+    // For now, we validate the format and length
+    
+    const estimatedBytes = this.estimateBase58Bytes(address.length);
+    const hasViewKey = estimatedBytes >= 70; // 70 bytes = full address with view key
+    
+    return this.createSuccess({ 
+      format: 'base58',
+      length: address.length,
+      estimatedBytes,
+      hasViewKey
+    });
+  }
+
+  private validateHexAddress(address: string): ValidationResult {
+    // Hex addresses: 76 chars (38 bytes) without view key, 140 chars (70 bytes) with view key
+    const bytes = address.length / 2;
+    const hasViewKey = bytes === 70;
+    
+    if (bytes !== 38 && bytes !== 70) {
+      return this.createError(
+        WalletErrorCode.InvalidAddress,
+        `Invalid hex address length: ${address.length} characters (${bytes} bytes)`,
+        'Hex addresses must be 76 characters (38 bytes) or 140 characters (70 bytes)'
+      );
+    }
+
+    return this.createSuccess({ 
+      format: 'hex',
+      length: address.length,
+      bytes,
+      hasViewKey
+    });
+  }
+
+  private estimateBase58Bytes(base58Length: number): number {
+    // Base58 encoding approximately: bytes * 1.38 = base58Length
+    return Math.round(base58Length / 1.38);
+  }
+
+  private isValidNetwork(network: string): boolean {
+    return TariAddressValidator.VALID_NETWORKS.includes(network.toLowerCase());
   }
 }
 
@@ -455,6 +521,10 @@ export class MicroTariValidator extends BaseValidator<string | number | bigint> 
 export class NetworkTypeValidator extends BaseValidator<string> {
   private static readonly VALID_NETWORKS = ['mainnet', 'testnet', 'nextnet'];
 
+  constructor() {
+    super('network-type');
+  }
+
   validate(value: string): ValidationResult {
     if (typeof value !== 'string') {
       return this.createError(
@@ -478,9 +548,16 @@ export class NetworkTypeValidator extends BaseValidator<string> {
 }
 
 /**
- * Seed words validator
+ * Seed words validator for BIP39 mnemonic phrases
  */
 export class SeedWordsValidator extends BaseValidator<string[]> {
+  private static readonly VALID_LENGTHS = [12, 15, 18, 21, 24];
+  private static readonly WORD_PATTERN = /^[a-z]+$/;
+
+  constructor() {
+    super('seed-words');
+  }
+
   validate(value: string[]): ValidationResult {
     if (!Array.isArray(value)) {
       return this.createError(
@@ -490,35 +567,95 @@ export class SeedWordsValidator extends BaseValidator<string[]> {
       );
     }
 
-    if (value.length !== 24) {
+    // Check valid BIP39 lengths
+    if (!SeedWordsValidator.VALID_LENGTHS.includes(value.length)) {
       return this.createError(
         WalletErrorCode.InvalidLength,
-        `Seed words must contain exactly 24 words, got ${value.length}`,
-        'Provide exactly 24 seed words'
+        `Seed words must contain 12, 15, 18, 21, or 24 words, got ${value.length}`,
+        'Provide a valid BIP39 mnemonic length (12, 15, 18, 21, or 24 words)'
       );
     }
 
+    // Validate each word
     for (let i = 0; i < value.length; i++) {
       const word = value[i];
-      if (typeof word !== 'string' || word.trim().length === 0) {
+      
+      if (typeof word !== 'string') {
         return this.createError(
           WalletErrorCode.InvalidFormat,
-          `Seed word at position ${i + 1} is invalid`,
-          'All seed words must be non-empty strings'
+          `Seed word at position ${i + 1} must be a string`,
+          'All seed words must be strings'
         );
       }
 
-      // Check for valid word format (basic validation)
-      if (!/^[a-z]+$/.test(word.trim())) {
+      const trimmedWord = word.trim().toLowerCase();
+      
+      if (trimmedWord.length === 0) {
+        return this.createError(
+          WalletErrorCode.InvalidFormat,
+          `Seed word at position ${i + 1} is empty`,
+          'All seed words must be non-empty'
+        );
+      }
+
+      // Check for valid word format (only lowercase letters)
+      if (!SeedWordsValidator.WORD_PATTERN.test(trimmedWord)) {
         return this.createError(
           WalletErrorCode.InvalidCharacters,
           `Seed word "${word}" contains invalid characters`,
-          'Seed words should only contain lowercase letters'
+          'Seed words should only contain lowercase letters (a-z)'
+        );
+      }
+
+      // Check word length (BIP39 words are typically 3-8 characters)
+      if (trimmedWord.length < 3 || trimmedWord.length > 8) {
+        return this.createError(
+          WalletErrorCode.InvalidLength,
+          `Seed word "${word}" has invalid length (${trimmedWord.length} characters)`,
+          'BIP39 words are typically 3-8 characters long'
         );
       }
     }
 
-    return this.createSuccess({ wordCount: value.length });
+    // Check for duplicate words (not allowed in BIP39)
+    const uniqueWords = new Set(value.map(w => w.trim().toLowerCase()));
+    if (uniqueWords.size !== value.length) {
+      const duplicates = this.findDuplicates(value.map(w => w.trim().toLowerCase()));
+      return this.createError(
+        WalletErrorCode.InvalidFormat,
+        `Duplicate words found: ${duplicates.join(', ')}`,
+        'BIP39 seed phrases cannot contain duplicate words'
+      );
+    }
+
+    return this.createSuccess({ 
+      wordCount: value.length,
+      entropyBits: this.calculateEntropyBits(value.length),
+      isStandardLength: [12, 24].includes(value.length)
+    });
+  }
+
+  private findDuplicates(words: string[]): string[] {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    
+    for (const word of words) {
+      if (seen.has(word)) {
+        duplicates.add(word);
+      } else {
+        seen.add(word);
+      }
+    }
+    
+    return Array.from(duplicates);
+  }
+
+  private calculateEntropyBits(wordCount: number): number {
+    // BIP39 entropy calculation: (wordCount * 11) - (wordCount / 3)
+    // Each word encodes 11 bits, minus checksum bits (1 bit per 3 words)
+    const totalBits = wordCount * 11;
+    const checksumBits = Math.floor(wordCount / 3);
+    return totalBits - checksumBits;
   }
 }
 
@@ -578,29 +715,26 @@ export const Validators = {
     new CompositeValidator(validators, mode),
   
   // Tari-specific validators
-  // TODO: Implement these validators
-  // tariAddress: (network?: string) => new TariAddressValidator(network),
+  tariAddress: (network?: string) => new TariAddressValidator(network),
   microTari: () => new MicroTariValidator(),
-  // networkType: new NetworkTypeValidator(),
-  // seedWords: new SeedWordsValidator(),
+  networkType: () => new NetworkTypeValidator(),
+  seedWords: () => new SeedWordsValidator(),
 };
 
 /**
  * Pre-configured validation functions for common use cases
  */
-// TODO: Implement TariAddressValidator
-// export const validateTariAddress = (address: string, network?: string): string =>
-//   validate(address, Validators.tariAddress(network), { fieldName: 'address' });
+export const validateTariAddress = (address: string, network?: string): string =>
+  validate(address, Validators.tariAddress(network), { fieldName: 'address' });
 
 export const validateMicroTari = (amount: string | number | bigint): string | number | bigint =>
   validate(amount, Validators.microTari(), { fieldName: 'amount' });
 
-// TODO: Implement NetworkType and SeedWords validators
-// export const validateNetworkType = (network: string): string =>
-//   validate(network, Validators.networkType(), { fieldName: 'network' });
+export const validateNetworkType = (network: string): string =>
+  validate(network, Validators.networkType(), { fieldName: 'network' });
 
-// export const validateSeedWords = (words: string[]): string[] =>
-//   validate(words, Validators.seedWords(), { fieldName: 'seedWords' });
+export const validateSeedWords = (words: string[]): string[] =>
+  validate(words, Validators.seedWords(), { fieldName: 'seedWords' });
 
 export const validateRequired = <T>(value: T, fieldName: string): T =>
   validate<T>(value, Validators.required(), { fieldName });
