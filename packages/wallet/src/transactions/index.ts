@@ -28,6 +28,30 @@ export {
   type TransactionStateManagerEvents
 } from './transaction-state.js';
 
+// Transaction building and fee estimation
+export {
+  TransactionBuilder,
+  type TransactionBuildOptions,
+  type TransactionParams
+} from './builder/index.js';
+
+export {
+  FeeEstimator,
+  type FeeEstimatorConfig,
+  type FeeEstimate,
+  NetworkFees
+} from './fees/index.js';
+
+// Transaction sending
+export {
+  StandardSender,
+  type StandardSendOptions,
+  RecipientValidator,
+  AmountValidator,
+  type AmountValidationConfig,
+  DEFAULT_AMOUNT_CONFIG
+} from './send/index.js';
+
 // Re-export core transaction types for convenience
 export type {
   TransactionInfo,

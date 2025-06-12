@@ -41,6 +41,8 @@ import { TransactionStatus, TransactionDirection } from '@tari-project/tarijs-co
 import { TariAddress } from '../models/index.js';
 import { TransactionRepository } from './transaction-repository.js';
 import { TransactionStateManager } from './transaction-state.js';
+import { FeeEstimator } from './fees/index.js';
+import { StandardSender, type StandardSendOptions } from './send/index.js';
 
 /**
  * Configuration for the transaction service
@@ -82,6 +84,8 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
   private readonly config: TransactionServiceConfig;
   private readonly repository: TransactionRepository;
   private readonly stateManager: TransactionStateManager;
+  private readonly feeEstimator: FeeEstimator;
+  private readonly standardSender: StandardSender;
   private readonly ffi = getFFIBindings();
   private isDisposed = false;
   private refreshTimer?: NodeJS.Timeout;
@@ -98,6 +102,12 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
     this.stateManager = new TransactionStateManager({
       timeoutSeconds: config.transactionTimeoutSeconds
     });
+    
+    // Initialize fee estimator and standard sender
+    this.feeEstimator = new FeeEstimator(config.walletHandle, {
+      defaultFeePerGram: config.defaultFeePerGram
+    });
+    this.standardSender = new StandardSender(config.walletHandle, this.feeEstimator);
 
     // Set up event forwarding
     this.repository.on('transaction:updated', (update) => {
@@ -129,7 +139,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
   }
 
   /**
-   * Send a standard transaction
+   * Send a standard transaction using the StandardSender
    */
   @withErrorContext('send_transaction', 'transaction_service')
   @withRetry({ maxAttempts: 3, backoffMs: 1000 })
@@ -141,35 +151,22 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
     try {
       this.operationSemaphore++;
 
-      // Validate parameters
-      const validation = this.validateSendParams(params);
-      if (!validation.valid) {
-        throw new WalletError(
-          WalletErrorCode.ValidationFailed,
-          `Transaction validation failed: ${validation.errors.map(e => e.message).join(', ')}`,
-          ErrorSeverity.Error,
-          { validation }
-        );
-      }
+      // Convert params to StandardSendOptions
+      const sendOptions: StandardSendOptions = {
+        feePerGram: params.feePerGram,
+        message: params.message,
+        lockHeight: params.lockHeight,
+        allowSelfSend: false // Default to false for safety
+      };
 
-      // Resolve recipient address
-      const recipientAddress = await this.resolveAddress(params.recipient);
-
-      // Call FFI to send transaction
-      const transactionIdStr = await this.ffi.wallet_send_transaction(
-        this.config.walletHandle,
-        recipientAddress.toString(),
-        params.amount.toString(),
-        {
-          fee_per_gram: params.feePerGram.toString(),
-          message: params.message || '',
-          is_one_sided: params.isOneSided || false
-        }
+      // Use StandardSender for the actual sending
+      const transactionId = await this.standardSender.sendTransaction(
+        params.recipient,
+        params.amount,
+        sendOptions
       );
 
-      const transactionId = transactionIdStr as TransactionId;
-
-      // Create pending transaction record
+      // Create pending transaction record for repository tracking
       const pendingTx: PendingOutboundTransaction = {
         id: transactionId,
         amount: params.amount,
@@ -181,7 +178,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
         address: params.recipient,
         isOneSided: params.isOneSided || false,
         isCoinbase: false,
-        pendingId: transactionId as any, // For outbound, pending ID same as transaction ID initially
+        pendingId: transactionId as any,
         cancellable: true
       };
 
@@ -227,6 +224,65 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
     } finally {
       this.operationSemaphore--;
     }
+  }
+
+  /**
+   * Validate transaction parameters without sending
+   * 
+   * Performs all validation that would be done during sending
+   * but without actually submitting the transaction.
+   */
+  @withErrorContext('validate_transaction', 'transaction_service')
+  async validateTransaction(
+    recipient: string | TariAddress,
+    amount: MicroTari,
+    options: StandardSendOptions = {}
+  ): Promise<{
+    isValid: boolean;
+    recipientAddress: TariAddress;
+    estimatedFee: MicroTari;
+    totalCost: MicroTari;
+    errors: string[];
+  }> {
+    this.ensureNotDisposed();
+    
+    return await this.standardSender.validateTransactionParams(
+      recipient,
+      amount,
+      options
+    );
+  }
+
+  /**
+   * Get transaction cost breakdown for a potential transaction
+   */
+  @withErrorContext('get_transaction_cost', 'transaction_service')
+  async getTransactionCost(
+    amount: MicroTari,
+    feePerGram?: MicroTari
+  ): Promise<{
+    amount: MicroTari;
+    estimatedFee: MicroTari;
+    totalCost: MicroTari;
+    feeBreakdown: {
+      baseAmount: MicroTari;
+      feePerGram: MicroTari;
+      estimatedSizeGrams: number;
+    };
+  }> {
+    this.ensureNotDisposed();
+    
+    return await this.standardSender.getTransactionCost(amount, feePerGram);
+  }
+
+  /**
+   * Estimate fee for a transaction
+   */
+  @withErrorContext('estimate_fee', 'transaction_service')
+  async estimateFee(amount: MicroTari, outputCount = 1): Promise<MicroTari> {
+    this.ensureNotDisposed();
+    
+    return await this.feeEstimator.estimateFeePerGram(amount, outputCount);
   }
 
   /**
