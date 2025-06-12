@@ -30,6 +30,8 @@ module.exports = {
   
   // Module resolution
   moduleNameMapper: {
+    // Handle .js extensions in TypeScript imports
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@tari-project/tarijs-core$': '<rootDir>/../core/src',
   },
   

@@ -67,6 +67,9 @@ module.exports = {
   
   // Module resolution
   moduleNameMapper: {
+    // Handle .js extensions in TypeScript imports
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+    // Package mappings
     '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src',
     '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src',
     '^@tari-project/tarijs-build$': '<rootDir>/packages/build/src',
