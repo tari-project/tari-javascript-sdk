@@ -13,6 +13,7 @@ import {
   withErrorContext,
   withRetry,
   RetryConfigs,
+  TransactionStatus,
   type TransactionId,
   type WalletHandle,
   type TransactionInfo,
@@ -541,7 +542,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       feeBreakdown = this.calculateFeeBreakdown(transaction, inputs, outputs, kernels);
       
       // Get block info if transaction is confirmed
-      if (transaction.status === 'Confirmed' && transaction.blockHeight) {
+      if (transaction.status === TransactionStatus.MinedConfirmed && transaction.blockHeight) {
         blockInfo = await this.getBlockInfo(transaction.blockHeight);
       }
     }
@@ -709,7 +710,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       virtualSize: size,
       version: 1,
       firstSeenTime: transaction.timestamp,
-      confirmedTime: transaction.status === 'Confirmed' ? transaction.timestamp : undefined,
+      confirmedTime: transaction.status === TransactionStatus.MinedConfirmed ? transaction.timestamp : undefined,
       network: 'testnet' // This would come from wallet configuration
     };
   }

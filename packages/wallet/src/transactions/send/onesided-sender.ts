@@ -292,11 +292,11 @@ export class OneSidedSender {
         await this.oneSidedValidator.validateOneSidedTransaction(
           recipientAddress,
           amount,
-          estimatedFee
+          estimatedFee as MicroTari
         );
         
         // Get UTXO consumption details
-        utxoConsumption = await this.analyzeUtxoConsumption(amount, estimatedFee);
+        utxoConsumption = await this.analyzeUtxoConsumption(amount, estimatedFee as MicroTari);
       }
     } catch (error: unknown) {
       if (error instanceof WalletError) {
@@ -311,8 +311,8 @@ export class OneSidedSender {
     return {
       isValid: errors.length === 0,
       recipientAddress: recipientAddress || TariAddress.empty(),
-      estimatedFee,
-      totalCost,
+      estimatedFee: estimatedFee as MicroTari,
+      totalCost: totalCost as MicroTari,
       utxoConsumption,
       errors,
       warnings
