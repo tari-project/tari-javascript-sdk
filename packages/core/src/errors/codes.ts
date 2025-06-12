@@ -52,6 +52,13 @@ export const enum WalletErrorCode {
   InvalidCommitment = 2018,
   InvalidRangeProof = 2019,
   
+  // Additional transaction errors
+  TransactionTimeout = 2020,
+  TransactionNotCancellable = 2021,
+  TransactionSendFailed = 2022,
+  FeeEstimationFailed = 2023,
+  InvalidStateTransition = 2024,
+  
   // Network errors (3000-3099)
   NetworkUnavailable = 3000,
   ConnectionFailed = 3001,
@@ -172,6 +179,14 @@ export const enum WalletErrorCode {
   FeatureDisabled = 9012,
   QuotaExceeded = 9013,
   InternalError = 9014,
+  
+  // Resource errors
+  ResourceDisposed = 6017,
+  
+  // Legacy aliases for compatibility
+  UnknownError = 9000, // Alias for Unknown
+  FEE_ESTIMATION_FAILED = 2023, // Alias for FeeEstimationFailed
+  TRANSACTION_SEND_FAILED = 2022, // Alias for TransactionSendFailed
 }
 
 /**
@@ -226,6 +241,11 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.InvalidKernel]: ErrorCategory.Transaction,
   [WalletErrorCode.InvalidCommitment]: ErrorCategory.Transaction,
   [WalletErrorCode.InvalidRangeProof]: ErrorCategory.Transaction,
+  [WalletErrorCode.TransactionTimeout]: ErrorCategory.Transaction,
+  [WalletErrorCode.TransactionNotCancellable]: ErrorCategory.Transaction,
+  [WalletErrorCode.TransactionSendFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.FeeEstimationFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.InvalidStateTransition]: ErrorCategory.Transaction,
   
   // Network errors (3000-3099)
   [WalletErrorCode.NetworkUnavailable]: ErrorCategory.Network,
@@ -296,6 +316,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.ResourceUnavailable]: ErrorCategory.Resource,
   [WalletErrorCode.ResourceCleanupFailed]: ErrorCategory.Resource,
   [WalletErrorCode.ResourceNotFound]: ErrorCategory.Resource,
+  [WalletErrorCode.ResourceDisposed]: ErrorCategory.Resource,
   
   // Security errors (7000-7099)
   [WalletErrorCode.AuthenticationFailed]: ErrorCategory.Security,
@@ -347,6 +368,9 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.FeatureDisabled]: ErrorCategory.General,
   [WalletErrorCode.QuotaExceeded]: ErrorCategory.General,
   [WalletErrorCode.InternalError]: ErrorCategory.General,
+  [WalletErrorCode.UnknownError]: ErrorCategory.General,
+  [WalletErrorCode.FEE_ESTIMATION_FAILED]: ErrorCategory.Transaction,
+  [WalletErrorCode.TRANSACTION_SEND_FAILED]: ErrorCategory.Transaction,
 };
 
 /**

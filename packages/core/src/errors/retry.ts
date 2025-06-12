@@ -535,21 +535,21 @@ export async function retryWithCircuitBreaker<T>(
  * Decorator for automatic retry on method calls
  */
 export function withRetry(config?: Partial<RetryConfig>) {
-  return function <T extends any[], R>(
+  return function (
     target: any,
     propertyKey: string,
-    descriptor: TypedPropertyDescriptor<(...args: T) => Promise<R>>
+    descriptor: TypedPropertyDescriptor<any>
   ) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (this: any, ...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
       return retry(
         () => originalMethod.apply(this, args),
         config,
         { operation: propertyKey, component: target.constructor.name }
       );
-    } as (...args: T) => Promise<R>;
+    };
 
     return descriptor;
   };
@@ -562,22 +562,22 @@ export function withCircuitBreaker(
   circuitBreakerKey: string,
   config?: Partial<RetryConfig>
 ) {
-  return function <T extends any[], R>(
+  return function (
     target: any,
     propertyKey: string,
-    descriptor: TypedPropertyDescriptor<(...args: T) => Promise<R>>
+    descriptor: TypedPropertyDescriptor<any>
   ) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (this: any, ...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
       return retryWithCircuitBreaker(
         () => originalMethod.apply(this, args),
         circuitBreakerKey,
         config,
         { operation: propertyKey, component: target.constructor.name }
       );
-    } as (...args: T) => Promise<R>;
+    };
 
     return descriptor;
   };

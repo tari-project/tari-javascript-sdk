@@ -379,6 +379,52 @@ export class TariAddress {
         throw new Error(`Unsupported format for random generation: ${format}`);
     }
   }
+
+  /**
+   * Create an empty/default address
+   */
+  static empty(): TariAddress {
+    // Create a default zero address
+    const zeroHex = '0'.repeat(64);
+    return new TariAddress(zeroHex);
+  }
+
+  /**
+   * Create address from string
+   */
+  static fromString(address: string): TariAddress {
+    return new TariAddress(address);
+  }
+
+  /**
+   * Get a display-friendly string representation
+   */
+  toDisplayString(): string {
+    switch (this._format) {
+      case AddressFormat.Emoji:
+        return this.toEmoji();
+      case AddressFormat.Base58:
+        return this.toBase58();
+      case AddressFormat.Hex:
+        // Shorten hex addresses for display
+        const hex = this.toHex();
+        if (hex.length > 16) {
+          return `${hex.slice(0, 8)}...${hex.slice(-8)}`;
+        }
+        return hex;
+      default:
+        return this._normalized;
+    }
+  }
+
+  /**
+   * Get FFI handle (placeholder for actual FFI implementation)
+   */
+  get handle(): string {
+    // Return normalized address as handle for now
+    // In real implementation this would be an FFI handle
+    return this._normalized;
+  }
 }
 
 // Utility functions for working with TariAddress

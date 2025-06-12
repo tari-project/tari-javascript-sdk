@@ -276,3 +276,56 @@ export const BrandGuards = {
       /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/.test(value)
     )
 };
+
+// Utility functions for common branded type conversions
+
+/**
+ * Create a MicroTari from a bigint value
+ */
+export function createMicroTari(value: bigint): MicroTari {
+  if (value < 0n) {
+    throw new Error('MicroTari amount cannot be negative');
+  }
+  return value as MicroTari;
+}
+
+/**
+ * Create a TransactionId from a bigint value
+ */
+export function createTransactionId(value: bigint): TransactionId {
+  return value as TransactionId;
+}
+
+/**
+ * Convert a number to MicroTari (assuming the number represents Tari)
+ */
+export function tariToMicroTari(tari: number): MicroTari {
+  if (tari < 0) {
+    throw new Error('Tari amount cannot be negative');
+  }
+  const microTari = BigInt(Math.round(tari * 1_000_000));
+  return createMicroTari(microTari);
+}
+
+/**
+ * Convert MicroTari to a number (representing Tari)
+ */
+export function microTariToTari(microTari: MicroTari): number {
+  return Number(microTari as bigint) / 1_000_000;
+}
+
+/**
+ * Safe conversion from unknown to MicroTari
+ */
+export function asMicroTari(value: unknown): MicroTari {
+  if (typeof value === 'bigint') {
+    return createMicroTari(value);
+  }
+  if (typeof value === 'number') {
+    return createMicroTari(BigInt(value));
+  }
+  if (typeof value === 'string') {
+    return createMicroTari(BigInt(value));
+  }
+  throw new Error(`Cannot convert ${typeof value} to MicroTari`);
+};

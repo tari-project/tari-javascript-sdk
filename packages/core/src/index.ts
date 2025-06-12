@@ -34,8 +34,8 @@ export * from './types/callbacks';
 export * from './types/guards';
 
 // Re-export specific types and values from enums without conflicts
-export { NetworkType, AddressFormat } from './types/enums';
-export type { LogLevel, TransactionStatus } from './types/enums';
+export { NetworkType, AddressFormat, TransactionDirection, TransactionStatus } from './types/enums';
+export type { LogLevel } from './types/enums';
 
 // Re-export error system (takes precedence over types for validation)
 export * from './errors/index';

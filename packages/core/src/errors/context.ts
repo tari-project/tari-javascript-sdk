@@ -230,15 +230,15 @@ export const ErrorContextInstance = ErrorContextManager.getInstance();
  * Decorator for automatically adding operation context
  */
 export function withErrorContext(operation: string, component?: string) {
-  return function <T extends any[], R>(
+  return function (
     target: any,
     propertyKey: string,
-    descriptor: TypedPropertyDescriptor<(...args: T) => R>
+    descriptor: TypedPropertyDescriptor<any>
   ) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = function (this: any, ...args: T): R {
+    descriptor.value = function (this: any, ...args: any[]): any {
       const context: Record<string, unknown> = { operation };
       if (component) {
         context.component = component;
@@ -247,7 +247,7 @@ export function withErrorContext(operation: string, component?: string) {
       return ErrorContextInstance.enhanceContext(context, () =>
         originalMethod.apply(this, args)
       );
-    } as (...args: T) => R;
+    };
 
     return descriptor;
   };
@@ -257,15 +257,15 @@ export function withErrorContext(operation: string, component?: string) {
  * Decorator for automatically adding operation context (async)
  */
 export function withAsyncErrorContext(operation: string, component?: string) {
-  return function <T extends any[], R>(
+  return function (
     target: any,
     propertyKey: string,
-    descriptor: TypedPropertyDescriptor<(...args: T) => Promise<R>>
+    descriptor: TypedPropertyDescriptor<any>
   ) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (this: any, ...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
       const context: Record<string, unknown> = { operation };
       if (component) {
         context.component = component;
@@ -274,7 +274,7 @@ export function withAsyncErrorContext(operation: string, component?: string) {
       return ErrorContextInstance.enhanceContextAsync(context, () =>
         originalMethod.apply(this, args)
       );
-    } as (...args: T) => Promise<R>;
+    };
 
     return descriptor;
   };

@@ -640,21 +640,21 @@ export async function executeWithRecoveryAndRetry<T>(
  * Decorator for automatic recovery
  */
 export function withRecovery(maxRecoveryAttempts = 1) {
-  return function <T extends any[], R>(
+  return function (
     target: any,
     propertyKey: string,
-    descriptor: TypedPropertyDescriptor<(...args: T) => Promise<R>>
+    descriptor: TypedPropertyDescriptor<any>
   ) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (this: any, ...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
       return executeWithRecovery(
         () => originalMethod.apply(this, args),
         { operation: propertyKey, component: target.constructor.name },
         maxRecoveryAttempts
       );
-    } as (...args: T) => Promise<R>;
+    };
 
     return descriptor;
   };
@@ -664,20 +664,20 @@ export function withRecovery(maxRecoveryAttempts = 1) {
  * Decorator for automatic recovery with retry
  */
 export function withRecoveryAndRetry() {
-  return function <T extends any[], R>(
+  return function (
     target: any,
     propertyKey: string,
-    descriptor: TypedPropertyDescriptor<(...args: T) => Promise<R>>
+    descriptor: TypedPropertyDescriptor<any>
   ) {
     const originalMethod = descriptor.value;
     if (!originalMethod) return;
 
-    descriptor.value = async function (this: any, ...args: T): Promise<R> {
+    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
       return executeWithRecoveryAndRetry(
         () => originalMethod.apply(this, args),
         { operation: propertyKey, component: target.constructor.name }
       );
-    } as (...args: T) => Promise<R>;
+    };
 
     return descriptor;
   };
