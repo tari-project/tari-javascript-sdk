@@ -23,4 +23,4 @@ export {
   LifecycleEvent,
   type LifecycleHooks,
   type LifecycleStats
-} from '../lifecycle.js';
+} from '../lifecycle/index.js';

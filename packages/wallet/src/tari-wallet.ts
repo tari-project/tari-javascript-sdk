@@ -36,8 +36,11 @@ import {
 import { 
   WalletLifecycleManager, 
   type LifecycleHooks,
-  createAsyncDisposableResource 
-} from './lifecycle.js';
+  createAsyncDisposableResource,
+  ResourceManager,
+  ResourceType,
+  globalWalletFinalizer
+} from './lifecycle/index.js';
 import {
   SeedManager,
   SecureBuffer,
@@ -92,6 +95,8 @@ export class TariWallet implements AsyncDisposable {
   private readonly networkInfoService: NetworkInfoService;
   private readonly versionInfoService: VersionInfoService;
   private readonly instanceId: string;
+  private readonly resourceManager: ResourceManager;
+  private readonly finalizerUnregister?: () => void;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
@@ -111,6 +116,36 @@ export class TariWallet implements AsyncDisposable {
     this.stateManager = new WalletStateManager(this.instanceId);
     this.lifecycleManager = new WalletLifecycleManager(this.instanceId, this.stateManager, hooks);
     this.balanceService = new BalanceService(handle, balanceConfig);
+    
+    // Initialize resource management
+    this.resourceManager = ResourceManager.getInstance();
+    
+    // Register this wallet with the resource manager
+    const resourceId = this.resourceManager.registerResource(
+      this,
+      ResourceType.WalletHandle,
+      handle,
+      this.instanceId,
+      ['primary-wallet']
+    );
+    
+    // Register with FinalizationRegistry for automatic cleanup
+    this.finalizerUnregister = globalWalletFinalizer.registerWalletResource(
+      this,
+      resourceId,
+      ResourceType.WalletHandle,
+      this.instanceId,
+      handle,
+      {
+        id: resourceId,
+        type: ResourceType.WalletHandle,
+        handle,
+        created: new Date(),
+        lastAccessed: new Date(),
+        refCount: 1,
+        walletId: this.instanceId
+      }
+    );
     
     // Initialize address services
     const defaultAddressConfig: AddressServiceConfig = {
@@ -854,7 +889,9 @@ export class TariWallet implements AsyncDisposable {
   getStats() {
     return {
       ...this.stateManager.getStats(),
-      lifecycle: this.lifecycleManager.getStats()
+      lifecycle: this.lifecycleManager.getStats(),
+      resources: this.resourceManager.getStats(),
+      finalizer: globalWalletFinalizer.getStats()
     };
   }
 
@@ -867,6 +904,14 @@ export class TariWallet implements AsyncDisposable {
     if (this.stateManager.isDestroyed) {
       return; // Already destroyed
     }
+
+    // Unregister from FinalizationRegistry (proper cleanup)
+    if (this.finalizerUnregister) {
+      this.finalizerUnregister();
+    }
+
+    // Cleanup all wallet resources through resource manager
+    await this.resourceManager.cleanupWalletResources(this.instanceId);
 
     // Cleanup address services
     this.addressService.destroy();

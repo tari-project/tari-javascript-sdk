@@ -11,7 +11,7 @@ import {
   ErrorSeverity,
   type WalletHandle
 } from '@tari-project/tarijs-core';
-import { WalletState, type WalletStateManager } from './wallet-state.js';
+import { WalletState, type WalletStateManager } from '../wallet-state.js';
 
 /**
  * Lifecycle event types
