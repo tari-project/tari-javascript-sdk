@@ -20,10 +20,45 @@ export interface WalletConfig extends BaseConfig {
 
 // Balance information
 export interface Balance {
+  /** Available spendable balance */
   available: bigint;
+  /** Incoming transactions pending confirmation */
   pendingIncoming: bigint;
+  /** Outgoing transactions pending confirmation */
   pendingOutgoing: bigint;
-  timelocked: bigint;
+  /** Total balance (available + pending incoming) */
+  total: bigint;
+  /** Timestamp of last balance update */
+  lastUpdated: Date;
+}
+
+// Extended balance information with additional details
+export interface BalanceInfo extends Balance {
+  /** Time-locked balance that cannot be spent */
+  timeLocked: bigint;
+  /** Confirmed balance (fully confirmed transactions) */
+  confirmed: bigint;
+  /** Unconfirmed balance (partially confirmed transactions) */
+  unconfirmed: bigint;
+  /** Current blockchain height when balance was fetched */
+  height: number;
+}
+
+// Balance change event
+export interface BalanceChangeEvent {
+  /** Timestamp of the change */
+  timestamp: Date;
+  /** Previous balance state */
+  previousBalance: Balance;
+  /** Current balance state */
+  currentBalance: Balance;
+  /** Array of specific field changes */
+  changes: Array<{
+    field: keyof Balance;
+    oldValue: bigint;
+    newValue: bigint;
+    change: bigint;
+  }>;
 }
 
 // Transaction types

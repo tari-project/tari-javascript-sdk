@@ -22,7 +22,8 @@ import type {
   WalletEventHandlers,
   Contact,
   PeerInfo,
-  Balance
+  Balance,
+  BalanceInfo
 } from './types/index.js';
 import { TariAddress, WalletBalance, TransactionId } from './models/index.js';
 import { 
@@ -39,6 +40,11 @@ import {
   SecureBuffer,
   type SeedValidationResult
 } from './seed/index.js';
+import {
+  BalanceService,
+  type BalanceServiceConfig,
+  type BalanceChangeListener
+} from './balance/index.js';
 
 /**
  * Main Tari wallet class providing high-level wallet operations
@@ -52,21 +58,31 @@ export class TariWallet implements AsyncDisposable {
   private readonly eventEmitter: EventEmitter;
   private readonly stateManager: WalletStateManager;
   private readonly lifecycleManager: WalletLifecycleManager;
+  private readonly balanceService: BalanceService;
   private readonly instanceId: string;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
    */
-  constructor(handle: WalletHandle, config: WalletConfig, hooks: LifecycleHooks = {}) {
+  constructor(
+    handle: WalletHandle, 
+    config: WalletConfig, 
+    hooks: LifecycleHooks = {},
+    balanceConfig?: BalanceServiceConfig
+  ) {
     this.instanceId = `wallet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.handle = handle;
     this.config = { ...config };
     this.eventEmitter = new EventEmitter();
     this.stateManager = new WalletStateManager(this.instanceId);
     this.lifecycleManager = new WalletLifecycleManager(this.instanceId, this.stateManager, hooks);
+    this.balanceService = new BalanceService(handle, balanceConfig);
 
     // Initialize lifecycle
     this.initializeLifecycle();
+
+    // Setup balance change forwarding
+    this.setupBalanceEventForwarding();
   }
 
   // Core wallet operations
@@ -99,31 +115,112 @@ export class TariWallet implements AsyncDisposable {
   }
 
   /**
-   * Get current wallet balance
+   * Get wallet balance with caching support
+   * 
+   * @param force - Force refresh from FFI, bypassing cache
+   * @returns Promise resolving to current wallet balance
    */
-  async getBalance(): Promise<WalletBalance> {
-    try {
-      const bindings = getFFIBindings();
-      const ffiBalance = await bindings.getBalance(this.handle);
-      
-      const balance: Balance = {
-        available: BigInt(ffiBalance.available),
-        pendingIncoming: BigInt(ffiBalance.pendingIncoming),
-        pendingOutgoing: BigInt(ffiBalance.pendingOutgoing),
-        timelocked: BigInt(ffiBalance.timelocked)
-      };
-      
-      return new WalletBalance(balance);
-    } catch (error) {
-      throw new WalletError(
-        WalletErrorCode.InternalError,
-        'Failed to retrieve wallet balance',
-        {
-          severity: ErrorSeverity.Error,
-          cause: error as Error
-        }
-      );
-    }
+  async getBalance(force: boolean = false): Promise<Balance> {
+    this.ensureNotDestroyed();
+    return this.balanceService.getBalance(force);
+  }
+
+  /**
+   * Get detailed balance information including time-locked funds
+   * 
+   * @param force - Force refresh from FFI, bypassing cache
+   * @returns Promise resolving to detailed balance information
+   */
+  async getDetailedBalance(force: boolean = false): Promise<BalanceInfo> {
+    this.ensureNotDestroyed();
+    return this.balanceService.getDetailedBalance(force);
+  }
+
+  /**
+   * Get available spendable balance
+   * 
+   * @returns Promise resolving to available balance in microTari
+   */
+  async getAvailableBalance(): Promise<bigint> {
+    this.ensureNotDestroyed();
+    return this.balanceService.getAvailableBalance();
+  }
+
+  /**
+   * Get pending incoming balance
+   * 
+   * @returns Promise resolving to pending incoming balance in microTari
+   */
+  async getPendingIncomingBalance(): Promise<bigint> {
+    this.ensureNotDestroyed();
+    return this.balanceService.getPendingIncomingBalance();
+  }
+
+  /**
+   * Get pending outgoing balance
+   * 
+   * @returns Promise resolving to pending outgoing balance in microTari
+   */
+  async getPendingOutgoingBalance(): Promise<bigint> {
+    this.ensureNotDestroyed();
+    return this.balanceService.getPendingOutgoingBalance();
+  }
+
+  /**
+   * Check if wallet has sufficient balance for a transaction
+   * 
+   * @param amount - Amount to send in microTari
+   * @param fee - Transaction fee in microTari (optional)
+   * @returns Promise resolving to true if sufficient balance exists
+   */
+  async hasSufficientBalance(amount: bigint, fee: bigint = 0n): Promise<boolean> {
+    this.ensureNotDestroyed();
+    return this.balanceService.hasSufficientBalance(amount, fee);
+  }
+
+  /**
+   * Get maximum spendable amount (available balance minus estimated fee)
+   * 
+   * @param estimatedFee - Estimated transaction fee in microTari
+   * @returns Promise resolving to maximum spendable amount
+   */
+  async getMaxSpendableAmount(estimatedFee: bigint = 1000000n): Promise<bigint> {
+    this.ensureNotDestroyed();
+    return this.balanceService.getMaxSpendableAmount(estimatedFee);
+  }
+
+  /**
+   * Add a balance change listener
+   * 
+   * @param listener - Function to call when balance changes
+   */
+  addBalanceChangeListener(listener: BalanceChangeListener): void {
+    this.balanceService.addChangeListener(listener);
+  }
+
+  /**
+   * Remove a balance change listener
+   * 
+   * @param listener - Previously added listener function
+   */
+  removeBalanceChangeListener(listener: BalanceChangeListener): void {
+    this.balanceService.removeChangeListener(listener);
+  }
+
+  /**
+   * Clear the balance cache to force fresh data on next query
+   */
+  clearBalanceCache(): void {
+    this.balanceService.clearCache();
+  }
+
+  /**
+   * Get balance cache statistics
+   * 
+   * @returns Cache performance statistics
+   */
+  getBalanceCacheStats() {
+    return this.balanceService.getCacheStats();
   }
 
   /**
@@ -558,8 +655,24 @@ export class TariWallet implements AsyncDisposable {
       this.eventEmitter.removeAllListeners();
     });
 
+    // Add balance service cleanup
+    this.lifecycleManager.addCleanup(async () => {
+      this.balanceService.dispose();
+    });
+
     // Initialize the lifecycle
     await this.lifecycleManager.initialize(this.handle);
+  }
+
+  /**
+   * Setup balance event forwarding to wallet event emitter
+   */
+  private setupBalanceEventForwarding(): void {
+    this.balanceService.addChangeListener((event) => {
+      // Forward balance change events through the wallet event emitter
+      this.eventEmitter.emit('balanceUpdated', event.currentBalance);
+      this.eventEmitter.emit('balanceChanged', event);
+    });
   }
 }
 

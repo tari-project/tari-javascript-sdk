@@ -63,7 +63,7 @@ export { FFICallError, ErrorClassification, CircuitState, type CallContext } fro
 
 // FFI bindings
 export { getFFIBindings, initializeFFI, resetFFI } from './ffi/bindings';
-export type { FFIWalletConfig, WalletHandle } from './ffi/types';
+export type { FFIWalletConfig, WalletHandle, FFIBalance } from './ffi/types';
 export { createWalletHandle, unwrapWalletHandle } from './ffi/types';
 
 // Wallet handle wrapper (Task 8)

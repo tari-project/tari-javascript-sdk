@@ -144,12 +144,7 @@ class WalletBalance {
     return this.balance.pendingOutgoing;
   }
 
-  /**
-   * Time-locked balance
-   */
-  get timelocked(): bigint {
-    return this.balance.timelocked;
-  }
+
 
   /**
    * Total balance including pending incoming
