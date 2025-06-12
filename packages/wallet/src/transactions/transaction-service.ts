@@ -48,6 +48,11 @@ import {
   OneSidedSender,
   type OneSidedSendOptions
 } from './send/index.js';
+import { 
+  HistoryService,
+  type HistoryServiceConfig,
+  DEFAULT_HISTORY_SERVICE_CONFIG
+} from './history/index.js';
 
 /**
  * Configuration for the transaction service
@@ -92,6 +97,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
   private readonly feeEstimator: FeeEstimator;
   private readonly standardSender: StandardSender;
   private readonly oneSidedSender: OneSidedSender;
+  private readonly historyService: HistoryService;
   private readonly ffi = getFFIBindings();
   private isDisposed = false;
   private refreshTimer?: NodeJS.Timeout;
@@ -115,6 +121,13 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
     });
     this.standardSender = new StandardSender(config.walletHandle, this.feeEstimator);
     this.oneSidedSender = new OneSidedSender(config.walletHandle, this.feeEstimator);
+    
+    // Initialize history service
+    const historyConfig: HistoryServiceConfig = {
+      walletHandle: config.walletHandle,
+      ...DEFAULT_HISTORY_SERVICE_CONFIG
+    };
+    this.historyService = new HistoryService(historyConfig, this.repository);
 
     // Set up event forwarding
     this.repository.on('transaction:updated', (update) => {
@@ -476,8 +489,57 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
   async getTransactionStatistics(filter?: TransactionFilter): Promise<TransactionStatistics> {
     this.ensureNotDisposed();
 
-    const transactions = await this.repository.getTransactions(filter);
-    return this.calculateStatistics(transactions);
+    return await this.historyService.getTransactionStatistics(filter);
+  }
+
+  /**
+   * Get transaction history with advanced filtering and pagination
+   */
+  @withErrorContext('get_transaction_history', 'transaction_service')
+  async getTransactionHistory(
+    filter?: TransactionFilter,
+    options?: TransactionQueryOptions
+  ) {
+    this.ensureNotDisposed();
+    
+    return await this.historyService.getTransactionHistory(filter, options);
+  }
+
+  /**
+   * Search transaction history with full-text search
+   */
+  @withErrorContext('search_transaction_history', 'transaction_service')
+  async searchTransactionHistory(
+    query: string,
+    filter?: TransactionFilter,
+    options?: TransactionQueryOptions
+  ) {
+    this.ensureNotDisposed();
+    
+    return await this.historyService.searchTransactionHistory(query, filter, options);
+  }
+
+  /**
+   * Get recent transaction activity
+   */
+  @withErrorContext('get_recent_activity', 'transaction_service')
+  async getRecentActivity(timeWindowMs?: number, limit?: number) {
+    this.ensureNotDisposed();
+    
+    return await this.historyService.getRecentActivity(timeWindowMs, limit);
+  }
+
+  /**
+   * Export transaction history
+   */
+  @withErrorContext('export_transaction_history', 'transaction_service')
+  async exportTransactionHistory(
+    filter?: TransactionFilter,
+    format: 'csv' | 'json' | 'xlsx' = 'csv'
+  ) {
+    this.ensureNotDisposed();
+    
+    return await this.historyService.exportTransactionHistory(filter, format);
   }
 
   /**
@@ -711,6 +773,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
     
     await this.repository.dispose();
     await this.stateManager.dispose();
+    await this.historyService.dispose();
     
     this.removeAllListeners();
   }

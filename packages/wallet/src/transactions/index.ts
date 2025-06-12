@@ -52,6 +52,24 @@ export {
   DEFAULT_AMOUNT_CONFIG
 } from './send/index.js';
 
+// Transaction history and querying
+export {
+  HistoryService,
+  type HistoryServiceConfig,
+  type HistoryServiceEvents,
+  type HistoryEntry,
+  type SearchResult,
+  DEFAULT_HISTORY_SERVICE_CONFIG,
+  HistoryQueryBuilder,
+  type BuiltQuery,
+  type QueryPerformanceHints,
+  HistoryFilters,
+  type AdvancedFilterOptions,
+  type FilterStatistics,
+  type FilterValidationResult,
+  FILTER_PRESETS
+} from './history/index.js';
+
 // Re-export core transaction types for convenience
 export type {
   TransactionInfo,
