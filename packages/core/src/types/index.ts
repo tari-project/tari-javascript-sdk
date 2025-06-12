@@ -1,38 +1,50 @@
 /**
  * @fileoverview Core type definitions for Tari JavaScript SDK
  * 
- * This module contains fundamental types shared across all packages,
- * including network configurations, basic data structures, and
- * common interfaces that don't depend on FFI implementation.
+ * Central export point for all type system components including enums,
+ * branded types, configuration interfaces, and validation utilities.
  */
 
-// Network configuration types
-export enum NetworkType {
-  Mainnet = 'mainnet',
-  Testnet = 'testnet',
-  Nextnet = 'nextnet',
-}
+// Core enumerations and constants
+export * from './enums.js';
+export * from './constants.js';
 
-export enum LogLevel {
-  Error = 'error',
-  Warn = 'warn',
-  Info = 'info',
-  Debug = 'debug',
-  Trace = 'trace',
-}
+// Branded types and utilities
+export * from './branded.js';
+export * from './utils.js';
 
-// Basic configuration interfaces
-export interface BaseConfig {
-  network: NetworkType;
-  logLevel?: LogLevel;
-}
+// Configuration interfaces
+export * from './config.js';
+export * from './wallet-config.js';
 
-// FFI handle types (placeholders for now)
+// Balance and amount types
+export * from './balance.js';
+export * from './amount.js';
+
+// Address types and validation
+export * from './address.js';
+
+// Transaction types
+export * from './transaction.js';
+export * from './transaction-status.js';
+
+// Contact and metadata types
+export * from './contact.js';
+export * from './metadata.js';
+
+// UTXO and output types
+export * from './utxo.js';
+export * from './output-features.js';
+
+// Event and callback types
+export * from './events.js';
+export * from './callbacks.js';
+
+// Validation and type guards
+export * from './guards.js';
+export * from './validators.js';
+
+// Legacy exports for backward compatibility
 export type NativeHandle = bigint;
-
-// Utility types
 export type HexString = string;
 export type Base58String = string;
-export type EmojiId = string;
-
-// Types are already exported above - no need to re-export
