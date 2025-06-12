@@ -87,7 +87,7 @@ export class WalletLifecycleManager {
   async initialize(handle: WalletHandle): Promise<void> {
     if (this.initialized) {
       throw new WalletError(
-        WalletErrorCode.WalletAlreadyInitialized,
+        WalletErrorCode.WalletExists,
         'Wallet lifecycle already initialized'
       );
     }
@@ -325,7 +325,7 @@ export class AsyncDisposableWalletResource implements AsyncDisposable {
 /**
  * Create a disposable resource wrapper
  */
-export function createDisposableResource<T>(
+export function createDisposableResource<T extends object>(
   resource: T,
   cleanup: CleanupFunction
 ): T & Disposable {
@@ -338,7 +338,7 @@ export function createDisposableResource<T>(
 /**
  * Create an async disposable resource wrapper
  */
-export function createAsyncDisposableResource<T>(
+export function createAsyncDisposableResource<T extends object>(
   resource: T,
   cleanup: CleanupFunction
 ): T & AsyncDisposable {

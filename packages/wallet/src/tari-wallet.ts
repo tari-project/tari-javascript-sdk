@@ -12,10 +12,9 @@ import {
   WalletError, 
   WalletErrorCode, 
   ErrorSeverity,
-  withErrorContext,
-  withRetry,
-  type WalletHandle
+  type FFIWalletConfig
 } from '@tari-project/tarijs-core';
+import type { WalletHandle } from '@tari-project/tarijs-core';
 import type { 
   WalletConfig, 
   TransactionInfo, 
@@ -28,9 +27,7 @@ import type {
 import { TariAddress, WalletBalance, TransactionId } from './models/index.js';
 import { 
   WalletState, 
-  WalletStateManager, 
-  requireUsableState,
-  withStateTransition 
+  WalletStateManager
 } from './wallet-state.js';
 import { 
   WalletLifecycleManager, 
@@ -72,10 +69,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get wallet's primary address
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('get_address', 'wallet')
-  @withRetry('wallet_get_address')
   async getAddress(): Promise<TariAddress> {
     try {
       const bindings = getFFIBindings();
@@ -90,12 +83,11 @@ export class TariWallet implements AsyncDisposable {
       });
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.AddressRetrievalFailed,
+        WalletErrorCode.InternalError,
         'Failed to retrieve wallet address',
         {
           severity: ErrorSeverity.Error,
-          cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          cause: error as Error
         }
       );
     }
@@ -104,10 +96,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get current wallet balance
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('get_balance', 'wallet')
-  @withRetry('wallet_get_balance')
   async getBalance(): Promise<WalletBalance> {
     try {
       const bindings = getFFIBindings();
@@ -123,12 +111,11 @@ export class TariWallet implements AsyncDisposable {
       return new WalletBalance(balance);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.BalanceRetrievalFailed,
+        WalletErrorCode.InternalError,
         'Failed to retrieve wallet balance',
         {
           severity: ErrorSeverity.Error,
-          cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          cause: error as Error
         }
       );
     }
@@ -137,10 +124,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Send a transaction to another address
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('send_transaction', 'wallet')
-  @withRetry('wallet_send_transaction')
   async sendTransaction(
     recipient: string | TariAddress,
     amount: bigint,
@@ -152,8 +135,7 @@ export class TariWallet implements AsyncDisposable {
         WalletErrorCode.InvalidAmount,
         'Transaction amount must be positive',
         {
-          severity: ErrorSeverity.Error,
-          metadata: { amount: amount.toString() }
+          severity: ErrorSeverity.Error
         }
       );
     }
@@ -179,16 +161,11 @@ export class TariWallet implements AsyncDisposable {
       return new TransactionId(txIdStr);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.TransactionSendFailed,
+        WalletErrorCode.TransactionFailed,
         'Failed to send transaction',
         {
           severity: ErrorSeverity.Error,
-          cause: error as Error,
-          metadata: {
-            walletId: this.instanceId,
-            amount: amount.toString(),
-            recipient: typeof recipient === 'string' ? recipient : recipient.toString()
-          }
+          cause: error as Error
         }
       );
     }
@@ -197,10 +174,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get wallet seed words (requires passphrase if set)
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('get_seed_words', 'wallet')
-  @withRetry('wallet_get_seed_words')
   async getSeedWords(_passphrase?: string): Promise<string[]> {
     try {
       const bindings = getFFIBindings();
@@ -209,12 +182,11 @@ export class TariWallet implements AsyncDisposable {
       return seedWords;
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.SeedWordsRetrievalFailed,
+        WalletErrorCode.InternalError,
         'Failed to retrieve wallet seed words',
         {
           severity: ErrorSeverity.Error,
-          cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          cause: error as Error
         }
       );
     }
@@ -223,9 +195,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Sign a message with wallet's private key
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('sign_message', 'wallet')
   async signMessage(message: string): Promise<string> {
     if (!message || typeof message !== 'string') {
       throw new WalletError(
@@ -243,12 +212,12 @@ export class TariWallet implements AsyncDisposable {
       );
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.MessageSigningFailed,
+        WalletErrorCode.SigningFailed,
         'Failed to sign message',
         {
           severity: ErrorSeverity.Error,
           cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          
         }
       );
     }
@@ -259,9 +228,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get transaction history
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('get_transactions', 'wallet')
   async getTransactions(): Promise<TransactionInfo[]> {
     try {
       // TODO: Implement when transaction history FFI is available
@@ -271,12 +237,12 @@ export class TariWallet implements AsyncDisposable {
       );
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.TransactionHistoryFailed,
+        WalletErrorCode.TransactionNotFound,
         'Failed to retrieve transaction history',
         {
           severity: ErrorSeverity.Error,
           cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          
         }
       );
     }
@@ -285,9 +251,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Cancel a pending transaction
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('cancel_transaction', 'wallet')
   async cancelTransaction(_transactionId: TransactionId): Promise<void> {
     try {
       // TODO: Implement when transaction cancellation FFI is available
@@ -297,12 +260,12 @@ export class TariWallet implements AsyncDisposable {
       );
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.TransactionCancelFailed,
+        WalletErrorCode.TransactionFailed,
         'Failed to cancel transaction',
         {
           severity: ErrorSeverity.Error,
           cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          
         }
       );
     }
@@ -313,8 +276,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Add a contact to the wallet
    */
-  @requireUsableState
-  @withErrorContext('add_contact', 'wallet')
   async addContact(_contact: Contact): Promise<void> {
     try {
       // TODO: Implement when contact management FFI is available
@@ -324,12 +285,12 @@ export class TariWallet implements AsyncDisposable {
       );
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.ContactAddFailed,
+        WalletErrorCode.InvalidConfig,
         'Failed to add contact',
         {
           severity: ErrorSeverity.Error,
           cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          
         }
       );
     }
@@ -338,8 +299,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get all contacts
    */
-  @requireUsableState
-  @withErrorContext('get_contacts', 'wallet')
   async getContacts(): Promise<Contact[]> {
     try {
       // TODO: Implement when contact management FFI is available
@@ -349,12 +308,12 @@ export class TariWallet implements AsyncDisposable {
       );
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.ContactRetrievalFailed,
+        WalletErrorCode.InvalidConfig,
         'Failed to retrieve contacts',
         {
           severity: ErrorSeverity.Error,
           cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          
         }
       );
     }
@@ -365,9 +324,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Set the base node for network communication
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('set_base_node', 'wallet')
   async setBaseNode(peer: PeerInfo): Promise<void> {
     try {
       const bindings = getFFIBindings();
@@ -377,15 +333,12 @@ export class TariWallet implements AsyncDisposable {
       });
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.BaseNodeSetFailed,
+        WalletErrorCode.ConnectionFailed,
         'Failed to set base node',
         {
           severity: ErrorSeverity.Error,
           cause: error as Error,
-          metadata: { 
-            walletId: this.instanceId,
-            baseNode: peer
-          }
+
         }
       );
     }
@@ -394,9 +347,6 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Sync wallet with the network
    */
-  @requireUsableState
-  @withStateTransition()
-  @withErrorContext('sync_wallet', 'wallet')
   async sync(): Promise<void> {
     try {
       // TODO: Implement when wallet sync FFI is available
@@ -411,7 +361,7 @@ export class TariWallet implements AsyncDisposable {
         {
           severity: ErrorSeverity.Error,
           cause: error as Error,
-          metadata: { walletId: this.instanceId }
+          
         }
       );
     }

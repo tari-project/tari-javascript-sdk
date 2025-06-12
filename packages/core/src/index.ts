@@ -61,6 +61,11 @@ export * from './ffi/memory';
 // Export specific items from call-manager to avoid CircuitState conflict
 export { FFICallError, ErrorClassification, CircuitState, type CallContext } from './ffi/call-manager';
 
+// FFI bindings
+export { getFFIBindings, initializeFFI, resetFFI } from './ffi/bindings';
+export type { FFIWalletConfig, WalletHandle } from './ffi/types';
+export { createWalletHandle, unwrapWalletHandle } from './ffi/types';
+
 // Wallet handle wrapper (Task 8)
 export * from './wallet-handle';
 

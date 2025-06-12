@@ -9,8 +9,7 @@ import { NetworkType } from '@tari-project/tarijs-core';
 import { 
   WalletError, 
   WalletErrorCode,
-  ErrorSeverity,
-  withErrorContext 
+  ErrorSeverity
 } from '@tari-project/tarijs-core';
 import type { WalletConfig } from '../types/index.js';
 
@@ -50,7 +49,6 @@ const DEFAULT_VALIDATION_OPTIONS: Required<ValidationOptions> = {
 /**
  * Validate wallet configuration with comprehensive checks
  */
-@withErrorContext('validate_config', 'wallet')
 export async function validateWalletConfig(
   config: WalletConfig,
   options: ValidationOptions = {}
@@ -65,9 +63,7 @@ export async function validateWalletConfig(
       WalletErrorCode.RequiredFieldMissing,
       'Network type is required',
       { 
-        field: 'network',
-        severity: ErrorSeverity.Error,
-        recoverySuggestion: 'Specify network as NetworkType.Mainnet, NetworkType.Testnet, or NetworkType.Nextnet'
+        severity: ErrorSeverity.Error
       }
     ));
   }
@@ -77,9 +73,7 @@ export async function validateWalletConfig(
       WalletErrorCode.RequiredFieldMissing,
       'Storage path is required',
       {
-        field: 'storagePath',
-        severity: ErrorSeverity.Error,
-        recoverySuggestion: 'Provide a valid directory path for wallet storage'
+        severity: ErrorSeverity.Error
       }
     ));
   }
@@ -90,10 +84,7 @@ export async function validateWalletConfig(
       WalletErrorCode.InvalidNetworkType,
       `Invalid network type: ${config.network}`,
       {
-        field: 'network',
-        value: config.network,
-        severity: ErrorSeverity.Error,
-        recoverySuggestion: `Use one of: ${Object.values(NetworkType).join(', ')}`
+        severity: ErrorSeverity.Error
       }
     ));
   }
@@ -110,8 +101,6 @@ export async function validateWalletConfig(
           WalletErrorCode.InvalidDataDir,
           `Storage path validation failed: ${error}`,
           {
-            field: 'storagePath',
-            value: config.storagePath,
             severity: ErrorSeverity.Error,
             cause: error as Error
           }
@@ -129,11 +118,8 @@ export async function validateWalletConfig(
         WalletErrorCode.InvalidDataDir,
         `Log path validation failed: ${error}`,
         {
-          field: 'logPath',
-          value: config.logPath,
           severity: ErrorSeverity.Warning,
-          cause: error as Error,
-          recoverySuggestion: 'Logs will be disabled if path is invalid'
+          cause: error as Error
         }
       ));
     }
@@ -146,11 +132,7 @@ export async function validateWalletConfig(
         WalletErrorCode.ValueOutOfRange,
         `Log level must be an integer between 0 and 5, got: ${config.logLevel}`,
         {
-          field: 'logLevel',
-          value: config.logLevel,
-          severity: ErrorSeverity.Error,
-          validRange: '0-5',
-          recoverySuggestion: 'Use 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG, 5=TRACE'
+          severity: ErrorSeverity.Error
         }
       ));
     }
@@ -162,10 +144,7 @@ export async function validateWalletConfig(
         WalletErrorCode.ValueOutOfRange,
         `Number of rolling log files must be at least 1, got: ${config.numRollingLogFiles}`,
         {
-          field: 'numRollingLogFiles',
-          value: config.numRollingLogFiles,
-          severity: ErrorSeverity.Error,
-          recoverySuggestion: 'Set to a positive integer (recommended: 5-20)'
+          severity: ErrorSeverity.Error
         }
       ));
     }
@@ -177,10 +156,7 @@ export async function validateWalletConfig(
         WalletErrorCode.ValueOutOfRange,
         `Rolling log file size must be at least 1024 bytes, got: ${config.rollingLogFileSize}`,
         {
-          field: 'rollingLogFileSize',
-          value: config.rollingLogFileSize,
-          severity: ErrorSeverity.Error,
-          recoverySuggestion: 'Set to at least 1024 bytes (recommended: 1MB-20MB)'
+          severity: ErrorSeverity.Error
         }
       ));
     }
@@ -195,10 +171,9 @@ export async function validateWalletConfig(
         errors.push(error);
       } else {
         errors.push(new WalletError(
-          WalletErrorCode.InvalidSeedPhrase,
+          WalletErrorCode.InvalidFormat,
           `Seed words validation failed: ${error}`,
           {
-            field: 'seedWords',
             severity: ErrorSeverity.Error,
             cause: error as Error
           }
@@ -213,8 +188,6 @@ export async function validateWalletConfig(
       WalletErrorCode.InvalidFormat,
       'Passphrase must be a string',
       {
-        field: 'passphrase',
-        value: typeof config.passphrase,
         severity: ErrorSeverity.Error
       }
     ));
@@ -229,24 +202,16 @@ export async function validateWalletConfig(
           WalletErrorCode.DiskSpaceInsufficient,
           `Insufficient disk space: ${formatBytes(available)} available, ${formatBytes(opts.minDiskSpace)} required`,
           {
-            field: 'storagePath',
-            value: config.storagePath,
-            severity: ErrorSeverity.Warning,
-            metadata: {
-              availableBytes: available,
-              requiredBytes: opts.minDiskSpace
-            },
-            recoverySuggestion: 'Free up disk space or choose a different storage location'
+            severity: ErrorSeverity.Warning
           }
         ));
       }
     } catch (error) {
       // Disk space check failure is a warning
       warnings.push(new WalletError(
-        WalletErrorCode.DiskSpaceCheck,
+        WalletErrorCode.Unknown,
         `Could not check disk space: ${error}`,
         {
-          field: 'storagePath',
           severity: ErrorSeverity.Warning,
           cause: error as Error
         }
@@ -317,19 +282,15 @@ async function validatePath(path: string, pathType: string): Promise<void> {
 function validateSeedWords(seedWords: string[]): void {
   if (!Array.isArray(seedWords)) {
     throw new WalletError(
-      WalletErrorCode.InvalidSeedPhrase,
+      WalletErrorCode.InvalidFormat,
       'Seed words must be an array'
     );
   }
 
   if (seedWords.length !== 24) {
     throw new WalletError(
-      WalletErrorCode.InvalidSeedLength,
-      `Seed phrase must contain exactly 24 words, got ${seedWords.length}`,
-      {
-        expectedLength: 24,
-        actualLength: seedWords.length
-      }
+      WalletErrorCode.InvalidLength,
+      `Seed phrase must contain exactly 24 words, got ${seedWords.length}`
     );
   }
 
@@ -338,29 +299,22 @@ function validateSeedWords(seedWords: string[]): void {
     const word = seedWords[i];
     if (!word || typeof word !== 'string') {
       throw new WalletError(
-        WalletErrorCode.InvalidSeedWord,
-        `Seed word at position ${i + 1} is invalid: ${word}`,
-        { wordIndex: i, word }
+        WalletErrorCode.InvalidFormat,
+        `Seed word at position ${i + 1} is invalid: ${word}`
       );
     }
 
     if (word.trim() !== word || word.includes(' ')) {
       throw new WalletError(
-        WalletErrorCode.InvalidSeedWord,
-        `Seed word at position ${i + 1} contains whitespace: "${word}"`,
-        { wordIndex: i, word }
+        WalletErrorCode.InvalidFormat,
+        `Seed word at position ${i + 1} contains whitespace: "${word}"`
       );
     }
 
     if (!/^[a-z]+$/.test(word)) {
       throw new WalletError(
-        WalletErrorCode.InvalidSeedWord,
-        `Seed word at position ${i + 1} contains invalid characters: "${word}"`,
-        { 
-          wordIndex: i, 
-          word,
-          recoverySuggestion: 'Seed words should contain only lowercase letters'
-        }
+        WalletErrorCode.InvalidFormat,
+        `Seed word at position ${i + 1} contains invalid characters: "${word}"`
       );
     }
   }
@@ -369,12 +323,8 @@ function validateSeedWords(seedWords: string[]): void {
   const uniqueWords = new Set(seedWords);
   if (uniqueWords.size !== seedWords.length) {
     throw new WalletError(
-      WalletErrorCode.InvalidSeedPhrase,
-      'Seed phrase contains duplicate words',
-      {
-        totalWords: seedWords.length,
-        uniqueWords: uniqueWords.size
-      }
+      WalletErrorCode.InvalidFormat,
+      'Seed phrase contains duplicate words'
     );
   }
 }

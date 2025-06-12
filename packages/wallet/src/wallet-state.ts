@@ -110,16 +110,10 @@ export class WalletStateManager {
     // Validate transition
     if (!this.isValidTransition(fromState, newState)) {
       throw new WalletError(
-        WalletErrorCode.InvalidStateTransition,
+        WalletErrorCode.InvalidState,
         `Invalid state transition from ${fromState} to ${newState}`,
         {
-          severity: ErrorSeverity.Error,
-          metadata: {
-            fromState,
-            toState: newState,
-            walletId: this.walletId,
-            validTransitions: this.getValidTransitions(fromState)
-          }
+          severity: ErrorSeverity.Error
         }
       );
     }
@@ -166,45 +160,43 @@ export class WalletStateManager {
   ensureUsable(): void {
     if (this.isDestroyed) {
       throw new WalletError(
-        WalletErrorCode.UseAfterFree,
+        WalletErrorCode.InvalidState,
         'Cannot use wallet after it has been destroyed',
         {
-          severity: ErrorSeverity.Error,
-          metadata: {
-            walletId: this.walletId,
-            currentState: this.currentState,
-            destroyedAt: this.getDestroyedAt()
-          }
+          severity: ErrorSeverity.Error
         }
       );
     }
 
     if (this.isError) {
       const lastError = this.getLastError();
-      throw new WalletError(
-        WalletErrorCode.WalletInErrorState,
-        'Wallet is in error state and cannot be used',
-        {
-          severity: ErrorSeverity.Error,
-          cause: lastError,
-          metadata: {
-            walletId: this.walletId,
-            currentState: this.currentState
+      const errorMessage = 'Wallet is in error state and cannot be used';
+      
+      if (lastError) {
+        throw new WalletError(
+          WalletErrorCode.InvalidState,
+          `${errorMessage}: ${lastError.message}`,
+          {
+            severity: ErrorSeverity.Error
           }
-        }
-      );
+        );
+      } else {
+        throw new WalletError(
+          WalletErrorCode.InvalidState,
+          errorMessage,
+          {
+            severity: ErrorSeverity.Error
+          }
+        );
+      }
     }
 
     if (!this.isUsable) {
       throw new WalletError(
-        WalletErrorCode.WalletNotReady,
+        WalletErrorCode.InvalidState,
         `Wallet is not ready for operations (current state: ${this.currentState})`,
         {
-          severity: ErrorSeverity.Error,
-          metadata: {
-            walletId: this.walletId,
-            currentState: this.currentState
-          }
+          severity: ErrorSeverity.Error
         }
       );
     }
@@ -311,17 +303,19 @@ export interface WalletStateStats {
 /**
  * Decorator for ensuring wallet is in usable state before method execution
  */
-export function requireUsableState(
+export function requireUsableState<T extends (...args: any[]) => any>(
   target: any,
   propertyName: string,
-  descriptor: TypedPropertyDescriptor<any>
+  descriptor: TypedPropertyDescriptor<T>
 ): void {
   const method = descriptor.value;
+
+  if (!method) return;
 
   descriptor.value = function (this: { stateManager: WalletStateManager }, ...args: any[]) {
     this.stateManager.ensureUsable();
     return method.apply(this, args);
-  };
+  } as T;
 }
 
 /**
@@ -331,12 +325,14 @@ export function withStateTransition(
   activeState: WalletState = WalletState.Active,
   readyState: WalletState = WalletState.Ready
 ) {
-  return function (
+  return function <T extends (...args: any[]) => Promise<any>>(
     target: any,
     propertyName: string,
-    descriptor: TypedPropertyDescriptor<any>
+    descriptor: TypedPropertyDescriptor<T>
   ): void {
     const method = descriptor.value;
+
+    if (!method) return;
 
     descriptor.value = async function (this: { stateManager: WalletStateManager }, ...args: any[]) {
       const stateManager = this.stateManager;
@@ -366,6 +362,6 @@ export function withStateTransition(
         }
         throw error;
       }
-    };
+    } as T;
   };
 }

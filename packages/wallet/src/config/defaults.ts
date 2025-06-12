@@ -53,8 +53,12 @@ export const NETWORK_PRESETS: Record<NetworkType, Partial<WalletConfig>> = {
  * Merge user configuration with defaults and network presets
  */
 export function mergeConfig(userConfig: Partial<WalletConfig>): WalletConfig {
-  // Start with defaults
-  const merged = { ...DEFAULT_CONFIG } as WalletConfig;
+  // Start with basic structure
+  const merged = { 
+    ...DEFAULT_CONFIG,
+    network: userConfig.network!,
+    storagePath: userConfig.storagePath!
+  } as WalletConfig;
 
   // Apply network preset if specified
   if (userConfig.network) {

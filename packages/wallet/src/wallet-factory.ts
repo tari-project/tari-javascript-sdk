@@ -7,13 +7,10 @@
  */
 
 import { 
-  getFFIBindings, 
+  getFFIBindings,
   WalletError, 
   WalletErrorCode,
   ErrorSeverity,
-  withErrorContext,
-  withRetry,
-  withRecovery,
   type FFIWalletConfig
 } from '@tari-project/tarijs-core';
 import type { WalletConfig } from './types/index.js';
@@ -92,7 +89,6 @@ export class WalletFactory {
   /**
    * Initialize the wallet factory (must be called before creating wallets)
    */
-  @withErrorContext('wallet_factory_init', 'factory')
   static async initialize(): Promise<void> {
     if (this.initialized) {
       return;
@@ -110,8 +106,7 @@ export class WalletFactory {
         'Failed to initialize wallet factory',
         {
           severity: ErrorSeverity.Critical,
-          cause: error as Error,
-          recoverySuggestion: 'Ensure native bindings are available and compatible'
+          cause: error as Error
         }
       );
     }
@@ -120,9 +115,6 @@ export class WalletFactory {
   /**
    * Create a new Tari wallet instance
    */
-  @withErrorContext('create_wallet', 'factory')
-  @withRetry('wallet_create')
-  @withRecovery(2)
   static async create(
     userConfig: Partial<WalletConfig>, 
     options: WalletFactoryOptions = {}
@@ -148,8 +140,7 @@ export class WalletFactory {
           WalletErrorCode.InvalidConfig,
           `Wallet configuration validation failed: ${errorMessages}`,
           {
-            severity: ErrorSeverity.Error,
-            metadata: { errors: validation.errors, warnings: validation.warnings }
+            severity: ErrorSeverity.Error
           }
         );
       }
@@ -179,9 +170,6 @@ export class WalletFactory {
   /**
    * Restore a wallet from seed words
    */
-  @withErrorContext('restore_wallet', 'factory')
-  @withRetry('wallet_restore')
-  @withRecovery(2)
   static async restore(
     seedWords: string[], 
     userConfig: Partial<WalletConfig>,
@@ -191,11 +179,10 @@ export class WalletFactory {
 
     if (!seedWords || !Array.isArray(seedWords) || seedWords.length !== 24) {
       throw new WalletError(
-        WalletErrorCode.InvalidSeedPhrase,
+        WalletErrorCode.InvalidFormat,
         'Seed words must be an array of exactly 24 words',
         {
-          severity: ErrorSeverity.Error,
-          metadata: { providedLength: seedWords?.length || 0 }
+          severity: ErrorSeverity.Error
         }
       );
     }
@@ -222,8 +209,7 @@ export class WalletFactory {
           WalletErrorCode.InvalidConfig,
           `Wallet restoration configuration validation failed: ${errorMessages}`,
           {
-            severity: ErrorSeverity.Error,
-            metadata: { errors: validation.errors, warnings: validation.warnings }
+            severity: ErrorSeverity.Error
           }
         );
       }
@@ -329,12 +315,11 @@ export class WalletFactory {
       return wallet;
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.WalletCreationFailed,
+        WalletErrorCode.InitializationFailed,
         'Failed to create wallet instance',
         {
           severity: ErrorSeverity.Error,
-          cause: error as Error,
-          metadata: { config: this.sanitizeConfig(config) }
+          cause: error as Error
         }
       );
     }
@@ -347,7 +332,7 @@ export class WalletFactory {
       logPath: config.logPath,
       logLevel: config.logLevel,
       passphrase: config.passphrase,
-      seedWords: config.seedWords?.join(' '), // FFI expects space-separated string
+      seedWords: config.seedWords,
       numRollingLogFiles: config.numRollingLogFiles,
       rollingLogFileSize: config.rollingLogFileSize,
     };
@@ -357,11 +342,10 @@ export class WalletFactory {
     return new Promise((_, reject) => {
       setTimeout(() => {
         reject(new WalletError(
-          WalletErrorCode.InitializationTimeout,
+          WalletErrorCode.OperationTimeout,
           `Wallet creation timed out after ${timeoutMs}ms`,
           {
-            severity: ErrorSeverity.Error,
-            metadata: { timeoutMs }
+            severity: ErrorSeverity.Error
           }
         ));
       }, timeoutMs);
@@ -373,7 +357,7 @@ export class WalletFactory {
     return {
       ...safe,
       passphrase: passphrase ? '[REDACTED]' : undefined,
-      seedWords: seedWords ? `[${seedWords.length} words]` : undefined,
+      seedWords: seedWords ? ['[REDACTED]'] : undefined,
     };
   }
 }
