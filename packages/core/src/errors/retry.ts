@@ -535,23 +535,19 @@ export async function retryWithCircuitBreaker<T>(
  * Decorator for automatic retry on method calls
  */
 export function withRetry(config?: Partial<RetryConfig>) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<any>
+  return function <This, Args extends any[], Return>(
+    target: (this: This, ...args: Args) => Promise<Return>,
+    context: ClassMethodDecoratorContext<This>
   ) {
-    const originalMethod = descriptor.value;
-    if (!originalMethod) return;
-
-    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
+    const methodName = String(context.name);
+    
+    return async function (this: This, ...args: Args): Promise<Return> {
       return retry(
-        () => originalMethod.apply(this, args),
+        () => target.apply(this, args),
         config,
-        { operation: propertyKey, component: target.constructor.name }
+        { operation: methodName, component: (this as any).constructor?.name || 'Unknown' }
       );
     };
-
-    return descriptor;
   };
 }
 
@@ -562,24 +558,20 @@ export function withCircuitBreaker(
   circuitBreakerKey: string,
   config?: Partial<RetryConfig>
 ) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<any>
+  return function <This, Args extends any[], Return>(
+    target: (this: This, ...args: Args) => Promise<Return>,
+    context: ClassMethodDecoratorContext<This>
   ) {
-    const originalMethod = descriptor.value;
-    if (!originalMethod) return;
-
-    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
+    const methodName = String(context.name);
+    
+    return async function (this: This, ...args: Args): Promise<Return> {
       return retryWithCircuitBreaker(
-        () => originalMethod.apply(this, args),
+        () => target.apply(this, args),
         circuitBreakerKey,
         config,
-        { operation: propertyKey, component: target.constructor.name }
+        { operation: methodName, component: (this as any).constructor?.name || 'Unknown' }
       );
     };
-
-    return descriptor;
   };
 }
 

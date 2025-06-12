@@ -230,26 +230,20 @@ export const ErrorContextInstance = ErrorContextManager.getInstance();
  * Decorator for automatically adding operation context
  */
 export function withErrorContext(operation: string, component?: string) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<any>
+  return function <This, Args extends any[], Return>(
+    target: (this: This, ...args: Args) => Return,
+    context: ClassMethodDecoratorContext<This>
   ) {
-    const originalMethod = descriptor.value;
-    if (!originalMethod) return;
-
-    descriptor.value = function (this: any, ...args: any[]): any {
-      const context: Record<string, unknown> = { operation };
+    return function (this: This, ...args: Args): Return {
+      const contextData: Record<string, unknown> = { operation };
       if (component) {
-        context.component = component;
+        contextData.component = component;
       }
 
-      return ErrorContextInstance.enhanceContext(context, () =>
-        originalMethod.apply(this, args)
+      return ErrorContextInstance.enhanceContext(contextData, () =>
+        target.apply(this, args)
       );
     };
-
-    return descriptor;
   };
 }
 
@@ -257,26 +251,20 @@ export function withErrorContext(operation: string, component?: string) {
  * Decorator for automatically adding operation context (async)
  */
 export function withAsyncErrorContext(operation: string, component?: string) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<any>
+  return function <This, Args extends any[], Return>(
+    target: (this: This, ...args: Args) => Promise<Return>,
+    context: ClassMethodDecoratorContext<This>
   ) {
-    const originalMethod = descriptor.value;
-    if (!originalMethod) return;
-
-    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
-      const context: Record<string, unknown> = { operation };
+    return async function (this: This, ...args: Args): Promise<Return> {
+      const contextData: Record<string, unknown> = { operation };
       if (component) {
-        context.component = component;
+        contextData.component = component;
       }
 
-      return ErrorContextInstance.enhanceContextAsync(context, () =>
-        originalMethod.apply(this, args)
+      return ErrorContextInstance.enhanceContextAsync(contextData, () =>
+        target.apply(this, args)
       );
     };
-
-    return descriptor;
   };
 }
 

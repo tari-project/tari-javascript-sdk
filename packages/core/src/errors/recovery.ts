@@ -640,23 +640,19 @@ export async function executeWithRecoveryAndRetry<T>(
  * Decorator for automatic recovery
  */
 export function withRecovery(maxRecoveryAttempts = 1) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<any>
+  return function <This, Args extends any[], Return>(
+    target: (this: This, ...args: Args) => Promise<Return>,
+    context: ClassMethodDecoratorContext<This>
   ) {
-    const originalMethod = descriptor.value;
-    if (!originalMethod) return;
-
-    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
+    const methodName = String(context.name);
+    
+    return async function (this: This, ...args: Args): Promise<Return> {
       return executeWithRecovery(
-        () => originalMethod.apply(this, args),
-        { operation: propertyKey, component: target.constructor.name },
+        () => target.apply(this, args),
+        { operation: methodName, component: (this as any).constructor?.name || 'Unknown' },
         maxRecoveryAttempts
       );
     };
-
-    return descriptor;
   };
 }
 
@@ -664,21 +660,17 @@ export function withRecovery(maxRecoveryAttempts = 1) {
  * Decorator for automatic recovery with retry
  */
 export function withRecoveryAndRetry() {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<any>
+  return function <This, Args extends any[], Return>(
+    target: (this: This, ...args: Args) => Promise<Return>,
+    context: ClassMethodDecoratorContext<This>
   ) {
-    const originalMethod = descriptor.value;
-    if (!originalMethod) return;
-
-    descriptor.value = async function (this: any, ...args: any[]): Promise<any> {
+    const methodName = String(context.name);
+    
+    return async function (this: This, ...args: Args): Promise<Return> {
       return executeWithRecoveryAndRetry(
-        () => originalMethod.apply(this, args),
-        { operation: propertyKey, component: target.constructor.name }
+        () => target.apply(this, args),
+        { operation: methodName, component: (this as any).constructor?.name || 'Unknown' }
       );
     };
-
-    return descriptor;
   };
 }

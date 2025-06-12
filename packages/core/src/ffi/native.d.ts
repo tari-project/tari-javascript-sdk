@@ -131,6 +131,34 @@ export interface NativeBindings {
   validateAddress(address: string, network: string): Promise<boolean>;
   emojiIdToAddress(emojiId: string, network: string): Promise<string>;
   addressToEmojiId(address: string): Promise<string>;
+  emojiIdToPublicKey(emojiId: string): Promise<string>;
+
+  // Transaction utilities
+  walletPreviewUtxoSelection(
+    handle: WalletHandle,
+    amount: string,
+    feePerGram?: string
+  ): Promise<{
+    total_value: string;
+    fee_estimate: string;
+    output_count: number;
+    inputs: any[];
+  }>;
+
+  walletValidateScript(
+    handle: WalletHandle,
+    recipientAddress: string
+  ): Promise<{
+    is_valid: boolean;
+    errors: string[];
+  }>;
+
+  walletGetNetworkInfo(handle: WalletHandle): Promise<{
+    network: string;
+    min_confirmations: number;
+    max_fee_per_gram: string;
+    tip_height: number;
+  }>;
 
   // Event callbacks (Phase 8)
   walletSetEventCallback(handle: WalletHandle, callback: (payload: string) => void): Promise<void>;

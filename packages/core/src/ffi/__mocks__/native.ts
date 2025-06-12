@@ -260,6 +260,97 @@ class MockNativeBindings implements NativeBindings {
     }
   }
 
+  async emojiIdToPublicKey(emojiId: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock emoji ID to public key conversion failed');
+    }
+    await this.simulateLatency();
+
+    // Generate mock public key from emoji ID
+    const hash = emojiId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return `mock_public_key_${hash.toString(16).padStart(8, '0')}`;
+  }
+
+  async walletPreviewUtxoSelection(
+    handle: number,
+    amount: string,
+    feePerGram?: string
+  ): Promise<{
+    total_value: string;
+    fee_estimate: string;
+    output_count: number;
+    inputs: any[];
+  }> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock UTXO selection failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    const amountNum = BigInt(amount);
+    const feeGram = feePerGram ? BigInt(feePerGram) : 5000n; // Default fee
+    const estimatedFee = feeGram * 250n; // Estimate ~250 bytes
+
+    return {
+      total_value: (amountNum + estimatedFee).toString(),
+      fee_estimate: estimatedFee.toString(),
+      output_count: 2, // Change + recipient
+      inputs: [
+        {
+          commitment: '0x' + '00'.repeat(32),
+          value: amountNum.toString(),
+          script: 'mock_script',
+          features: { output_type: 'Standard' }
+        }
+      ]
+    };
+  }
+
+  async walletValidateScript(
+    handle: number,
+    recipientAddress: string
+  ): Promise<{
+    is_valid: boolean;
+    errors: string[];
+  }> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock script validation failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    // Mock validation - valid if address starts with 'tari://'
+    const isValid = recipientAddress.startsWith('tari://');
+    
+    return {
+      is_valid: isValid,
+      errors: isValid ? [] : ['Invalid Tari address format']
+    };
+  }
+
+  async walletGetNetworkInfo(handle: number): Promise<{
+    network: string;
+    min_confirmations: number;
+    max_fee_per_gram: string;
+    tip_height: number;
+  }> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock network info retrieval failed');
+    }
+    await this.simulateLatency();
+
+    this.getWallet(handle); // Validate handle exists
+
+    return {
+      network: 'testnet',
+      min_confirmations: 3,
+      max_fee_per_gram: '50000', // 50,000 µT per gram
+      tip_height: Math.floor(Math.random() * 100000) + 500000 // Mock height
+    };
+  }
+
   // Mock control methods (not part of NativeBindings interface)
   setFailureMode(shouldFail: boolean): void {
     this.shouldFail = shouldFail;

@@ -371,6 +371,96 @@ export class FFIBindings {
     const native = this.getNativeModule();
     return native.cleanupAllCallbacks();
   }
+
+  /**
+   * Preview UTXO selection for a transaction
+   */
+  public async walletPreviewUtxoSelection(
+    handle: WalletHandle,
+    amount: string,
+    feePerGram?: string
+  ): Promise<{
+    totalValue: string;
+    feeEstimate: string;
+    outputCount: number;
+    inputs: any[];
+  }> {
+    const native = this.getNativeModule();
+    validateTransactionAmount(amount);
+    
+    const selection = await native.walletPreviewUtxoSelection(
+      unwrapWalletHandle(handle),
+      amount,
+      feePerGram
+    );
+    
+    return {
+      totalValue: selection.total_value,
+      feeEstimate: selection.fee_estimate,
+      outputCount: selection.output_count,
+      inputs: selection.inputs || []
+    };
+  }
+
+  /**
+   * Validate a script for one-sided transactions
+   */
+  public async walletValidateScript(
+    handle: WalletHandle,
+    recipientAddress: string
+  ): Promise<{
+    isValid: boolean;
+    errors: string[];
+  }> {
+    const native = this.getNativeModule();
+    validateTariAddress(recipientAddress);
+    
+    const result = await native.walletValidateScript(
+      unwrapWalletHandle(handle),
+      recipientAddress
+    );
+    
+    return {
+      isValid: result.is_valid,
+      errors: result.errors || []
+    };
+  }
+
+  /**
+   * Get network information from wallet
+   */
+  public async walletGetNetworkInfo(handle: WalletHandle): Promise<{
+    network: string;
+    minConfirmations: number;
+    maxFeePerGram: string;
+    tipHeight: number;
+  }> {
+    const native = this.getNativeModule();
+    
+    const info = await native.walletGetNetworkInfo(unwrapWalletHandle(handle));
+    
+    return {
+      network: info.network,
+      minConfirmations: info.min_confirmations,
+      maxFeePerGram: info.max_fee_per_gram,
+      tipHeight: info.tip_height
+    };
+  }
+
+  /**
+   * Convert emoji ID to public key
+   */
+  public static async emojiIdToPublicKey(emojiId: string): Promise<string> {
+    // For static method, we need to get a global instance
+    const bindings = getFFIBindings();
+    const native = bindings.getNativeModule();
+    
+    if (!emojiId || typeof emojiId !== 'string') {
+      throw new Error('Invalid emoji ID provided');
+    }
+    
+    return native.emojiIdToPublicKey(emojiId);
+  }
 }
 
 // Singleton instance
