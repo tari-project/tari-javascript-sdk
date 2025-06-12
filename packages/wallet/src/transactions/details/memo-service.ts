@@ -462,8 +462,7 @@ export class MemoService extends TypedEventEmitter {
       await this.ffiBindings.wallet_set_transaction_memo(
         this.walletHandle,
         transactionId,
-        memo,
-        encrypted
+        memo
       );
     } catch (error: unknown) {
       // FFI memo storage failed, continue with cache-only storage

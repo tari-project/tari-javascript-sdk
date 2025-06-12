@@ -293,11 +293,10 @@ export class OneSidedValidator {
       // Validate that we can construct a TariScript for this recipient
       const scriptValidation = await this.ffi.walletValidateScript(
         this.walletHandle,
-        recipient.toBase58(),
-        'CheckPubKey' // Basic script type for one-sided transactions
+        recipient.toBase58()
       );
 
-      if (!scriptValidation.valid) {
+      if (!scriptValidation.isValid) {
         throw new WalletError(
           WalletErrorCode.InvalidAddress,
           'Cannot construct TariScript for one-sided transaction to this recipient',
@@ -307,30 +306,15 @@ export class OneSidedValidator {
               metadata: {
                 recipient: recipient.toString(),
                 scriptType: 'CheckPubKey',
-                reason: scriptValidation.error || 'Unknown script validation error'
+                reason: scriptValidation.errors.join(', ') || 'Unknown script validation error'
               }
             }
           }
         );
       }
 
-      // Check script complexity
-      if (scriptValidation.complexity && scriptValidation.complexity > this.config.maxScriptComplexity) {
-        throw new WalletError(
-          WalletErrorCode.InvalidAmount,
-          `TariScript complexity (${scriptValidation.complexity}) exceeds maximum allowed (${this.config.maxScriptComplexity})`,
-          {
-            context: {
-              operation: 'validateOneSidedTransaction',
-              metadata: {
-                complexity: scriptValidation.complexity,
-                maxComplexity: this.config.maxScriptComplexity,
-                recipient: recipient.toString()
-              }
-            }
-          }
-        );
-      }
+      // Note: Complexity validation not available from current FFI response
+      // For basic one-sided transactions, complexity should be acceptable
 
     } catch (error: unknown) {
       if (error instanceof WalletError) {

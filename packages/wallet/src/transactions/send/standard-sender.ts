@@ -88,7 +88,7 @@ export class StandardSender {
   ): Promise<TransactionId> {
     // Step 1: Validate all inputs
     validateRequired(recipient, 'recipient');
-    validateMicroTari(amount, 'amount');
+    validateMicroTari(amount);
     
     if (amount <= 0n) {
       throw new WalletError(
@@ -220,7 +220,7 @@ export class StandardSender {
 
     try {
       // Validate amount
-      validateMicroTari(amount, 'amount');
+      validateMicroTari(amount);
       if (amount <= 0n) {
         errors.push('Amount must be greater than zero');
       }
@@ -285,7 +285,7 @@ export class StandardSender {
       estimatedSizeGrams: number;
     };
   }> {
-    validateMicroTari(amount, 'amount');
+    validateMicroTari(amount);
 
     const estimatedFeePerGram = feePerGram || 
       await this.feeEstimator.estimateFeePerGram(amount, 1);

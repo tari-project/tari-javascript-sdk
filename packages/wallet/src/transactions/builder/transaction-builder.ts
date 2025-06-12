@@ -429,8 +429,12 @@ export class TransactionBuilder {
       throw new WalletError(
         WalletErrorCode.UtxoValidationFailed,
         `Missing required fields: ${missing.join(', ')}`,
-        ErrorSeverity.Error,
-        { missingFields: missing, currentState: this.state }
+        { 
+          severity: ErrorSeverity.Error,
+          context: {
+            metadata: { missingFields: missing, currentState: this.state }
+          }
+        }
       );
     }
   }
@@ -443,7 +447,7 @@ export class TransactionBuilder {
       throw new WalletError(
         WalletErrorCode.InvalidStateTransition,
         'Transaction builder has already been built and cannot be modified',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
   }
@@ -521,7 +525,7 @@ export class BuilderUtils {
       throw new WalletError(
         WalletErrorCode.UtxoValidationFailed,
         'Incomplete transaction parameters',
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
 
