@@ -42,7 +42,12 @@ import { TariAddress } from '../models/index.js';
 import { TransactionRepository } from './transaction-repository.js';
 import { TransactionStateManager } from './transaction-state.js';
 import { FeeEstimator } from './fees/index.js';
-import { StandardSender, type StandardSendOptions } from './send/index.js';
+import { 
+  StandardSender, 
+  type StandardSendOptions,
+  OneSidedSender,
+  type OneSidedSendOptions
+} from './send/index.js';
 
 /**
  * Configuration for the transaction service
@@ -86,6 +91,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
   private readonly stateManager: TransactionStateManager;
   private readonly feeEstimator: FeeEstimator;
   private readonly standardSender: StandardSender;
+  private readonly oneSidedSender: OneSidedSender;
   private readonly ffi = getFFIBindings();
   private isDisposed = false;
   private refreshTimer?: NodeJS.Timeout;
@@ -103,11 +109,12 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       timeoutSeconds: config.transactionTimeoutSeconds
     });
     
-    // Initialize fee estimator and standard sender
+    // Initialize fee estimator and senders
     this.feeEstimator = new FeeEstimator(config.walletHandle, {
       defaultFeePerGram: config.defaultFeePerGram
     });
     this.standardSender = new StandardSender(config.walletHandle, this.feeEstimator);
+    this.oneSidedSender = new OneSidedSender(config.walletHandle, this.feeEstimator);
 
     // Set up event forwarding
     this.repository.on('transaction:updated', (update) => {
@@ -198,7 +205,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
   }
 
   /**
-   * Send a one-sided transaction
+   * Send a one-sided transaction using the dedicated OneSidedSender
    */
   @withErrorContext('send_one_sided_transaction', 'transaction_service')
   @withRetry({ maxAttempts: 3, backoffMs: 1000 })
@@ -210,16 +217,46 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
     try {
       this.operationSemaphore++;
 
-      // Convert to standard send params with one-sided flag
-      const sendParams: SendTransactionParams = {
-        recipient: params.recipient,
-        amount: params.amount,
+      // Convert params to OneSidedSendOptions
+      const sendOptions: OneSidedSendOptions = {
         feePerGram: params.feePerGram,
         message: params.message,
-        isOneSided: true
+        useStealth: params.useStealth || false,
+        recoveryData: params.recoveryData
       };
 
-      return await this.sendTransaction(sendParams);
+      // Use OneSidedSender for the actual sending
+      const transactionId = await this.oneSidedSender.sendOneSidedTransaction(
+        params.recipient,
+        params.amount,
+        sendOptions
+      );
+
+      // Create pending transaction record for repository tracking
+      const pendingTx: PendingOutboundTransaction = {
+        id: transactionId,
+        amount: params.amount,
+        fee: params.feePerGram ? params.feePerGram * BigInt(300) : BigInt(Math.ceil(Number(params.amount) * 0.002)), // Higher estimated fee for one-sided
+        status: TransactionStatus.Pending,
+        direction: TransactionDirection.Outbound,
+        message: params.message || '',
+        timestamp: Date.now() as any,
+        address: params.recipient,
+        isOneSided: true,
+        isCoinbase: false,
+        pendingId: transactionId as any,
+        cancellable: true
+      };
+
+      // Store in repository and state manager
+      await this.repository.addTransaction(pendingTx);
+      this.stateManager.trackTransaction(transactionId, TransactionStatus.Pending);
+
+      // Emit events
+      this.emit('transaction:created', pendingTx);
+      this.emit('balance:changed', await this.getCurrentBalance(), 'one_sided_transaction_sent');
+
+      return transactionId;
 
     } finally {
       this.operationSemaphore--;
@@ -247,6 +284,39 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
     this.ensureNotDisposed();
     
     return await this.standardSender.validateTransactionParams(
+      recipient,
+      amount,
+      options
+    );
+  }
+
+  /**
+   * Validate one-sided transaction parameters without sending
+   * 
+   * Performs all validation that would be done during one-sided sending
+   * including stealth addressing and script complexity checks.
+   */
+  @withErrorContext('validate_one_sided_transaction', 'transaction_service')
+  async validateOneSidedTransaction(
+    recipient: string | TariAddress,
+    amount: MicroTari,
+    options: OneSidedSendOptions = {}
+  ): Promise<{
+    isValid: boolean;
+    recipientAddress: TariAddress;
+    estimatedFee: MicroTari;
+    totalCost: MicroTari;
+    utxoConsumption: {
+      inputCount: number;
+      outputCount: number;
+      scriptComplexity: number;
+    };
+    errors: string[];
+    warnings: string[];
+  }> {
+    this.ensureNotDisposed();
+    
+    return await this.oneSidedSender.validateOneSidedTransaction(
       recipient,
       amount,
       options

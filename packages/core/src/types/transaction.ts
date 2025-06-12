@@ -157,10 +157,14 @@ export interface SendOneSidedParams {
   recipient: TariAddressString;
   /** Amount to send in MicroTari */
   amount: MicroTari;
-  /** Fee per gram in MicroTari */
-  feePerGram: MicroTari;
+  /** Fee per gram in MicroTari (optional, will be estimated if not provided) */
+  feePerGram?: MicroTari;
   /** Optional message */
   message?: string;
+  /** Whether to use stealth addressing for enhanced privacy */
+  useStealth?: boolean;
+  /** Optional recovery data for the recipient */
+  recoveryData?: string;
   /** Commitment for one-sided transaction */
   commitment?: string;
 }
