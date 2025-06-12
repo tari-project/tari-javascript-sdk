@@ -17,7 +17,7 @@ import {
 import type { WalletHandle } from '@tari-project/tarijs-core';
 import type { 
   WalletConfig, 
-  TransactionInfo, 
+  TransactionInfo as WalletTransactionInfo, 
   SendTransactionOptions,
   WalletEventHandlers,
   Contact,
@@ -27,7 +27,8 @@ import type {
 } from './types/index.js';
 import { 
   TariAddress as CoreTariAddress,
-  type TransactionId
+  type TransactionId,
+  type TransactionInfo as CoreTransactionInfo
 } from '@tari-project/tarijs-core';
 import { TariAddress, BalanceModel } from './models/index.js';
 import { 
@@ -588,10 +589,24 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get transaction by ID
    */
-  async getTransaction(transactionId: TransactionId): Promise<TransactionInfo | null> {
+  async getTransaction(transactionId: TransactionId): Promise<WalletTransactionInfo | null> {
     this.ensureNotDestroyed();
     
-    return await this.transactionAPI.getTransaction(transactionId);
+    const coreTransaction = await this.transactionAPI.getTransaction(transactionId);
+    if (!coreTransaction) return null;
+    
+    // Convert core TransactionInfo to wallet TransactionInfo by adding isInbound
+    return {
+      ...coreTransaction,
+      isInbound: false, // TODO: Determine actual inbound status
+      id: coreTransaction.id,
+      amount: coreTransaction.amount,
+      fee: coreTransaction.fee || 0n,
+      status: coreTransaction.status as any, // TODO: Map status enum
+      message: coreTransaction.message || '',
+      timestamp: new Date(), // TODO: Get actual timestamp
+      confirmations: coreTransaction.confirmations || 0
+    };
   }
 
   /**

@@ -130,7 +130,6 @@ export {
 
 // Re-export core transaction types for convenience
 export type {
-  TransactionInfo,
   PendingInboundTransaction,
   PendingOutboundTransaction,
   CompletedTransaction,
