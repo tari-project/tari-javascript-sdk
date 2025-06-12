@@ -56,6 +56,21 @@ import {
   type FormattingOptions,
   type EmojiConversionOptions
 } from './address/index.js';
+import {
+  WalletInfoService,
+  NetworkInfoService,
+  VersionInfoService,
+  type WalletInfoConfig,
+  type NetworkInfoOptions,
+  type VersionCompatibility,
+  type WalletInfo,
+  type NetworkInfo,
+  type VersionInfo,
+  type SyncStatus,
+  type BaseNodeInfo,
+  type WalletCapabilities,
+  type WalletMetrics
+} from './info/index.js';
 
 /**
  * Main Tari wallet class providing high-level wallet operations
@@ -73,6 +88,9 @@ export class TariWallet implements AsyncDisposable {
   private readonly addressService: AddressService;
   private readonly addressFormatter: AddressFormatter;
   private readonly emojiConverter: EmojiConverter;
+  private readonly walletInfoService: WalletInfoService;
+  private readonly networkInfoService: NetworkInfoService;
+  private readonly versionInfoService: VersionInfoService;
   private readonly instanceId: string;
 
   /**
@@ -83,7 +101,8 @@ export class TariWallet implements AsyncDisposable {
     config: WalletConfig, 
     hooks: LifecycleHooks = {},
     balanceConfig?: BalanceServiceConfig,
-    addressConfig?: AddressServiceConfig
+    addressConfig?: AddressServiceConfig,
+    walletInfoConfig?: WalletInfoConfig
   ) {
     this.instanceId = `wallet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.handle = handle;
@@ -104,6 +123,18 @@ export class TariWallet implements AsyncDisposable {
     this.addressService = new AddressService(defaultAddressConfig);
     this.addressFormatter = new AddressFormatter();
     this.emojiConverter = new EmojiConverter();
+    
+    // Initialize info services
+    const defaultWalletInfoConfig: WalletInfoConfig = {
+      includeSensitive: false,
+      refreshInterval: 30 * 1000, // 30 seconds
+      autoRefresh: true,
+      networkTimeout: 10 * 1000, // 10 seconds
+      ...walletInfoConfig
+    };
+    this.walletInfoService = new WalletInfoService(defaultWalletInfoConfig);
+    this.networkInfoService = new NetworkInfoService();
+    this.versionInfoService = new VersionInfoService();
 
     // Initialize lifecycle
     this.initializeLifecycle();
@@ -189,6 +220,139 @@ export class TariWallet implements AsyncDisposable {
     return this.addressService.validateAddress(address, {
       network: this.config.network
     });
+  }
+
+  // Wallet Information Methods
+
+  /**
+   * Get comprehensive wallet information
+   */
+  async getWalletInfo(forceRefresh = false): Promise<WalletInfo> {
+    this.ensureNotDestroyed();
+    
+    return this.walletInfoService.getWalletInfo(this.handle, this.config.network, forceRefresh);
+  }
+
+  /**
+   * Get wallet synchronization status
+   */
+  async getSyncStatus(): Promise<SyncStatus> {
+    this.ensureNotDestroyed();
+    
+    return this.walletInfoService.getSyncStatus(this.handle);
+  }
+
+  /**
+   * Check if wallet is fully synchronized
+   */
+  async isSynchronized(): Promise<boolean> {
+    this.ensureNotDestroyed();
+    
+    return this.walletInfoService.isWalletSynchronized(this.handle);
+  }
+
+  /**
+   * Get wallet capabilities
+   */
+  getWalletCapabilities(): WalletCapabilities {
+    this.ensureNotDestroyed();
+    
+    return this.walletInfoService.getWalletCapabilities();
+  }
+
+  /**
+   * Get wallet performance metrics
+   */
+  async getWalletMetrics(): Promise<WalletMetrics> {
+    this.ensureNotDestroyed();
+    
+    return this.walletInfoService.getWalletMetrics(this.handle);
+  }
+
+  /**
+   * Get network information
+   */
+  async getNetworkInfo(options: NetworkInfoOptions = {}): Promise<NetworkInfo> {
+    this.ensureNotDestroyed();
+    
+    return this.networkInfoService.getNetworkInfo(this.handle, this.config.network, options);
+  }
+
+  /**
+   * Get base node connection information
+   */
+  async getBaseNodeInfo(): Promise<BaseNodeInfo> {
+    this.ensureNotDestroyed();
+    
+    return this.networkInfoService.getBaseNodeInfo(this.handle);
+  }
+
+  /**
+   * Check if wallet is connected to the network
+   */
+  async isNetworkConnected(): Promise<boolean> {
+    this.ensureNotDestroyed();
+    
+    return this.networkInfoService.isNetworkConnected(this.handle);
+  }
+
+  /**
+   * Get network connectivity status
+   */
+  async getConnectivityStatus(): Promise<{
+    isConnected: boolean;
+    peerCount: number;
+    latency?: number;
+    lastConnected?: Date;
+  }> {
+    this.ensureNotDestroyed();
+    
+    return this.networkInfoService.getConnectivityStatus(this.handle);
+  }
+
+  /**
+   * Start network monitoring
+   */
+  startNetworkMonitoring(intervalMs = 10000): void {
+    this.ensureNotDestroyed();
+    
+    this.networkInfoService.startMonitoring(this.handle, this.config.network, intervalMs);
+  }
+
+  /**
+   * Stop network monitoring
+   */
+  stopNetworkMonitoring(): void {
+    this.ensureNotDestroyed();
+    
+    this.networkInfoService.stopMonitoring();
+  }
+
+  /**
+   * Get version information and compatibility
+   */
+  async getVersionInfo(options: VersionCompatibility = {}): Promise<VersionInfo> {
+    this.ensureNotDestroyed();
+    
+    return this.versionInfoService.getVersionInfo(options);
+  }
+
+  /**
+   * Check if current versions are compatible
+   */
+  async isVersionCompatible(options: VersionCompatibility = {}): Promise<boolean> {
+    this.ensureNotDestroyed();
+    
+    return this.versionInfoService.isCompatible(options);
+  }
+
+  /**
+   * Check if an upgrade is required
+   */
+  async requiresUpgrade(options: VersionCompatibility = {}): Promise<boolean> {
+    this.ensureNotDestroyed();
+    
+    return this.versionInfoService.requiresUpgrade(options);
   }
 
   /**
@@ -708,6 +872,11 @@ export class TariWallet implements AsyncDisposable {
     this.addressService.destroy();
     this.addressFormatter.destroy();
     this.emojiConverter.destroy();
+    
+    // Cleanup info services
+    this.walletInfoService.destroy();
+    this.networkInfoService.destroy();
+    this.versionInfoService.destroy();
 
     await this.lifecycleManager.destroy();
   }
