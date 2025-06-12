@@ -82,6 +82,21 @@ import {
   type SignatureVerificationOptions,
   type SignatureVerificationResult
 } from './signing/index.js';
+import {
+  TransactionAPI,
+  type TransactionAPIConfig,
+  type TransactionAPIEvents,
+  type StandardSendOptions,
+  type TransactionQueryOptions,
+  type TransactionAPIStatistics
+} from './api/transaction-api.js';
+import type {
+  TransactionDetails,
+  PendingInboundTransaction,
+  PendingOutboundTransaction,
+  CancellationResult,
+  HistoryEntry
+} from './transactions/index.js';
 
 /**
  * Main Tari wallet class providing high-level wallet operations
@@ -107,6 +122,7 @@ export class TariWallet implements AsyncDisposable {
   private readonly finalizerUnregister?: () => void;
   private readonly messageSigner: MessageSigner;
   private readonly signatureVerifier: SignatureVerifier;
+  private readonly transactionAPI: TransactionAPI;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
@@ -117,7 +133,8 @@ export class TariWallet implements AsyncDisposable {
     hooks: LifecycleHooks = {},
     balanceConfig?: BalanceServiceConfig,
     addressConfig?: AddressServiceConfig,
-    walletInfoConfig?: WalletInfoConfig
+    walletInfoConfig?: WalletInfoConfig,
+    transactionConfig?: Partial<TransactionAPIConfig>
   ) {
     this.instanceId = `wallet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.handle = handle;
@@ -185,11 +202,17 @@ export class TariWallet implements AsyncDisposable {
     this.messageSigner = new MessageSigner(handle, this.instanceId);
     this.signatureVerifier = new SignatureVerifier();
 
+    // Initialize transaction API
+    this.transactionAPI = new TransactionAPI(handle, transactionConfig);
+
     // Initialize lifecycle
     this.initializeLifecycle();
 
     // Setup balance change forwarding
     this.setupBalanceEventForwarding();
+
+    // Setup transaction event forwarding
+    this.setupTransactionEventForwarding();
   }
 
   // Core wallet operations
@@ -513,54 +536,197 @@ export class TariWallet implements AsyncDisposable {
     return this.balanceService.getCacheStats();
   }
 
+  // Transaction Operations
+
   /**
-   * Send a transaction to another address
+   * Send a standard transaction to another address
    */
   async sendTransaction(
-    recipient: string | TariAddress,
+    address: string | TariAddress,
     amount: bigint,
-    options: SendTransactionOptions = {}
+    options: StandardSendOptions = {}
   ): Promise<TransactionId> {
-    // Validate inputs
-    if (amount <= 0n) {
-      throw new WalletError(
-        WalletErrorCode.InvalidAmount,
-        'Transaction amount must be positive',
-        {
-          severity: ErrorSeverity.Error
-        }
-      );
-    }
+    this.ensureNotDestroyed();
+    
+    // Convert amount to MicroTari type
+    const microTariAmount = amount as any; // Type assertion for compatibility
+    
+    return await this.transactionAPI.sendTransaction(address, microTariAmount, options);
+  }
 
-    try {
-      // Convert recipient to address string
-      const recipientAddress = typeof recipient === 'string' 
-        ? recipient 
-        : recipient.toString();
+  /**
+   * Send a one-sided transaction
+   */
+  async sendOneSidedTransaction(
+    address: string | TariAddress,
+    amount: bigint,
+    options: Omit<StandardSendOptions, 'oneSided'> = {}
+  ): Promise<TransactionId> {
+    this.ensureNotDestroyed();
+    
+    const microTariAmount = amount as any;
+    return await this.transactionAPI.sendOneSidedTransaction(address, microTariAmount, options);
+  }
 
-      const bindings = getFFIBindings();
-      const txIdStr = await bindings.sendTransaction(
-        this.handle,
-        recipientAddress,
-        amount.toString(),
-        {
-          feePerGram: options.feePerGram?.toString(),
-          message: options.message || '',
-          isOneSided: options.isOneSided || false
-        }
-      );
+  /**
+   * Get transaction by ID
+   */
+  async getTransaction(transactionId: TransactionId): Promise<TransactionInfo | null> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getTransaction(transactionId);
+  }
 
-      return new TransactionId(txIdStr);
-    } catch (error) {
-      throw new WalletError(
-        WalletErrorCode.TransactionFailed,
-        'Failed to send transaction',
-        {
-          severity: ErrorSeverity.Error,
-          cause: error as Error
-        }
-      );
-    }
+  /**
+   * Get detailed transaction information
+   */
+  async getTransactionDetails(
+    transactionId: TransactionId,
+    forceRefresh: boolean = false
+  ): Promise<TransactionDetails> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getTransactionDetails(transactionId, forceRefresh);
+  }
+
+  /**
+   * Get transaction history
+   */
+  async getTransactionHistory(
+    options: TransactionQueryOptions = {}
+  ): Promise<HistoryEntry[]> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getTransactionHistory(options);
+  }
+
+  /**
+   * Search transaction history
+   */
+  async searchTransactionHistory(
+    searchText: string,
+    options: TransactionQueryOptions = {}
+  ): Promise<HistoryEntry[]> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.searchTransactionHistory(searchText, options);
+  }
+
+  /**
+   * Export transaction history
+   */
+  async exportTransactionHistory(
+    format: 'csv' | 'json' = 'csv',
+    options: TransactionQueryOptions = {}
+  ): Promise<string> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.exportTransactionHistory(format, options);
+  }
+
+  /**
+   * Get pending transactions
+   */
+  async getPendingTransactions(forceRefresh: boolean = false): Promise<{
+    inbound: PendingInboundTransaction[];
+    outbound: PendingOutboundTransaction[];
+  }> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getPendingTransactions(forceRefresh);
+  }
+
+  /**
+   * Cancel a pending transaction
+   */
+  async cancelTransaction(transactionId: TransactionId): Promise<CancellationResult> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.cancelTransaction(transactionId);
+  }
+
+  /**
+   * Check if a transaction can be cancelled
+   */
+  async canCancelTransaction(transactionId: TransactionId): Promise<{
+    canCancel: boolean;
+    reason?: string;
+  }> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.canCancelTransaction(transactionId);
+  }
+
+  /**
+   * Get all cancellable transactions
+   */
+  async getCancellableTransactions(): Promise<PendingOutboundTransaction[]> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getCancellableTransactions();
+  }
+
+  /**
+   * Update transaction memo
+   */
+  async updateTransactionMemo(transactionId: TransactionId, memo: string): Promise<void> {
+    this.ensureNotDestroyed();
+    
+    await this.transactionAPI.updateTransactionMemo(transactionId, memo);
+  }
+
+  /**
+   * Get transaction memo
+   */
+  async getTransactionMemo(transactionId: TransactionId): Promise<string | null> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getTransactionMemo(transactionId);
+  }
+
+  /**
+   * Get confirmation count for a transaction
+   */
+  async getConfirmationCount(transactionId: TransactionId): Promise<number> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getConfirmationCount(transactionId);
+  }
+
+  /**
+   * Start tracking confirmations for a transaction
+   */
+  async startConfirmationTracking(transactionId: TransactionId): Promise<void> {
+    this.ensureNotDestroyed();
+    
+    await this.transactionAPI.startConfirmationTracking(transactionId);
+  }
+
+  /**
+   * Stop tracking confirmations for a transaction
+   */
+  stopConfirmationTracking(transactionId: TransactionId): boolean {
+    this.ensureNotDestroyed();
+    
+    return this.transactionAPI.stopConfirmationTracking(transactionId);
+  }
+
+  /**
+   * Get comprehensive transaction statistics
+   */
+  async getTransactionStatistics(): Promise<TransactionAPIStatistics> {
+    this.ensureNotDestroyed();
+    
+    return await this.transactionAPI.getStatistics();
+  }
+
+  /**
+   * Refresh all transaction data
+   */
+  async refreshTransactionData(): Promise<void> {
+    this.ensureNotDestroyed();
+    
+    await this.transactionAPI.refreshAllData();
   }
 
   /**
@@ -978,6 +1144,9 @@ export class TariWallet implements AsyncDisposable {
     this.networkInfoService.destroy();
     this.versionInfoService.destroy();
 
+    // Cleanup transaction API
+    await this.transactionAPI.dispose();
+
     await this.lifecycleManager.destroy();
   }
 
@@ -1023,6 +1192,49 @@ export class TariWallet implements AsyncDisposable {
       // Forward balance change events through the wallet event emitter
       this.eventEmitter.emit('balanceUpdated', event.currentBalance);
       this.eventEmitter.emit('balanceChanged', event);
+    });
+  }
+
+  private setupTransactionEventForwarding(): void {
+    // Forward transaction API events through the wallet event emitter
+    this.transactionAPI.on('transaction:sent', (txId, amount) => {
+      this.eventEmitter.emit('transactionSent', txId, amount);
+    });
+
+    this.transactionAPI.on('transaction:received', (txId, amount) => {
+      this.eventEmitter.emit('transactionReceived', txId, amount);
+    });
+
+    this.transactionAPI.on('transaction:confirmed', (txId, blockHeight) => {
+      this.eventEmitter.emit('transactionConfirmed', txId, blockHeight);
+    });
+
+    this.transactionAPI.on('transaction:finalized', (txId, details) => {
+      this.eventEmitter.emit('transactionFinalized', txId, details);
+    });
+
+    this.transactionAPI.on('pending:updated', (pending) => {
+      this.eventEmitter.emit('pendingTransactionsUpdated', pending);
+    });
+
+    this.transactionAPI.on('pending:timeout', (txId, timeoutSeconds) => {
+      this.eventEmitter.emit('transactionTimeout', txId, timeoutSeconds);
+    });
+
+    this.transactionAPI.on('cancellation:completed', (txId, refundAmount) => {
+      this.eventEmitter.emit('transactionCancelled', txId, refundAmount);
+    });
+
+    this.transactionAPI.on('confirmations:changed', (txId, newCount, oldCount) => {
+      this.eventEmitter.emit('confirmationsChanged', txId, newCount, oldCount);
+    });
+
+    this.transactionAPI.on('details:enriched', (txId, details) => {
+      this.eventEmitter.emit('transactionDetailsEnriched', txId, details);
+    });
+
+    this.transactionAPI.on('history:updated', (entries) => {
+      this.eventEmitter.emit('transactionHistoryUpdated', entries);
     });
   }
 }

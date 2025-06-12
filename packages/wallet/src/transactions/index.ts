@@ -122,6 +122,17 @@ export {
   DEFAULT_DETAIL_SERVICE_CONFIG
 } from './details/index.js';
 
+// Transaction API integration
+export {
+  TransactionAPI,
+  type TransactionAPIConfig,
+  type TransactionAPIEvents,
+  type StandardSendOptions,
+  type TransactionQueryOptions,
+  type TransactionAPIStatistics,
+  DEFAULT_TRANSACTION_API_CONFIG
+} from '../api/transaction-api.js';
+
 // Re-export core transaction types for convenience
 export type {
   TransactionInfo,

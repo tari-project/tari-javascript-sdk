@@ -58,6 +58,9 @@ export * from './restore/index.js';
 // Message signing and verification
 export * from './signing/index.js';
 
+// Transaction management
+export * from './transactions/index.js';
+
 // Configuration management
 export * from './config/index.js';
 
@@ -77,6 +80,20 @@ export const SDK_CAPABILITIES = {
   balanceOperations: true,
   /** Transaction sending and receiving */
   transactions: true,
+  /** One-sided transaction support */
+  oneSidedTransactions: true,
+  /** Transaction history and search */
+  transactionHistory: true,
+  /** Pending transaction management */
+  pendingTransactions: true,
+  /** Transaction cancellation */
+  transactionCancellation: true,
+  /** Transaction detail enrichment */
+  transactionDetails: true,
+  /** Transaction confirmation tracking */
+  confirmationTracking: true,
+  /** Transaction memo management */
+  transactionMemos: true,
   /** Message signing and verification */
   messageSigning: true,
   /** Address generation and management */
