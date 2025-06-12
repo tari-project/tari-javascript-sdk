@@ -11,6 +11,7 @@ import {
   MicroTari,
   WalletError,
   WalletErrorCode,
+  ErrorSeverity,
   withErrorContext,
   getFFIBindings,
   microTariFromFFI
@@ -183,7 +184,7 @@ export class OneSidedValidator {
   ): Promise<void> {
     try {
       // Get current wallet balance
-      const balance = await this.ffi.walletGetBalance(this.walletHandle);
+      const balance = await this.ffi.getBalance(this.walletHandle);
       
       // Estimate total cost including fee
       const estimatedFee = feePerGram ? 
@@ -236,31 +237,27 @@ export class OneSidedValidator {
       // Use FFI to preview UTXO selection
       const selection = await this.ffi.walletPreviewUtxoSelection(
         this.walletHandle,
-        totalCost
+        (totalCost as bigint).toString()
       );
 
-      if (!selection.success) {
+      // Check if selection has any inputs (indicates success)
+      if (!selection.inputs || selection.inputs.length === 0) {
         throw new WalletError(
           WalletErrorCode.InsufficientFunds,
           'Cannot select suitable UTXOs for one-sided transaction',
           {
-            operation: 'validateOneSidedTransaction',
-            totalCost: totalCost.toString(),
-            reason: selection.error || 'Unknown UTXO selection error'
+            severity: ErrorSeverity.Error
           }
         );
       }
 
       // Validate that we don't need too many inputs (complexity limit)
-      if (selection.inputCount && selection.inputCount > 10) {
+      if (selection.inputs.length > 10) {
         throw new WalletError(
           WalletErrorCode.InvalidAmount,
           'One-sided transaction would require too many inputs, reducing complexity',
           {
-            operation: 'validateOneSidedTransaction',
-            inputCount: selection.inputCount,
-            maxInputs: 10,
-            totalCost: totalCost.toString()
+            severity: ErrorSeverity.Error
           }
         );
       }

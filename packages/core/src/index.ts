@@ -20,6 +20,7 @@ export * from './types/constants';
 export * from './types/branded';
 export * from './types/utils';
 export { createMicroTari, createTransactionId, asMicroTari } from './types/branded';
+export { microTariFromFFI, microTariToFFI } from './types/conversions';
 export * from './types/config';
 export * from './types/wallet-config';
 export * from './types/balance';
