@@ -366,7 +366,7 @@ export class RecoveryStateManager {
           this.sessions.set(session.id, session);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load persisted recovery sessions:', error);
     }
   }
@@ -379,7 +379,7 @@ export class RecoveryStateManager {
     try {
       const sessions = this.getAllSessions();
       (globalThis as any).localStorage.setItem(this.config.persistenceKey, JSON.stringify(sessions));
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to persist recovery sessions:', error);
     }
   }

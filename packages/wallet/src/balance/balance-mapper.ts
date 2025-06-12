@@ -71,7 +71,7 @@ export class BalanceMapper {
       };
 
       return balance;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TypeConversionFailed,
         'Failed to map FFI balance to TypeScript balance',
@@ -109,7 +109,7 @@ export class BalanceMapper {
       };
 
       return balanceInfo;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TypeConversionFailed,
         'Failed to map FFI balance to detailed balance info',

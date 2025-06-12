@@ -74,7 +74,7 @@ export class WalletHandleCleanupStrategy implements CleanupStrategy {
     try {
       const bindings = getFFIBindings();
       await bindings.destroyWallet(handle);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.ResourceCleanupFailed,
         `Failed to destroy wallet handle ${metadata.id}`,
@@ -128,7 +128,7 @@ export class CacheCleanupStrategy implements CleanupStrategy {
           handle.clear();
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.ResourceCleanupFailed,
         `Failed to cleanup cache ${metadata.id}`,
@@ -197,7 +197,7 @@ export class SubscriptionCleanupStrategy implements CleanupStrategy {
           await handle.destroy();
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.ResourceCleanupFailed,
         `Failed to cleanup subscription ${metadata.id}`,
@@ -258,7 +258,7 @@ export class NetworkConnectionCleanupStrategy implements CleanupStrategy {
           handle.end();
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.ResourceCleanupFailed,
         `Failed to cleanup network connection ${metadata.id}`,
@@ -322,7 +322,7 @@ export class GenericCleanupStrategy implements CleanupStrategy {
           }
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Generic cleanup failures are typically not critical
       console.warn(`Generic cleanup failed for resource ${metadata.id}:`, error);
     }
@@ -377,7 +377,7 @@ export class CleanupExecutor {
         strategy: strategy.name,
         duration
       };
-    } catch (error) {
+    } catch (error: unknown) {
       const duration = Date.now() - startTime;
       return {
         success: false,
@@ -460,7 +460,7 @@ export class CleanupExecutor {
       const verificationPromise = strategy.verify(handle);
       
       return await Promise.race([verificationPromise, timeoutPromise]);
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Cleanup verification failed:', error);
       return false;
     }
@@ -497,7 +497,7 @@ export async function cleanupWithRetry(
         return result;
       }
       lastError = result.error;
-    } catch (error) {
+    } catch (error: unknown) {
       lastError = error as Error;
     }
 

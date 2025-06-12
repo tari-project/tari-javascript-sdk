@@ -95,7 +95,7 @@ export class EventSystemLifecycleManager {
 
       return eventSystem;
 
-    } catch (error) {
+    } catch (error: unknown) {
       // Cleanup on failure
       this.eventSystems.delete(walletHandle);
       
@@ -141,7 +141,7 @@ export class EventSystemLifecycleManager {
       // Call onDestroy hook
       await this.callHook('onDestroy', walletHandle);
 
-    } catch (error) {
+    } catch (error: unknown) {
       await this.callHook('onError', walletHandle,
         error instanceof Error ? error : new Error(String(error))
       );
@@ -274,7 +274,7 @@ export class EventSystemLifecycleManager {
           setTimeout(() => reject(new Error('Cleanup timeout')), this.config.cleanupTimeout)
         )
       ]);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Lifecycle cleanup timeout or error:', error);
     }
 
@@ -311,7 +311,7 @@ export class EventSystemLifecycleManager {
       } else if (eventSystemOrError instanceof WalletEventSystem) {
         await (hook as LifecycleHook['onCreate'])?.(walletHandle, eventSystemOrError);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Error in lifecycle hook '${hookName}':`, error);
     }
   }

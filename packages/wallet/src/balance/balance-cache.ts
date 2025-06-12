@@ -257,7 +257,7 @@ export class BalanceCache {
       const value = await factory();
       this.set(key, value, ttlMs);
       return value;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to compute and cache value',

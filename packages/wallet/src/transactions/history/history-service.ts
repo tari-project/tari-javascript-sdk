@@ -20,11 +20,13 @@ import {
 } from '@tari-project/tarijs-core';
 import type {
   TransactionInfo,
-  TransactionFilter,
-  TransactionQueryOptions,
   TransactionSortBy,
   TransactionStatistics
 } from '@tari-project/tarijs-core';
+import type {
+  TransactionFilter,
+  TransactionQueryOptions
+} from '../../types/transaction-extensions.js';
 import { TransactionStatus, TransactionDirection } from '@tari-project/tarijs-core';
 import { TransactionRepository, type QueryResult } from '../transaction-repository.js';
 import { HistoryQueryBuilder } from './query-builder.js';

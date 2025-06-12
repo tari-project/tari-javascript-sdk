@@ -351,7 +351,7 @@ export function withStateTransition(
         }
         
         return result;
-      } catch (error) {
+      } catch (error: unknown) {
         // On error, go back to ready state or error state
         if (stateManager.state === activeState) {
           if (error instanceof WalletError && error.severity === ErrorSeverity.Critical) {

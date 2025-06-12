@@ -107,7 +107,7 @@ export class WalletFactory {
       await bindings.initialize();
       
       this.initialized = true;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InitializationFailed,
         'Failed to initialize wallet factory',
@@ -321,7 +321,7 @@ export class WalletFactory {
 
       return { wallet, result: restorationResult };
 
-    } catch (error) {
+    } catch (error: unknown) {
       // Cleanup restoration service
       restorationService.destroy();
       throw error;
@@ -480,7 +480,7 @@ export class WalletFactory {
       }
 
       return wallet;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InitializationFailed,
         'Failed to create wallet instance',

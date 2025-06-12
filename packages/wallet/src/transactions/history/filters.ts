@@ -10,7 +10,7 @@ import {
   WalletErrorCode,
   type UnixTimestamp
 } from '@tari-project/tarijs-core';
-import type { TransactionFilter } from '@tari-project/tarijs-core';
+import type { TransactionFilter } from '../../types/transaction-extensions.js';
 import { TransactionStatus, TransactionDirection } from '@tari-project/tarijs-core';
 import type { HistoryEntry } from './history-service.js';
 
@@ -244,7 +244,7 @@ export class HistoryFilters {
           
         return regex.test(text);
       });
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidInput,
         `Invalid regular expression pattern: ${pattern}`,

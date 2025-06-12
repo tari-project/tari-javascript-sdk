@@ -68,7 +68,7 @@ export class NetworkInfoService extends EventEmitter {
 
       this.emit('networkInfoUpdated', networkInfo);
       return networkInfo;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve network information',
@@ -123,7 +123,7 @@ export class NetworkInfoService extends EventEmitter {
 
       this.emit('baseNodeInfoUpdated', baseNodeInfo);
       return baseNodeInfo;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve base node information',
@@ -149,7 +149,7 @@ export class NetworkInfoService extends EventEmitter {
     try {
       const baseNodeInfo = await this.getBaseNodeInfo(walletHandle);
       return baseNodeInfo.status === 'connected';
-    } catch (error) {
+    } catch (error: unknown) {
       return false;
     }
   }
@@ -177,7 +177,7 @@ export class NetworkInfoService extends EventEmitter {
         latency: baseNodeInfo.latency,
         lastConnected: baseNodeInfo.connectedAt
       };
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve connectivity status',
@@ -211,7 +211,7 @@ export class NetworkInfoService extends EventEmitter {
       const estimatedTime = blocksRemaining * networkInfo.averageBlockTime;
       
       return Math.max(0, estimatedTime);
-    } catch (error) {
+    } catch (error: unknown) {
       return null; // Return null if estimation fails
     }
   }
@@ -228,7 +228,7 @@ export class NetworkInfoService extends EventEmitter {
       try {
         await this.getNetworkInfo(walletHandle, network, { forceRefresh: true });
         await this.getBaseNodeInfo(walletHandle);
-      } catch (error) {
+      } catch (error: unknown) {
         this.emit('monitoringError', error);
       }
     }, intervalMs);

@@ -202,7 +202,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
         this.handleTransactionFinalized(transactionId, trackingInfo);
       }
       
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.ConfirmationTrackingFailed,
         `Failed to start tracking transaction ${transactionId}: ${error}`,
@@ -359,7 +359,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
       
       const confirmationData = JSON.parse(confirmationsJson);
       return confirmationData.confirmations || 0;
-    } catch (error) {
+    } catch (error: unknown) {
       // If transaction is not found or not confirmed, return 0
       return 0;
     }
@@ -381,7 +381,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
       
       const transaction = JSON.parse(transactionJson);
       return transaction.blockHeight ? BigInt(transaction.blockHeight) as BlockHeight : undefined;
-    } catch (error) {
+    } catch (error: unknown) {
       return undefined;
     }
   }
@@ -405,7 +405,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
           this.statistics.lastBlockUpdate = Date.now() as UnixTimestamp;
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Blockchain height update failed, continue with existing height
     }
   }
@@ -451,7 +451,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
           this.handleTransactionFinalized(transactionId, trackingInfo);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Continue with other transactions if one fails
     }
   }
@@ -491,7 +491,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
       if (this.isRunning && !this.isDisposed) {
         try {
           await this.updateConfirmations();
-        } catch (error) {
+        } catch (error: unknown) {
           // Continue running even if update fails
         }
       }

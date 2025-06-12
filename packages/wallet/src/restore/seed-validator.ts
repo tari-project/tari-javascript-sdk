@@ -144,7 +144,7 @@ export class RestorationSeedValidator {
       // Add security recommendations
       this.addSecurityRecommendations(result);
 
-    } catch (error) {
+    } catch (error: unknown) {
       result.isValid = false;
       result.errors.push(`Validation error: ${(error as Error).message}`);
     }

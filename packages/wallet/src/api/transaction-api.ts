@@ -290,12 +290,12 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       this.isInitialized = true;
       this.emit('api:initialized');
       
-    } catch (error) {
+    } catch (error: unknown) {
       this.emit('api:error', error instanceof Error ? error : new Error(String(error)));
       throw new WalletError(
         WalletErrorCode.InitializationFailed,
         `Failed to initialize transaction API: ${error}`,
-        { cause: error }
+        { cause: error instanceof Error ? error : undefined }
       );
     }
   }

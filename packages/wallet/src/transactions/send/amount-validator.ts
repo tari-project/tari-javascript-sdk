@@ -162,7 +162,7 @@ export class AmountValidator {
         amounts.forEach((amount, index) => {
             try {
                 this.validateBasicAmount(amount);
-            } catch (error: any) {
+            } catch (error: unknown) {
                 throw new WalletError(
                     error.code || WalletErrorCode.InvalidAmount,
                     `Invalid amount at index ${index}: ${error.message}`,
@@ -237,7 +237,7 @@ export class AmountValidator {
             const recommendedFee = BigInt(feeStats.avg) * BigInt(estimatedSizeGrams);
 
             return microTariFromFFI(recommendedFee);
-        } catch (error) {
+        } catch (error: unknown) {
             // Fallback to minimum network fee if stats unavailable
             const minimumFee = microTariFromFFI(1000n); // 1000 MicroTari minimum
             return minimumFee;
@@ -272,7 +272,7 @@ export class AmountValidator {
                     timestamp: now,
                     ttl: 30000 // 30 seconds cache
                 };
-            } catch (error: any) {
+            } catch (error: unknown) {
                 throw new WalletError(
                     WalletErrorCode.BalanceQueryFailed,
                     'Failed to retrieve wallet balance',
@@ -398,7 +398,7 @@ export class AmountValidator {
                     }
                 );
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             if (error instanceof WalletError) {
                 throw error;
             }

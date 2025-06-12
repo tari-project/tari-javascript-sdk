@@ -151,7 +151,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
       
       return result;
       
-    } catch (error) {
+    } catch (error: unknown) {
       this.statistics.failedRefunds++;
       
       const result: RefundResult = {
@@ -306,7 +306,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
       
       this.statistics.lastRefundTime = Date.now() as UnixTimestamp;
       
-    } catch (error) {
+    } catch (error: unknown) {
       // If batch processing fails, return error for all transactions
       for (const { transactionId } of transactions) {
         this.statistics.failedRefunds++;
@@ -335,11 +335,11 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
     try {
       const balanceJson = await this.ffiBindings.walletGetBalance(this.walletHandle);
       return JSON.parse(balanceJson);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.BalanceQueryFailed,
         `Failed to get current balance: ${error}`,
-        { cause: error }
+        { cause: error instanceof Error ? error : undefined }
       );
     }
   }

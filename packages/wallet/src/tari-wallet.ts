@@ -790,7 +790,7 @@ export class TariWallet implements AsyncDisposable {
 
       // Create secure buffer with normalized words
       return SeedManager.createSecureBuffer(validationResult.normalizedWords!);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         throw error;
       }
@@ -911,7 +911,7 @@ export class TariWallet implements AsyncDisposable {
         WalletErrorCode.NotImplemented,
         'Transaction history not yet implemented'
       );
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TransactionNotFound,
         'Failed to retrieve transaction history',
@@ -934,7 +934,7 @@ export class TariWallet implements AsyncDisposable {
         WalletErrorCode.NotImplemented,
         'Transaction cancellation not yet implemented'
       );
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TransactionFailed,
         'Failed to cancel transaction',
@@ -959,7 +959,7 @@ export class TariWallet implements AsyncDisposable {
         WalletErrorCode.NotImplemented,
         'Contact management not yet implemented'
       );
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidConfig,
         'Failed to add contact',
@@ -982,7 +982,7 @@ export class TariWallet implements AsyncDisposable {
         WalletErrorCode.NotImplemented,
         'Contact retrieval not yet implemented'
       );
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidConfig,
         'Failed to retrieve contacts',
@@ -1007,7 +1007,7 @@ export class TariWallet implements AsyncDisposable {
         publicKey: peer.publicKey,
         address: peer.address
       });
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.ConnectionFailed,
         'Failed to set base node',
@@ -1030,7 +1030,7 @@ export class TariWallet implements AsyncDisposable {
         WalletErrorCode.NotImplemented,
         'Network sync not yet implemented'
       );
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.SyncFailed,
         'Failed to sync wallet with network',
@@ -1181,7 +1181,7 @@ export class TariWallet implements AsyncDisposable {
       try {
         const bindings = getFFIBindings();
         await bindings.destroyWallet(this.handle);
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn(`Failed to destroy FFI wallet handle for ${this.instanceId}:`, error);
       }
     });

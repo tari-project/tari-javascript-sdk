@@ -211,7 +211,7 @@ export class EmojiConverter {
         sourceFormat: 'address',
         network: options.network
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.stats.errors++;
       
       throw new WalletError(
@@ -282,7 +282,7 @@ export class EmojiConverter {
         sourceFormat: 'emoji',
         network: options.network
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.stats.errors++;
       
       throw new WalletError(

@@ -95,7 +95,7 @@ export class BalanceService {
       }
 
       return balance;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve wallet balance',
@@ -134,7 +134,7 @@ export class BalanceService {
       }
 
       return balanceInfo;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve detailed wallet balance',
@@ -269,7 +269,7 @@ export class BalanceService {
       for (const listener of this.changeListeners) {
         try {
           listener(event);
-        } catch (error) {
+        } catch (error: unknown) {
           // Log error but don't break other listeners
           console.warn('Balance change listener error:', error);
         }
@@ -328,7 +328,7 @@ export class BalanceService {
     const interval = setInterval(async () => {
       try {
         await this.getBalance(true); // Force refresh to detect changes
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn('Balance monitoring error:', error);
       }
     }, intervalMs);

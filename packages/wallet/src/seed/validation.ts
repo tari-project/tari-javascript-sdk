@@ -111,7 +111,7 @@ export class SeedValidation {
         errors,
         normalizedWords: errors.length === 0 ? normalizedWords : undefined
       };
-    } catch (error) {
+    } catch (error: unknown) {
       errors.push(`Validation error: ${(error as Error).message}`);
       return { isValid: false, errors };
     }

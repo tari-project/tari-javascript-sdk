@@ -180,7 +180,7 @@ describe('CancellationService', () => {
       
       try {
         await service.cancelTransaction('non_existent' as TransactionId);
-      } catch (error) {
+      } catch (error: unknown) {
         // Expected to fail
       }
       
@@ -339,7 +339,7 @@ describe('CancellationService', () => {
       
       try {
         await service.cancelTransaction('non_existent' as TransactionId);
-      } catch (error) {
+      } catch (error: unknown) {
         // Expected
       }
       

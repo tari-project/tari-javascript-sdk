@@ -202,7 +202,7 @@ export class TransactionValidator {
           checksum: true
         }
       };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         valid: false,
         error: `Invalid address format: ${error}`

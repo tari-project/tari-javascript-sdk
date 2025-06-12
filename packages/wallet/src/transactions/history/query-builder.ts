@@ -10,11 +10,11 @@ import {
   WalletErrorCode,
   type UnixTimestamp
 } from '@tari-project/tarijs-core';
+import type { TransactionSortBy } from '@tari-project/tarijs-core';
 import type {
   TransactionFilter,
-  TransactionQueryOptions,
-  TransactionSortBy
-} from '@tari-project/tarijs-core';
+  TransactionQueryOptions
+} from '../../types/transaction-extensions.js';
 import { TransactionStatus, TransactionDirection } from '@tari-project/tarijs-core';
 import type { HistoryServiceConfig } from './history-service.js';
 

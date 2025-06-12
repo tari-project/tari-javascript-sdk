@@ -149,7 +149,7 @@ export class SignatureVerifier {
       if (isValid) {
         try {
           result.address = await bindings.publicKeyToAddress(publicKey);
-        } catch (error) {
+        } catch (error: unknown) {
           // Address derivation failed, but signature is still valid
           console.warn('Could not derive address from public key:', error);
         }
@@ -159,7 +159,7 @@ export class SignatureVerifier {
 
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         isValid: false,
         error: (error as Error).message,
@@ -210,7 +210,7 @@ export class SignatureVerifier {
         address: signedMessage.address || basicResult.address
       };
 
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         isValid: false,
         error: (error as Error).message,
@@ -268,7 +268,7 @@ export class SignatureVerifier {
           });
         }
 
-      } catch (error) {
+      } catch (error: unknown) {
         const result: SignatureVerificationResult = {
           isValid: false,
           error: (error as Error).message
@@ -313,7 +313,7 @@ export class SignatureVerifier {
       // Note: This depends on the signature scheme used
       const publicKey = await bindings.recoverPublicKey(message, signature);
       return publicKey;
-    } catch (error) {
+    } catch (error: unknown) {
       // Public key recovery not supported or failed
       return null;
     }
@@ -452,7 +452,7 @@ export class SignatureVerifier {
     if (options.additionalChecks?.validateMetadata && signedMessage.metadata) {
       try {
         JSON.stringify(signedMessage.metadata);
-      } catch (error) {
+      } catch (error: unknown) {
         failures.push('Invalid metadata structure');
       }
     }

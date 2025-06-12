@@ -573,7 +573,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
         this.stateManager.checkTransactionTimeout(tx.id);
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       this.emit('transaction:error', 
         error instanceof WalletError ? error : new WalletError(
           WalletErrorCode.UnknownError,
@@ -630,7 +630,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
           transactionId
         );
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Ignore errors in timeout handling
     }
   }
@@ -701,7 +701,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
   private async resolveAddress(address: TariAddressString): Promise<TariAddress> {
     try {
       return await TariAddress.fromString(address);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,
         `Invalid recipient address: ${address}`,

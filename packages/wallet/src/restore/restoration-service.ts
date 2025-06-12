@@ -229,7 +229,7 @@ export class WalletRestorationService extends EventEmitter {
       
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       const duration = Date.now() - startTime;
       const result: RestorationResult = {
         success: false,
@@ -293,7 +293,7 @@ export class WalletRestorationService extends EventEmitter {
 
       this.updateProgress(RestorationStage.Validating, 100, 'Seed phrase validated successfully');
       return validation;
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleError(error as Error);
       throw error;
     }
@@ -381,7 +381,7 @@ export class WalletRestorationService extends EventEmitter {
       this.updateProgress(RestorationStage.CreatingWallet, 100, 'Wallet instance created');
       
       return handle;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InitializationFailed,
         'Failed to create wallet from seed',
@@ -435,7 +435,7 @@ export class WalletRestorationService extends EventEmitter {
         transactionCount: 0, // Would be real data from FFI
         outputCount: 0 // Would be real data from FFI
       };
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.SyncFailed,
         'Failed to scan blockchain for wallet data',
@@ -468,7 +468,7 @@ export class WalletRestorationService extends EventEmitter {
       }
 
       this.updateProgress(RestorationStage.VerifyingBalance, 100, 'Wallet verification complete');
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InitializationFailed,
         'Failed to verify restored wallet',
@@ -543,7 +543,7 @@ export class WalletRestorationService extends EventEmitter {
   }
 
   private handleError(error: Error): void {
-    this.currentState.error = error;
+    this.currentState.error = error instanceof Error ? error : new Error(String(error));
     this.emit('error', error);
   }
 

@@ -169,7 +169,7 @@ export class FeeEstimator {
           if (networkEstimate) {
             return this.applyConstraints(networkEstimate, { maxFee, minFee });
           }
-        } catch (error) {
+        } catch (error: unknown) {
           // Log network error but continue with fallback
           console.warn('Network fee estimation failed, using fallback:', error);
         }
@@ -179,7 +179,7 @@ export class FeeEstimator {
       const fallbackEstimate = await this.estimateFromHistorical(amount, sizeGrams, priority);
       return this.applyConstraints(fallbackEstimate, { maxFee, minFee });
 
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.FeeEstimationFailed,
         `Failed to estimate transaction fee: ${error}`,
@@ -245,7 +245,7 @@ export class FeeEstimator {
 
       return estimate;
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Network fee estimation error:', error);
       return null;
     }
@@ -473,7 +473,7 @@ export class FeeEstimator {
     for (const priority of Object.values(FeePriority)) {
       try {
         estimates[priority] = await this.estimateFee(amount, { ...options, priority });
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn(`Failed to estimate fee for priority ${priority}:`, error);
       }
     }

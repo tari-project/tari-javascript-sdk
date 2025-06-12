@@ -278,7 +278,7 @@ export class WalletEventSystem {
           listener(data),
           timeoutPromise
         ]);
-      } catch (error) {
+      } catch (error: unknown) {
         // Log error if debug enabled
         if (this.config.debug) {
           console.error('[EventSystem] Handler error:', error);

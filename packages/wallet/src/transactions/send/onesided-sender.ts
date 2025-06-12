@@ -160,7 +160,7 @@ export class OneSidedSender {
     if (!feePerGram) {
       try {
         feePerGram = await this.estimateOneSidedFee(amount, options.useStealth);
-      } catch (error) {
+      } catch (error: unknown) {
         throw new WalletError(
           WalletErrorCode.FEE_ESTIMATION_FAILED,
           'Failed to estimate one-sided transaction fee',
@@ -194,7 +194,7 @@ export class OneSidedSender {
       );
 
       return txId as TransactionId;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TransactionFailed,
         'Failed to send one-sided transaction via FFI',
@@ -246,7 +246,7 @@ export class OneSidedSender {
         recipient,
         true // Allow self-send for one-sided
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error.message);
       } else {
@@ -259,7 +259,7 @@ export class OneSidedSender {
       if (amount <= 0n) {
         errors.push('Amount must be greater than zero');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error.message);
       } else {
@@ -271,7 +271,7 @@ export class OneSidedSender {
       // Estimate fee for one-sided transaction
       estimatedFee = options.feePerGram || 
         await this.estimateOneSidedFee(amount, options.useStealth);
-    } catch (error) {
+    } catch (error: unknown) {
       errors.push('Failed to estimate one-sided transaction fee');
     }
 
@@ -298,7 +298,7 @@ export class OneSidedSender {
         // Get UTXO consumption details
         utxoConsumption = await this.analyzeUtxoConsumption(amount, estimatedFee);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error.message);
       } else {
@@ -349,7 +349,7 @@ export class OneSidedSender {
       );
       
       return TariAddress.fromBase58(stealthAddress);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,
         'Failed to generate stealth address for one-sided transaction',
@@ -386,7 +386,7 @@ export class OneSidedSender {
         outputCount: 1, // One-sided transactions create single output
         scriptComplexity: 2 // TariScript complexity factor
       };
-    } catch (error) {
+    } catch (error: unknown) {
       // Fallback estimation if FFI call fails
       return {
         inputCount: 1,

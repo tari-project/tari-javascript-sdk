@@ -207,7 +207,7 @@ export class AddressService extends EventEmitter {
       this.emit('addressGenerated', address);
       
       return address;
-    } catch (error) {
+    } catch (error: unknown) {
       this.stats.conversionErrors++;
       this.updateStats();
       
@@ -244,7 +244,7 @@ export class AddressService extends EventEmitter {
       
       this.updateStats();
       return isValid;
-    } catch (error) {
+    } catch (error: unknown) {
       this.stats.conversionErrors++;
       this.updateStats();
       

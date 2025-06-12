@@ -113,7 +113,7 @@ export class WalletLifecycleManager {
       // Fire after init hook
       await this.fireHook('afterInit');
 
-    } catch (error) {
+    } catch (error: unknown) {
       this.stateManager.setError(error as Error, 'Initialization failed');
       await this.fireHook('onError', error as Error);
       throw error;
@@ -161,7 +161,7 @@ export class WalletLifecycleManager {
       // Fire after destroy hook
       await this.fireHook('afterDestroy');
 
-    } catch (error) {
+    } catch (error: unknown) {
       this.stateManager.setError(error as Error, 'Destruction failed');
       await this.fireHook('onError', error as Error);
       throw error;
@@ -261,7 +261,7 @@ export class WalletLifecycleManager {
       };
 
       await handler(eventData);
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn(`Lifecycle hook '${hookName}' failed:`, error);
       // Don't throw from hook failures to avoid cascading errors
     }

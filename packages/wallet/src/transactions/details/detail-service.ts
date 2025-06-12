@@ -353,7 +353,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       
       return enrichedDetails;
       
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TransactionDetailRetrievalFailed,
         `Failed to get transaction details for ${transactionId}: ${error}`,
@@ -504,7 +504,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       }
       
       return JSON.parse(transactionJson);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.FFIOperationFailed,
         `Failed to get basic transaction info: ${error}`,
@@ -595,7 +595,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       );
       
       return inputsJson ? JSON.parse(inputsJson) : [];
-    } catch (error) {
+    } catch (error: unknown) {
       // Return empty array if inputs not available
       return [];
     }
@@ -612,7 +612,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       );
       
       return outputsJson ? JSON.parse(outputsJson) : [];
-    } catch (error) {
+    } catch (error: unknown) {
       // Return empty array if outputs not available
       return [];
     }
@@ -629,7 +629,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       );
       
       return kernelsJson ? JSON.parse(kernelsJson) : [];
-    } catch (error) {
+    } catch (error: unknown) {
       // Return empty array if kernels not available
       return [];
     }
@@ -646,7 +646,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
       );
       
       return blockJson ? JSON.parse(blockJson) : undefined;
-    } catch (error) {
+    } catch (error: unknown) {
       // Return undefined if block info not available
       return undefined;
     }

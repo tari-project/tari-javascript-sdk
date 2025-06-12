@@ -388,7 +388,7 @@ describe('Tari Wallet SDK - Comprehensive Integration Tests', () => {
     test('should provide detailed error information', async () => {
       try {
         await WalletFactory.create({ network: 'invalid' as any, storagePath: '' });
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(WalletError);
         if (error instanceof WalletError) {
           expect(error.code).toBeDefined();

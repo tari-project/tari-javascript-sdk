@@ -141,7 +141,7 @@ export class WalletInfoService extends EventEmitter {
       
       this.emit('walletInfoUpdated', walletInfo);
       return walletInfo;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve wallet information',
@@ -187,7 +187,7 @@ export class WalletInfoService extends EventEmitter {
 
       this.cache.set(cacheKey, syncStatus, 5000); // 5 second cache
       return syncStatus;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve sync status',
@@ -247,7 +247,7 @@ export class WalletInfoService extends EventEmitter {
 
       this.cache.set(cacheKey, metrics, 10000); // 10 second cache
       return metrics;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve wallet metrics',

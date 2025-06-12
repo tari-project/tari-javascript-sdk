@@ -224,7 +224,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       
       return result;
       
-    } catch (error) {
+    } catch (error: unknown) {
       this.statistics.failedCancellations++;
       this.trackFailureReason(error);
       
@@ -261,7 +261,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       await this.validator.validateCancellation(transactionId, pendingTransaction);
       
       return { canCancel: true };
-    } catch (error) {
+    } catch (error: unknown) {
       const reason = error instanceof WalletError ? 
         error.message : 
         'Unknown validation error';
@@ -296,11 +296,11 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       }
       
       return cancellable;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TransactionQueryFailed,
         `Failed to get cancellable transactions: ${error}`,
-        { cause: error }
+        { cause: error instanceof Error ? error : undefined }
       );
     }
   }
@@ -325,7 +325,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       try {
         const result = await this.cancelTransaction(transactionId);
         results.push(result);
-      } catch (error) {
+      } catch (error: unknown) {
         results.push({
           success: false,
           transactionId,
@@ -383,7 +383,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       }
       
       return JSON.parse(transactionJson);
-    } catch (error) {
+    } catch (error: unknown) {
       // Transaction not found is not an error in this context
       return null;
     }
@@ -400,7 +400,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       );
       
       return result === true || result === 'true' || result === 1;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.FFIOperationFailed,
         `FFI cancellation failed: ${error}`,

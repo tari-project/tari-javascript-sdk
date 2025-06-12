@@ -119,7 +119,7 @@ export class AddressFormatter {
         truncated: this.isTruncated(formatted, options),
         formattedAt: new Date()
       };
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to format address',

@@ -361,7 +361,7 @@ export class TransactionBuilder {
       // Validate recipient address
       try {
         await TariAddress.fromString(this.state.recipient!);
-      } catch (error) {
+      } catch (error: unknown) {
         return {
           success: false,
           error: `Invalid recipient address: ${this.state.recipient}`,
@@ -381,7 +381,7 @@ export class TransactionBuilder {
 
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: `Failed to build transaction: ${error}`,

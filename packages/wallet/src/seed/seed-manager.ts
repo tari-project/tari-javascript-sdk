@@ -146,7 +146,7 @@ export class SeedManager {
       }
 
       return words as ValidatedSeedPhrase;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to generate seed phrase',
@@ -186,7 +186,7 @@ export class SeedManager {
         errors: [],
         normalizedWords
       };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         isValid: false,
         errors: [`Validation error: ${(error as Error).message}`]
@@ -265,7 +265,7 @@ export class SeedManager {
   private static async generateSecureEntropy(bytes: number): Promise<Buffer> {
     try {
       return randomBytes(bytes);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to generate secure entropy',

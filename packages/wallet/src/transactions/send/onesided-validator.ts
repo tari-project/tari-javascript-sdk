@@ -219,7 +219,7 @@ export class OneSidedValidator {
       // Validate UTXO selection capability
       await this.validateUtxoSelection(totalCost);
 
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         throw error;
       }
@@ -270,7 +270,7 @@ export class OneSidedValidator {
         );
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         throw error;
       }
@@ -320,7 +320,7 @@ export class OneSidedValidator {
         );
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         throw error;
       }
@@ -354,7 +354,7 @@ export class OneSidedValidator {
           console.warn(`Unknown network: ${networkInfo.network}, skipping network-specific validation`);
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         throw error;
       }

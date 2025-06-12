@@ -168,7 +168,7 @@ export class NetworkFeesService extends TypedEventEmitter {
 
       return stats;
 
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleNetworkError(error);
       return this.currentStats; // Return cached data if available
     }
@@ -346,7 +346,7 @@ export class NetworkFeesService extends TypedEventEmitter {
       // const stats = await this.ffi.wallet_get_fee_per_gram_stats(this.config.walletHandle);
       // return this.parseFFIStats(stats);
 
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.NetworkError,
         `Failed to fetch network fee statistics: ${error}`,

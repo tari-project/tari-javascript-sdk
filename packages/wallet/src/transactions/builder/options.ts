@@ -6,7 +6,7 @@
  */
 
 import type { MicroTari } from '@tari-project/tarijs-core';
-import type { FeePriority } from '../fees/index.js';
+import { FeePriority } from '../fees/index.js';
 
 /**
  * Transaction build options

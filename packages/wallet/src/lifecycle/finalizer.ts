@@ -285,7 +285,7 @@ export class AdvancedFinalizer {
         }
         
         lastError = result.error;
-      } catch (error) {
+      } catch (error: unknown) {
         lastError = error as Error;
       }
 

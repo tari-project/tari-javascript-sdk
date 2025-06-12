@@ -157,7 +157,7 @@ export class MessageSigner {
 
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.SigningFailed,
         'Failed to sign message',
@@ -192,7 +192,7 @@ export class MessageSigner {
       try {
         const signedMessage = await this.signMessage(messages[i], options);
         results.push(signedMessage);
-      } catch (error) {
+      } catch (error: unknown) {
         errors.push({ index: i, error: error as Error });
       }
     }
@@ -224,7 +224,7 @@ export class MessageSigner {
       const publicKey = await bindings.getPublicKey(this.walletHandle);
       this.touchResource();
       return publicKey;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to get wallet public key',
@@ -246,7 +246,7 @@ export class MessageSigner {
       const address = await bindings.getAddress(this.walletHandle);
       this.touchResource();
       return address;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to get wallet address',
@@ -306,7 +306,7 @@ export class MessageSigner {
       // Try to get public key
       await this.getPublicKey();
       hasPublicKey = true;
-    } catch (error) {
+    } catch (error: unknown) {
       issues.push('Cannot access wallet public key');
     }
 
@@ -314,7 +314,7 @@ export class MessageSigner {
       // Try to sign a test message
       await this.signMessage('test', { validateMessage: false });
       hasPrivateKey = true;
-    } catch (error) {
+    } catch (error: unknown) {
       issues.push('Cannot access wallet private key for signing');
     }
 

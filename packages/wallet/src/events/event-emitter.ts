@@ -308,7 +308,7 @@ export class TypedWalletEventEmitter {
 
       await this.callListener(listener, data, subscription, eventListeners);
 
-    } catch (error) {
+    } catch (error: unknown) {
       // Emit error event for listener failures (if not already an error event)
       if (event !== 'error') {
         this.emit('error', {

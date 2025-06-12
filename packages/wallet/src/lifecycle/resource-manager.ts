@@ -213,7 +213,7 @@ export class ResourceManager {
       }
       
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       this.failedCleanupCount++;
       console.warn(`Failed to cleanup resource ${resourceId}:`, error);
       return false;
@@ -385,7 +385,7 @@ export class ResourceManager {
       try {
         const bindings = getFFIBindings();
         await bindings.destroyWallet(handle);
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn('Failed to destroy wallet handle:', error);
       }
     });
@@ -439,7 +439,7 @@ export class ResourceManager {
           this.resources.delete(heldValue.id);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn(`FinalizationRegistry cleanup failed for ${heldValue.id}:`, error);
       this.failedCleanupCount++;
     }
@@ -459,7 +459,7 @@ export class ResourceManager {
     this.cleanupInterval = setInterval(async () => {
       try {
         await this.cleanupOldResources();
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn('Auto-cleanup failed:', error);
       }
     }, this.config.cleanupInterval);
@@ -477,7 +477,7 @@ export class ResourceManager {
             console.warn('Memory pressure cleanup failed:', error);
           });
         }
-      } catch (error) {
+      } catch (error: unknown) {
         // Ignore memory monitoring errors
       }
     }, 30000); // Check every 30 seconds

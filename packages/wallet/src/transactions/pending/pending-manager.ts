@@ -331,7 +331,7 @@ export class PendingManager extends TypedEventEmitter {
       }
       
       return false;
-    } catch (error) {
+    } catch (error: unknown) {
       const walletError = error instanceof WalletError ? error : new WalletError(
         WalletErrorCode.FFIError,
         `Failed to refresh transaction ${transactionId}`,
@@ -418,7 +418,7 @@ export class PendingManager extends TypedEventEmitter {
           if (result.isNew) newCount++;
           if (result.statusChanged) statusChangedCount++;
           updatedCount++;
-        } catch (error) {
+        } catch (error: unknown) {
           errors.push(this.createProcessingError(error, ffiTx.id));
         }
       }
@@ -430,7 +430,7 @@ export class PendingManager extends TypedEventEmitter {
           if (result.isNew) newCount++;
           if (result.statusChanged) statusChangedCount++;
           updatedCount++;
-        } catch (error) {
+        } catch (error: unknown) {
           errors.push(this.createProcessingError(error, ffiTx.id));
         }
       }
@@ -438,11 +438,11 @@ export class PendingManager extends TypedEventEmitter {
       // Check for transactions that are no longer pending in FFI
       await this.checkForCompletedTransactions(inboundFFI, outboundFFI);
 
-    } catch (error) {
+    } catch (error: unknown) {
       const ffiError = error instanceof WalletError ? error : new WalletError(
         WalletErrorCode.FFIError,
         'Failed to fetch pending transactions from FFI',
-        { cause: error }
+        { cause: error instanceof Error ? error : undefined }
       );
       errors.push(ffiError);
       this.emit('pending:error', ffiError);
@@ -544,7 +544,7 @@ export class PendingManager extends TypedEventEmitter {
               details: { completedDetection: true }
             });
           }
-        } catch (error) {
+        } catch (error: unknown) {
           // Log error but don't fail the entire refresh
           console.warn(`Failed to check status for transaction ${localTx.id}:`, error);
         }
@@ -613,7 +613,7 @@ export class PendingManager extends TypedEventEmitter {
         // For now, just emit the event
         this.emit('pending:auto_cancelled', transactionId, reason);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       this.emit('pending:error', 
         error instanceof WalletError ? error : new WalletError(
           WalletErrorCode.AutoCancellationFailed,
@@ -640,12 +640,12 @@ export class PendingManager extends TypedEventEmitter {
       if (!this.isDisposed && !this.isRefreshing) {
         try {
           await this.refreshPendingTransactions();
-        } catch (error) {
+        } catch (error: unknown) {
           this.emit('pending:error', 
             error instanceof WalletError ? error : new WalletError(
               WalletErrorCode.AutoRefreshFailed,
               'Automatic pending transaction refresh failed',
-              { cause: error }
+              { cause: error instanceof Error ? error : undefined }
             )
           );
         }

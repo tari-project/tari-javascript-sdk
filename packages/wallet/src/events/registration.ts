@@ -109,7 +109,7 @@ export class EventRegistrationManager {
         console.debug(`[Registration] Successfully registered wallet ${walletHandle}`);
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       const message = `Failed to register FFI callback for wallet ${walletHandle}`;
       if (this.config.debug) {
         console.error(`[Registration] ${message}:`, error);
@@ -149,7 +149,7 @@ export class EventRegistrationManager {
         );
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       const message = `Failed to unregister FFI callback for wallet ${walletHandle}`;
       if (this.config.debug) {
         console.error(`[Registration] ${message}:`, error);
@@ -308,7 +308,7 @@ export class EventRegistrationManager {
       // Forward to event system for type-safe emission
       await eventSystem.emit(payload.event_type as any, payload.data as any);
 
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMsg = `Failed to process FFI event for wallet ${walletHandle}`;
       if (this.config.debug) {
         console.error(`[Registration] ${errorMsg}:`, error);
@@ -323,7 +323,7 @@ export class EventRegistrationManager {
           timestamp: new Date(),
           context: { source: 'event_registration' }
         });
-      } catch (emitError) {
+      } catch (emitError: unknown) {
         console.error('[Registration] Failed to emit error event:', emitError);
       }
     }
@@ -350,7 +350,7 @@ export class EventRegistrationManager {
         timestamp: new Date(),
         context: { source: 'event_registration' }
       });
-    } catch (emitError) {
+    } catch (emitError: unknown) {
       console.error('[Registration] Failed to emit FFI error event:', emitError);
     }
   }

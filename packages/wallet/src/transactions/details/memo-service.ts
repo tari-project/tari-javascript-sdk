@@ -150,7 +150,7 @@ export class MemoService extends TypedEventEmitter {
       
       this.statistics.lastOperationTime = now;
       
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.MemoOperationFailed,
         `Failed to set memo for transaction ${transactionId}: ${error}`,
@@ -203,7 +203,7 @@ export class MemoService extends TypedEventEmitter {
         await this.decryptMemo(memoEntry.memo) : 
         memoEntry.memo;
       
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.MemoOperationFailed,
         `Failed to get memo for transaction ${transactionId}: ${error}`,
@@ -245,7 +245,7 @@ export class MemoService extends TypedEventEmitter {
       
       return true;
       
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.MemoOperationFailed,
         `Failed to delete memo for transaction ${transactionId}: ${error}`,
@@ -465,7 +465,7 @@ export class MemoService extends TypedEventEmitter {
         memo,
         encrypted
       );
-    } catch (error) {
+    } catch (error: unknown) {
       // FFI memo storage failed, continue with cache-only storage
       // In a production system, you might want to log this
     }
@@ -492,7 +492,7 @@ export class MemoService extends TypedEventEmitter {
       );
       
       return memoJson ? JSON.parse(memoJson) : null;
-    } catch (error) {
+    } catch (error: unknown) {
       return null;
     }
   }
@@ -510,7 +510,7 @@ export class MemoService extends TypedEventEmitter {
         this.walletHandle,
         transactionId
       );
-    } catch (error) {
+    } catch (error: unknown) {
       // FFI memo deletion failed, continue with cache-only deletion
     }
   }
@@ -525,7 +525,7 @@ export class MemoService extends TypedEventEmitter {
       }
       
       await this.ffiBindings.wallet_clear_transaction_memos(this.walletHandle);
-    } catch (error) {
+    } catch (error: unknown) {
       // FFI memo clearing failed, continue with cache-only clearing
     }
   }
@@ -561,7 +561,7 @@ export class MemoService extends TypedEventEmitter {
         
         this.updateStatistics();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Failed to load existing memos, start with empty cache
     }
   }

@@ -117,7 +117,7 @@ export class VersionInfoService {
         warnings,
         upgradeRequired: this.isUpgradeRequired(coreVersion, options)
       };
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to retrieve version information',
@@ -142,7 +142,7 @@ export class VersionInfoService {
     try {
       const versionInfo = await this.getVersionInfo(options);
       return versionInfo.isCompatible;
-    } catch (error) {
+    } catch (error: unknown) {
       return false;
     }
   }
@@ -156,7 +156,7 @@ export class VersionInfoService {
     try {
       const versionInfo = await this.getVersionInfo(options);
       return versionInfo.warnings;
-    } catch (error) {
+    } catch (error: unknown) {
       return [{
         type: 'incompatible',
         message: 'Unable to determine version compatibility',
@@ -176,7 +176,7 @@ export class VersionInfoService {
     try {
       const versionInfo = await this.getVersionInfo(options);
       return versionInfo.upgradeRequired;
-    } catch (error) {
+    } catch (error: unknown) {
       return false;
     }
   }

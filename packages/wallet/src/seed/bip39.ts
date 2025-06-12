@@ -121,7 +121,7 @@ export class BIP39Validator {
         isValid: errors.length === 0,
         errors
       };
-    } catch (error) {
+    } catch (error: unknown) {
       errors.push(`Validation error: ${(error as Error).message}`);
       return { isValid: false, errors };
     }
@@ -185,7 +185,7 @@ export class BIP39Validator {
       }
 
       return words;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to convert entropy to mnemonic',
@@ -255,7 +255,7 @@ export class BIP39Validator {
       }
 
       return entropyBuffer;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to convert mnemonic to entropy',
@@ -276,7 +276,7 @@ export class BIP39Validator {
 
     try {
       return await pbkdf2Async(mnemonic, salt, 2048, 64, 'sha512');
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InternalError,
         'Failed to derive seed from mnemonic',

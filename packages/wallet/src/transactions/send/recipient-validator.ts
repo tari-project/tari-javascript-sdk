@@ -134,7 +134,7 @@ export class RecipientValidator {
 
       const addressStr = address.toDisplayString();
       return this.ownAddresses!.has(addressStr);
-    } catch (error) {
+    } catch (error: unknown) {
       // If we can't determine own addresses, assume not self-send
       // This allows transactions to proceed but logs the issue
       console.warn('Unable to check for self-send, proceeding with transaction', error);
@@ -222,7 +222,7 @@ export class RecipientValidator {
     try {
       // First try to create TariAddress directly
       return TariAddress.fromString(addressStr);
-    } catch (directError) {
+    } catch (directError: unknown) {
       // If direct creation fails, try different resolution methods
       
       // Try emoji ID resolution
@@ -259,7 +259,7 @@ export class RecipientValidator {
       // Use FFI to resolve emoji ID to public key
       const publicKey = await FFIBindings.emojiIdToPublicKey(emojiId);
       return TariAddress.fromPublicKey(publicKey);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,
         `Invalid emoji ID: ${emojiId}`,
@@ -277,7 +277,7 @@ export class RecipientValidator {
   private async resolveBase58Address(base58: string): Promise<TariAddress> {
     try {
       return TariAddress.fromBase58(base58);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,
         `Invalid base58 address: ${base58}`,
@@ -295,7 +295,7 @@ export class RecipientValidator {
   private async resolveHexAddress(hex: string): Promise<TariAddress> {
     try {
       return TariAddress.fromHex(hex);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,
         `Invalid hex address: ${hex}`,
@@ -323,7 +323,7 @@ export class RecipientValidator {
       // TODO: Implement actual address loading from wallet
       // const addresses = await FFIBindings.walletGetOwnAddresses(this.walletHandle);
       // this.ownAddresses = new Set(addresses.map(addr => addr.toString()));
-    } catch (error) {
+    } catch (error: unknown) {
       // If we can't load own addresses, create empty set
       // This allows the wallet to function but won't prevent self-sends
       this.ownAddresses = new Set<string>();

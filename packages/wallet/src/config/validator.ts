@@ -93,7 +93,7 @@ export async function validateWalletConfig(
   if (opts.checkPaths && config.storagePath) {
     try {
       await validatePath(config.storagePath, 'storage');
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error);
       } else {
@@ -112,7 +112,7 @@ export async function validateWalletConfig(
   if (opts.checkPaths && config.logPath) {
     try {
       await validatePath(config.logPath, 'log');
-    } catch (error) {
+    } catch (error: unknown) {
       // Log path issues are warnings, not errors
       warnings.push(new WalletError(
         WalletErrorCode.InvalidDataDir,
@@ -166,7 +166,7 @@ export async function validateWalletConfig(
   if (opts.validateSeedWords && config.seedWords) {
     try {
       validateSeedWords(config.seedWords);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error);
       } else {
@@ -206,7 +206,7 @@ export async function validateWalletConfig(
           }
         ));
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Disk space check failure is a warning
       warnings.push(new WalletError(
         WalletErrorCode.Unknown,
@@ -267,7 +267,7 @@ async function validatePath(path: string, pathType: string): Promise<void> {
     
     // Check if we can write to the directory
     await fs.access(dirname(path), fs.constants.W_OK);
-  } catch (error) {
+  } catch (error: unknown) {
     throw new WalletError(
       WalletErrorCode.PermissionDeniedInit,
       `Cannot access ${pathType} path: ${error}`,

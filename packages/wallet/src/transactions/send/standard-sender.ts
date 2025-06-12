@@ -126,7 +126,7 @@ export class StandardSender {
     if (!feePerGram) {
       try {
         feePerGram = await this.feeEstimator.estimateFeePerGram(amount, 1);
-      } catch (error) {
+      } catch (error: unknown) {
         throw new WalletError(
           WalletErrorCode.FEE_ESTIMATION_FAILED,
           'Failed to estimate transaction fee',
@@ -159,7 +159,7 @@ export class StandardSender {
       );
 
       return TransactionId.from(txId);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TRANSACTION_SEND_FAILED,
         'Failed to send transaction via FFI',
@@ -211,7 +211,7 @@ export class StandardSender {
         recipient,
         options.allowSelfSend
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error.message);
       } else {
@@ -225,7 +225,7 @@ export class StandardSender {
       if (amount <= 0n) {
         errors.push('Amount must be greater than zero');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error.message);
       } else {
@@ -237,7 +237,7 @@ export class StandardSender {
       // Estimate fee
       estimatedFee = options.feePerGram || 
         await this.feeEstimator.estimateFeePerGram(amount, 1);
-    } catch (error) {
+    } catch (error: unknown) {
       errors.push('Failed to estimate transaction fee');
     }
 
@@ -246,7 +246,7 @@ export class StandardSender {
       if (estimatedFee > 0n) {
         await this.amountValidator.validateSufficientBalance(amount, estimatedFee);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof WalletError) {
         errors.push(error.message);
       } else {

@@ -187,7 +187,7 @@ export class CancelValidator {
         await customRule(transaction);
       }
       result.checks.customRulesPassed = true;
-    } catch (error) {
+    } catch (error: unknown) {
       result.checks.customRulesPassed = false;
       const errorMessage = error instanceof Error ? error.message : String(error);
       result.errors.push(`Custom validation failed: ${errorMessage}`);

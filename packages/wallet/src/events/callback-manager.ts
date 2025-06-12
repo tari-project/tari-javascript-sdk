@@ -91,7 +91,7 @@ export class CallbackManager {
         console.debug(`[CallbackManager] Successfully registered wallet ${walletHandle}`);
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       // Cleanup on failure
       this.eventSystems.delete(walletHandle);
       eventSystem.setFFICallbackRegistered(false);
@@ -124,7 +124,7 @@ export class CallbackManager {
         console.debug(`[CallbackManager] Successfully unregistered wallet ${walletHandle}`);
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       if (this.config.debug) {
         console.error(`[CallbackManager] Error unregistering wallet ${walletHandle}:`, error);
       }
