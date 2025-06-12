@@ -312,21 +312,19 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     this.ensureInitialized();
     
     if (options.oneSided) {
-      return await this.transactionService.sendOneSidedTransaction(
-        address,
+      return await this.transactionService.sendOneSidedTransaction({
+        recipient: address,
         amount,
-        options.fee,
-        options.message,
-        options.lockHeight
-      );
+        feePerGram: options.fee,
+        message: options.message
+      });
     } else {
-      return await this.transactionService.sendTransaction(
-        address,
+      return await this.transactionService.sendTransaction({
+        recipient: address,
         amount,
-        options.fee,
-        options.message,
-        options.lockHeight
-      );
+        feePerGram: options.fee,
+        message: options.message
+      });
     }
   }
 
@@ -341,13 +339,12 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
   ): Promise<TransactionId> {
     this.ensureInitialized();
     
-    return await this.transactionService.sendOneSidedTransaction(
-      address,
+    return await this.transactionService.sendOneSidedTransaction({
+      recipient: address,
       amount,
-      options.fee,
-      options.message,
-      options.lockHeight
-    );
+      feePerGram: options.fee,
+      message: options.message
+    });
   }
 
   /**
@@ -408,7 +405,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
   }> {
     this.ensureInitialized();
     
-    return await this.pendingManager.getPendingTransactions(forceRefresh);
+    return await this.pendingManager.getPendingTransactions();
   }
 
   /**
