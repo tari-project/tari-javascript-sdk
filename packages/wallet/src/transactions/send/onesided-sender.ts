@@ -6,7 +6,7 @@
  * with the recipient later scanning the blockchain to detect and claim funds.
  */
 
-import { FFIBindings } from '@tari-project/tarijs-core';
+import { getFFIBindings } from '@tari-project/tarijs-core';
 import {
   WalletHandle,
   TransactionId,
@@ -15,9 +15,6 @@ import {
   WalletErrorCode,
   withErrorContext,
   withRetry,
-  RetryConfigs,
-  validateTariAddress,
-  validateMicroTari,
   validateRequired,
 } from '@tari-project/tarijs-core';
 import { TariAddress } from '../../models';
@@ -72,6 +69,7 @@ export class OneSidedSender {
   private readonly recipientValidator: RecipientValidator;
   private readonly oneSidedValidator: OneSidedValidator;
   private readonly feeEstimator: FeeEstimator;
+  private readonly ffi = getFFIBindings();
 
   constructor(
     private readonly walletHandle: WalletHandle,
@@ -106,7 +104,7 @@ export class OneSidedSender {
    * @throws {WalletError} WalletErrorCode.TRANSACTION_SEND_FAILED - FFI transaction failure
    */
   @withErrorContext('onesided_transaction_send', 'transaction')
-  @withRetry(RetryConfigs.transaction())
+  @withRetry()
   async sendOneSidedTransaction(
     recipient: string | TariAddress,
     amount: MicroTari,
@@ -114,11 +112,10 @@ export class OneSidedSender {
   ): Promise<TransactionId> {
     // Step 1: Validate all inputs
     validateRequired(recipient, 'recipient');
-    validateMicroTari(amount, 'amount');
     
     if (amount <= 0n) {
       throw new WalletError(
-        WalletErrorCode.INVALID_AMOUNT,
+        WalletErrorCode.InvalidAmount,
         'One-sided transaction amount must be greater than zero',
         { operation: 'sendOneSidedTransaction', amount: amount.toString() }
       );
@@ -185,24 +182,24 @@ export class OneSidedSender {
 
     // Step 8: Submit transaction via FFI with one-sided flag
     try {
-      const txId = await FFIBindings.walletSendTransaction(
+      const txId = await this.ffi.walletSendTransaction(
         this.walletHandle,
-        targetAddress.handle,
+        targetAddress.toBase58(),
         amount,
         feePerGram,
         transactionParams.message || '',
         true // isOneSided = true for one-sided transactions
       );
 
-      return TransactionId.from(txId);
+      return txId as TransactionId;
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.TRANSACTION_SEND_FAILED,
+        WalletErrorCode.TransactionFailed,
         'Failed to send one-sided transaction via FFI',
         {
           operation: 'sendOneSidedTransaction',
           amount: amount.toString(),
-          recipient: targetAddress.toDisplayString(),
+          recipient: targetAddress.toString(),
           feePerGram: feePerGram.toString(),
           message: options.message || '',
           useStealth: options.useStealth,
@@ -255,7 +252,6 @@ export class OneSidedSender {
 
     try {
       // Validate amount
-      validateMicroTari(amount, 'amount');
       if (amount <= 0n) {
         errors.push('Amount must be greater than zero');
       }
@@ -343,19 +339,19 @@ export class OneSidedSender {
   ): Promise<TariAddress> {
     try {
       // Use FFI to generate stealth address with ECDH
-      const stealthHandle = await FFIBindings.walletGenerateStealthAddress(
+      const stealthAddress = await this.ffi.walletGenerateStealthAddress(
         this.walletHandle,
-        recipientAddress.handle
+        recipientAddress.toBase58()
       );
       
-      return TariAddress.fromHandle(stealthHandle);
+      return TariAddress.fromBase58(stealthAddress);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.STEALTH_ADDRESS_GENERATION_FAILED,
+        WalletErrorCode.InvalidAddress,
         'Failed to generate stealth address for one-sided transaction',
         {
           operation: 'generateStealthAddress',
-          recipient: recipientAddress.toDisplayString(),
+          recipient: recipientAddress.toString(),
           cause: error
         }
       );
@@ -374,13 +370,13 @@ export class OneSidedSender {
     
     try {
       // Query wallet for UTXO selection strategy
-      const utxoSelection = await FFIBindings.walletPreviewUtxoSelection(
+      const utxoSelection = await this.ffi.walletPreviewUtxoSelection(
         this.walletHandle,
         totalRequired
       );
 
       return {
-        inputCount: utxoSelection.inputCount,
+        inputCount: utxoSelection.inputCount || 1,
         outputCount: 1, // One-sided transactions create single output
         scriptComplexity: 2 // TariScript complexity factor
       };

@@ -12,8 +12,7 @@ import {
   WalletError,
   WalletErrorCode,
   withErrorContext,
-  validateMicroTari,
-  FFIBindings
+  getFFIBindings
 } from '@tari-project/tarijs-core';
 import { TariAddress } from '../../models';
 
@@ -53,6 +52,7 @@ export const DEFAULT_ONESIDED_CONFIG: OneSidedValidationConfig = {
  */
 export class OneSidedValidator {
   private readonly config: OneSidedValidationConfig;
+  private readonly ffi = getFFIBindings();
 
   constructor(
     private readonly walletHandle: WalletHandle,
@@ -107,11 +107,9 @@ export class OneSidedValidator {
     feePerGram?: MicroTari
   ): Promise<void> {
     // Validate amount
-    validateMicroTari(amount, 'amount');
-    
     if (amount <= 0n) {
       throw new WalletError(
-        WalletErrorCode.INVALID_AMOUNT,
+        WalletErrorCode.InvalidAmount,
         'One-sided transaction amount must be positive',
         { 
           operation: 'validateOneSidedTransaction',
@@ -123,11 +121,9 @@ export class OneSidedValidator {
 
     // Validate fee if provided
     if (feePerGram !== undefined) {
-      validateMicroTari(feePerGram, 'feePerGram');
-      
       if (feePerGram <= 0n) {
         throw new WalletError(
-          WalletErrorCode.INVALID_FEE,
+          WalletErrorCode.InvalidFee,
           'Fee per gram must be positive for one-sided transactions',
           { 
             operation: 'validateOneSidedTransaction',
@@ -147,7 +143,7 @@ export class OneSidedValidator {
     // Check minimum amount (dust protection)
     if (amount < this.config.minOneSidedAmount) {
       throw new WalletError(
-        WalletErrorCode.AMOUNT_TOO_SMALL,
+        WalletErrorCode.InvalidAmount,
         `One-sided transaction amount below minimum threshold of ${this.config.minOneSidedAmount}`,
         {
           operation: 'validateOneSidedTransaction',
@@ -161,7 +157,7 @@ export class OneSidedValidator {
     // Check maximum amount (security limit)
     if (amount > this.config.maxOneSidedAmount) {
       throw new WalletError(
-        WalletErrorCode.AMOUNT_TOO_LARGE,
+        WalletErrorCode.InvalidAmount,
         `One-sided transaction amount exceeds maximum threshold of ${this.config.maxOneSidedAmount}`,
         {
           operation: 'validateOneSidedTransaction',
@@ -186,7 +182,7 @@ export class OneSidedValidator {
   ): Promise<void> {
     try {
       // Get current wallet balance
-      const balance = await FFIBindings.walletGetBalance(this.walletHandle);
+      const balance = await this.ffi.walletGetBalance(this.walletHandle);
       
       // Estimate total cost including fee
       const estimatedFee = feePerGram ? 
@@ -198,7 +194,7 @@ export class OneSidedValidator {
       // Check available balance
       if (balance.available < totalCost) {
         throw new WalletError(
-          WalletErrorCode.INSUFFICIENT_FUNDS,
+          WalletErrorCode.InsufficientFunds,
           `Insufficient funds for one-sided transaction. Required: ${totalCost}, Available: ${balance.available}`,
           {
             operation: 'validateOneSidedTransaction',
@@ -219,7 +215,7 @@ export class OneSidedValidator {
       }
       
       throw new WalletError(
-        WalletErrorCode.BALANCE_QUERY_FAILED,
+        WalletErrorCode.BalanceFailed,
         'Failed to validate UTXO availability for one-sided transaction',
         {
           operation: 'validateOneSidedTransaction',
@@ -237,14 +233,14 @@ export class OneSidedValidator {
   private async validateUtxoSelection(totalCost: MicroTari): Promise<void> {
     try {
       // Use FFI to preview UTXO selection
-      const selection = await FFIBindings.walletPreviewUtxoSelection(
+      const selection = await this.ffi.walletPreviewUtxoSelection(
         this.walletHandle,
         totalCost
       );
 
       if (!selection.success) {
         throw new WalletError(
-          WalletErrorCode.UTXO_SELECTION_FAILED,
+          WalletErrorCode.InsufficientFunds,
           'Cannot select suitable UTXOs for one-sided transaction',
           {
             operation: 'validateOneSidedTransaction',
@@ -255,9 +251,9 @@ export class OneSidedValidator {
       }
 
       // Validate that we don't need too many inputs (complexity limit)
-      if (selection.inputCount > 10) {
+      if (selection.inputCount && selection.inputCount > 10) {
         throw new WalletError(
-          WalletErrorCode.TRANSACTION_TOO_COMPLEX,
+          WalletErrorCode.InvalidAmount,
           'One-sided transaction would require too many inputs, reducing complexity',
           {
             operation: 'validateOneSidedTransaction',
@@ -285,19 +281,19 @@ export class OneSidedValidator {
   private async validateScriptConstruction(recipient: TariAddress): Promise<void> {
     try {
       // Validate that we can construct a TariScript for this recipient
-      const scriptValidation = await FFIBindings.walletValidateScript(
+      const scriptValidation = await this.ffi.walletValidateScript(
         this.walletHandle,
-        recipient.handle,
+        recipient.toBase58(),
         'CheckPubKey' // Basic script type for one-sided transactions
       );
 
       if (!scriptValidation.valid) {
         throw new WalletError(
-          WalletErrorCode.SCRIPT_CONSTRUCTION_FAILED,
+          WalletErrorCode.InvalidAddress,
           'Cannot construct TariScript for one-sided transaction to this recipient',
           {
             operation: 'validateOneSidedTransaction',
-            recipient: recipient.toDisplayString(),
+            recipient: recipient.toString(),
             scriptType: 'CheckPubKey',
             reason: scriptValidation.error || 'Unknown script validation error'
           }
@@ -305,15 +301,15 @@ export class OneSidedValidator {
       }
 
       // Check script complexity
-      if (scriptValidation.complexity > this.config.maxScriptComplexity) {
+      if (scriptValidation.complexity && scriptValidation.complexity > this.config.maxScriptComplexity) {
         throw new WalletError(
-          WalletErrorCode.SCRIPT_TOO_COMPLEX,
+          WalletErrorCode.InvalidAmount,
           `TariScript complexity (${scriptValidation.complexity}) exceeds maximum allowed (${this.config.maxScriptComplexity})`,
           {
             operation: 'validateOneSidedTransaction',
             complexity: scriptValidation.complexity,
             maxComplexity: this.config.maxScriptComplexity,
-            recipient: recipient.toDisplayString()
+            recipient: recipient.toString()
           }
         );
       }
@@ -335,7 +331,7 @@ export class OneSidedValidator {
   private async validateNetworkRules(amount: MicroTari): Promise<void> {
     try {
       // Get current network information
-      const networkInfo = await FFIBindings.walletGetNetworkInfo(this.walletHandle);
+      const networkInfo = await this.ffi.walletGetNetworkInfo(this.walletHandle);
       
       // Apply network-specific validation rules
       switch (networkInfo.network) {
@@ -371,7 +367,7 @@ export class OneSidedValidator {
     
     if (amount > mainnetMaxAmount) {
       throw new WalletError(
-        WalletErrorCode.AMOUNT_TOO_LARGE,
+        WalletErrorCode.InvalidAmount,
         `One-sided transaction amount exceeds mainnet limit of ${mainnetMaxAmount}`,
         {
           operation: 'validateOneSidedTransaction',
