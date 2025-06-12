@@ -6,12 +6,12 @@
  * efficient querying capabilities.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   WalletError,
   WalletErrorCode,
   ErrorSeverity,
   withErrorContext,
+  TypedEventEmitter,
   type WalletHandle,
   type TransactionId,
   type UnixTimestamp
@@ -44,10 +44,10 @@ export interface TransactionRepositoryConfig {
  * Repository events
  */
 export interface TransactionRepositoryEvents {
-  'transaction:added': (transaction: TransactionInfo) => void;
-  'transaction:updated': (update: TransactionStatusUpdate) => void;
-  'transaction:removed': (transactionId: TransactionId) => void;
-  'cache:full': (size: number, limit: number) => void;
+  'transaction:added': [transaction: TransactionInfo];
+  'transaction:updated': [update: TransactionStatusUpdate];
+  'transaction:removed': [transactionId: TransactionId];
+  'cache:full': [size: number, limit: number];
 }
 
 /**
@@ -72,7 +72,7 @@ export interface QueryResult<T> {
 /**
  * Transaction repository providing data access abstraction
  */
-export class TransactionRepository extends EventEmitter<TransactionRepositoryEvents> {
+export class TransactionRepository extends TypedEventEmitter {
   private readonly config: TransactionRepositoryConfig;
   private readonly cache = new Map<TransactionId, CacheEntry>();
   private readonly indexByStatus = new Map<TransactionStatus, Set<TransactionId>>();
@@ -105,7 +105,7 @@ export class TransactionRepository extends EventEmitter<TransactionRepositoryEve
       throw new WalletError(
         WalletErrorCode.DuplicateTransaction,
         `Transaction ${transaction.id} already exists`,
-        ErrorSeverity.Error
+        { severity: ErrorSeverity.Error }
       );
     }
 

@@ -436,6 +436,26 @@ export class FeeEstimator {
   }
 
   /**
+   * Estimate fee per gram for a transaction
+   */
+  @withErrorContext('estimate_fee_per_gram', 'fee_estimator')
+  async estimateFeePerGram(
+    amount: MicroTari,
+    outputs: number = 1
+  ): Promise<MicroTari> {
+    const result = await this.estimateFee(amount, { outputs });
+    return result.feePerGram;
+  }
+
+  /**
+   * Estimate transaction size in grams
+   */
+  @withErrorContext('estimate_transaction_size', 'fee_estimator')
+  estimateTransactionSize(amount: MicroTari, outputs: number = 1): number {
+    return this.calculator.estimateTransactionSize(amount, outputs);
+  }
+
+  /**
    * Get fee estimation for different priority levels
    */
   @withErrorContext('get_priority_estimates', 'fee_estimator')

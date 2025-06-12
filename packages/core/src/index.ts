@@ -19,6 +19,7 @@
 export * from './types/constants';
 export * from './types/branded';
 export * from './types/utils';
+export { createMicroTari, createTransactionId, asMicroTari } from './types/branded';
 export * from './types/config';
 export * from './types/wallet-config';
 export * from './types/balance';
@@ -49,6 +50,8 @@ export {
   type Awaitable,
   type Optional,
 } from './utils/index';
+export { validateMicroTari } from './errors/validation';
+export { TypedEventEmitter } from './utils/typed-event-emitter';
 
 // FFI resource management (Task 4+)
 export * from './ffi/resource';
@@ -62,9 +65,9 @@ export * from './ffi/memory';
 export { FFICallError, ErrorClassification, CircuitState, type CallContext } from './ffi/call-manager';
 
 // FFI bindings
-export { getFFIBindings, initializeFFI, resetFFI } from './ffi/bindings';
+export { getFFIBindings, initializeFFI, resetFFI, FFIBindings } from './ffi/bindings';
 export type { FFIWalletConfig, WalletHandle, FFIBalance } from './ffi/types';
-export { createWalletHandle, unwrapWalletHandle } from './ffi/types';
+export { createWalletHandle, unwrapWalletHandle, validateTariAddress } from './ffi/types';
 
 // Wallet handle wrapper (Task 8)
 export * from './wallet-handle';
