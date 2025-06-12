@@ -8,11 +8,11 @@
 /**
  * Custom typed EventEmitter to avoid Node.js EventMap constraints
  */
-export class TypedEventEmitter {
-  private events = new Map<string, Array<(...args: any[]) => void>>();
+export class TypedEventEmitter<T extends Record<string, (...args: any[]) => void> = Record<string, (...args: any[]) => void>> {
+  private events = new Map<keyof T, Array<T[keyof T]>>();
 
-  emit(event: string, ...args: any[]): boolean {
-    const listeners = this.events.get(event);
+  protected emit<K extends keyof T>(event: K, ...args: Parameters<T[K]>): boolean {
+    const listeners = this.events.get(event) as Array<T[K]> | undefined;
     if (listeners) {
       listeners.forEach(listener => listener(...args));
       return true;
@@ -20,16 +20,16 @@ export class TypedEventEmitter {
     return false;
   }
 
-  on(event: string, listener: (...args: any[]) => void): this {
+  on<K extends keyof T>(event: K, listener: T[K]): this {
     if (!this.events.has(event)) {
       this.events.set(event, []);
     }
-    this.events.get(event)!.push(listener);
+    (this.events.get(event) as Array<T[K]>).push(listener);
     return this;
   }
 
-  off(event: string, listener: (...args: any[]) => void): this {
-    const listeners = this.events.get(event);
+  off<K extends keyof T>(event: K, listener: T[K]): this {
+    const listeners = this.events.get(event) as Array<T[K]> | undefined;
     if (listeners) {
       const index = listeners.indexOf(listener);
       if (index !== -1) {
@@ -39,7 +39,7 @@ export class TypedEventEmitter {
     return this;
   }
 
-  removeAllListeners(event?: string): this {
+  removeAllListeners<K extends keyof T>(event?: K): this {
     if (event) {
       this.events.delete(event);
     } else {
@@ -48,11 +48,11 @@ export class TypedEventEmitter {
     return this;
   }
 
-  listenerCount(event: string): number {
-    return this.events.get(event)?.length || 0;
+  listenerCount<K extends keyof T>(event: K): number {
+    return (this.events.get(event) as Array<T[K]> | undefined)?.length || 0;
   }
 
-  eventNames(): string[] {
+  eventNames(): Array<keyof T> {
     return Array.from(this.events.keys());
   }
 }
