@@ -107,7 +107,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
    * Process refund for a cancelled transaction
    */
   @withErrorContext('process_refund', 'refund_handler')
-  @withRetry(() => RetryConfigs.balance())
+  @withRetry(() => RetryConfigs.database())
   async processRefund(
     transactionId: TransactionId,
     transaction: PendingOutboundTransaction

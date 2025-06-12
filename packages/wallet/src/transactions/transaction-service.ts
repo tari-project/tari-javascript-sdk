@@ -166,7 +166,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
    * Send a standard transaction using the StandardSender
    */
   @withErrorContext('send_transaction', 'transaction_service')
-  @withRetry({ maxAttempts: 3, backoffMs: 1000 })
+  @withRetry({ maxAttempts: 3, baseDelay: 1000 })
   @withRecovery(2)
   async sendTransaction(params: SendTransactionParams): Promise<TransactionId> {
     this.ensureNotDisposed();
@@ -225,7 +225,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
    * Send a one-sided transaction using the dedicated OneSidedSender
    */
   @withErrorContext('send_one_sided_transaction', 'transaction_service')
-  @withRetry({ maxAttempts: 3, backoffMs: 1000 })
+  @withRetry({ maxAttempts: 3, baseDelay: 1000 })
   @withRecovery(2)
   async sendOneSidedTransaction(params: SendOneSidedParams): Promise<TransactionId> {
     this.ensureNotDisposed();
@@ -376,7 +376,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
    * Cancel a pending outbound transaction
    */
   @withErrorContext('cancel_transaction', 'transaction_service')
-  @withRetry({ maxAttempts: 2, backoffMs: 500 })
+  @withRetry({ maxAttempts: 2, baseDelay: 500 })
   async cancelTransaction(transactionId: TransactionId): Promise<void> {
     this.ensureNotDisposed();
 

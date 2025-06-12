@@ -145,7 +145,7 @@ export class NetworkFeesService extends TypedEventEmitter {
    * Get current network fee statistics
    */
   @withErrorContext('get_network_fee_statistics', 'network_fees_service')
-  @withRetry({ maxAttempts: 3, backoffMs: 2000 })
+  @withRetry({ maxAttempts: 3, baseDelay: 2000 })
   async getNetworkFeeStatistics(): Promise<NetworkFeeStatistics | null> {
     this.ensureNotDisposed();
 

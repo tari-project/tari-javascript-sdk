@@ -46,7 +46,7 @@ export interface PendingManagerConfig {
   /** Retry configuration for failed refresh operations */
   retryConfig: {
     maxAttempts: number;
-    backoffMs: number;
+    baseDelay: number;
     backoffMultiplier: number;
   };
 }
@@ -715,7 +715,7 @@ export const DEFAULT_PENDING_MANAGER_CONFIG: Partial<PendingManagerConfig> = {
   autoCancelTimeout: false, // Don't auto-cancel by default for safety
   retryConfig: {
     maxAttempts: 3,
-    backoffMs: 1000,
+    baseDelay: 1000,
     backoffMultiplier: 2
   }
 };

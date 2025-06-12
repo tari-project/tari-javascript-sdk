@@ -237,7 +237,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
         autoCancelTimeout: false,
         retryConfig: {
           maxAttempts: 3,
-          backoffMs: 1000,
+          baseDelay: 1000,
           backoffMultiplier: 2
         },
         ...this.config.pendingManager
@@ -325,7 +325,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       return await this.transactionService.sendTransaction({
         recipient: addressString as TariAddressString,
         amount,
-        feePerGram: options.fee || amount / 100n, // Default fee if not provided
+        feePerGram: options.fee || (amount / 100n) as MicroTari, // Default fee if not provided
         message: options.message
       });
     }
@@ -679,7 +679,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     this.pendingManager.on('pending:refreshed', (inboundCount: number, outboundCount: number) => 
       this.emit('pending:refreshed', inboundCount, outboundCount));
     this.pendingManager.on('pending:error', (error: Error, transactionId?: TransactionId) => 
-      this.emit('pending:error', error, transactionId));
+      this.emit('pending:error', error instanceof WalletError ? error : new WalletError(WalletErrorCode.Unknown, error.message), transactionId));
     this.pendingManager.on('pending:auto_cancelled', (transactionId: TransactionId, reason: string) => 
       this.emit('pending:auto_cancelled', transactionId, reason));
     

@@ -307,7 +307,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
    * Get enriched transaction details
    */
   @withErrorContext('get_transaction_details', 'detail_service')
-  @withRetry(() => RetryConfigs.query())
+  @withRetry(RetryConfigs.database())
   async getTransactionDetails(
     transactionId: TransactionId,
     forceRefresh: boolean = false

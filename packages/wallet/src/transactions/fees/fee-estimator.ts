@@ -142,7 +142,7 @@ export class FeeEstimator {
    * Estimate fee for a transaction
    */
   @withErrorContext('estimate_fee', 'fee_estimator')
-  @withRetry({ maxAttempts: 3, backoffMs: 1000 })
+  @withRetry({ maxAttempts: 3, baseDelay: 1000 })
   async estimateFee(
     amount: MicroTari, 
     options: FeeEstimationOptions = {}

@@ -375,7 +375,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
     try {
       const transactionJson = await this.ffiBindings.wallet_get_pending_outbound_transaction(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       if (!transactionJson) {
