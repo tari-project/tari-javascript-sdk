@@ -17,10 +17,19 @@
 use napi_derive::napi;
 
 mod error;
+mod error_codes;
+mod error_mapping;
 mod types;
 mod wallet;
 
-pub use error::*;
+// Export legacy error types for backward compatibility
+pub use error::{LegacyTariWalletError, TariResult, JsErrorCode, JsErrorInfo};
+
+// Export new error system (preferred)
+pub use error_codes::{WalletErrorCode, ErrorCategory, ErrorSeverity};
+pub use error_mapping::{TariWalletError, ErrorContext, ErrorMapper};
+
+// Export other modules
 pub use types::*;
 pub use wallet::*;
 

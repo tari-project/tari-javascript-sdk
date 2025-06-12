@@ -1,14 +1,19 @@
 /**
- * Error handling and conversion for Tari wallet FFI
+ * Legacy error handling for backward compatibility
+ * 
+ * This module maintains compatibility with existing code while
+ * the new comprehensive error system is in error_mapping.rs
  */
 
+use crate::error_mapping::{TariWalletError as NewTariWalletError};
+use crate::error_codes::WalletErrorCode;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::fmt;
 
-/// Tari wallet error types that can be converted to JavaScript errors
+/// Legacy Tari wallet error types for backward compatibility
 #[derive(Debug)]
-pub enum TariWalletError {
+pub enum LegacyTariWalletError {
     InvalidConfig(String),
     WalletNotFound,
     WalletAlreadyExists,
@@ -22,43 +27,67 @@ pub enum TariWalletError {
     TemporaryFailure(String),
 }
 
-impl fmt::Display for TariWalletError {
+/// Alias for backward compatibility
+pub type TariWalletError = LegacyTariWalletError;
+
+impl fmt::Display for LegacyTariWalletError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TariWalletError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
-            TariWalletError::WalletNotFound => write!(f, "Wallet not found"),
-            TariWalletError::WalletAlreadyExists => write!(f, "Wallet already exists"),
-            TariWalletError::InsufficientFunds => write!(f, "Insufficient funds for transaction"),
-            TariWalletError::InvalidAddress(addr) => write!(f, "Invalid address: {}", addr),
-            TariWalletError::TransactionNotFound(id) => write!(f, "Transaction not found: {}", id),
-            TariWalletError::NetworkError(msg) => write!(f, "Network error: {}", msg),
-            TariWalletError::StorageError(msg) => write!(f, "Storage error: {}", msg),
-            TariWalletError::FFIError(msg) => write!(f, "FFI error: {}", msg),
-            TariWalletError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
-            TariWalletError::TemporaryFailure(msg) => write!(f, "Temporary failure: {}", msg),
+            LegacyTariWalletError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
+            LegacyTariWalletError::WalletNotFound => write!(f, "Wallet not found"),
+            LegacyTariWalletError::WalletAlreadyExists => write!(f, "Wallet already exists"),
+            LegacyTariWalletError::InsufficientFunds => write!(f, "Insufficient funds for transaction"),
+            LegacyTariWalletError::InvalidAddress(addr) => write!(f, "Invalid address: {}", addr),
+            LegacyTariWalletError::TransactionNotFound(id) => write!(f, "Transaction not found: {}", id),
+            LegacyTariWalletError::NetworkError(msg) => write!(f, "Network error: {}", msg),
+            LegacyTariWalletError::StorageError(msg) => write!(f, "Storage error: {}", msg),
+            LegacyTariWalletError::FFIError(msg) => write!(f, "FFI error: {}", msg),
+            LegacyTariWalletError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
+            LegacyTariWalletError::TemporaryFailure(msg) => write!(f, "Temporary failure: {}", msg),
         }
     }
 }
 
-impl std::error::Error for TariWalletError {}
+impl std::error::Error for LegacyTariWalletError {}
 
-impl From<TariWalletError> for napi::Error {
-    fn from(err: TariWalletError) -> Self {
+impl From<LegacyTariWalletError> for napi::Error {
+    fn from(err: LegacyTariWalletError) -> Self {
         let (status, message) = match &err {
-            TariWalletError::InvalidConfig(_) => (Status::InvalidArg, err.to_string()),
-            TariWalletError::WalletNotFound => (Status::GenericFailure, err.to_string()),
-            TariWalletError::WalletAlreadyExists => (Status::InvalidArg, err.to_string()),
-            TariWalletError::InsufficientFunds => (Status::GenericFailure, err.to_string()),
-            TariWalletError::InvalidAddress(_) => (Status::InvalidArg, err.to_string()),
-            TariWalletError::TransactionNotFound(_) => (Status::GenericFailure, err.to_string()),
-            TariWalletError::NetworkError(_) => (Status::GenericFailure, err.to_string()),
-            TariWalletError::StorageError(_) => (Status::GenericFailure, err.to_string()),
-            TariWalletError::FFIError(_) => (Status::GenericFailure, err.to_string()),
-            TariWalletError::ValidationError(_) => (Status::InvalidArg, err.to_string()),
-            TariWalletError::TemporaryFailure(_) => (Status::GenericFailure, err.to_string()),
+            LegacyTariWalletError::InvalidConfig(_) => (Status::InvalidArg, err.to_string()),
+            LegacyTariWalletError::WalletNotFound => (Status::GenericFailure, err.to_string()),
+            LegacyTariWalletError::WalletAlreadyExists => (Status::InvalidArg, err.to_string()),
+            LegacyTariWalletError::InsufficientFunds => (Status::GenericFailure, err.to_string()),
+            LegacyTariWalletError::InvalidAddress(_) => (Status::InvalidArg, err.to_string()),
+            LegacyTariWalletError::TransactionNotFound(_) => (Status::GenericFailure, err.to_string()),
+            LegacyTariWalletError::NetworkError(_) => (Status::GenericFailure, err.to_string()),
+            LegacyTariWalletError::StorageError(_) => (Status::GenericFailure, err.to_string()),
+            LegacyTariWalletError::FFIError(_) => (Status::GenericFailure, err.to_string()),
+            LegacyTariWalletError::ValidationError(_) => (Status::InvalidArg, err.to_string()),
+            LegacyTariWalletError::TemporaryFailure(_) => (Status::GenericFailure, err.to_string()),
         };
 
         napi::Error::new(status, message)
+    }
+}
+
+/// Convert legacy errors to new error system
+impl From<LegacyTariWalletError> for NewTariWalletError {
+    fn from(legacy: LegacyTariWalletError) -> Self {
+        let (code, message) = match legacy {
+            LegacyTariWalletError::InvalidConfig(msg) => (WalletErrorCode::InvalidConfig, msg),
+            LegacyTariWalletError::WalletNotFound => (WalletErrorCode::WalletNotFound, "Wallet not found".to_string()),
+            LegacyTariWalletError::WalletAlreadyExists => (WalletErrorCode::WalletExists, "Wallet already exists".to_string()),
+            LegacyTariWalletError::InsufficientFunds => (WalletErrorCode::InsufficientFunds, "Insufficient funds".to_string()),
+            LegacyTariWalletError::InvalidAddress(addr) => (WalletErrorCode::InvalidAddress, format!("Invalid address: {}", addr)),
+            LegacyTariWalletError::TransactionNotFound(id) => (WalletErrorCode::TransactionNotFound, format!("Transaction not found: {}", id)),
+            LegacyTariWalletError::NetworkError(msg) => (WalletErrorCode::NetworkUnavailable, msg),
+            LegacyTariWalletError::StorageError(msg) => (WalletErrorCode::DatabaseCorrupted, msg),
+            LegacyTariWalletError::FFIError(msg) => (WalletErrorCode::FFICallFailed, msg),
+            LegacyTariWalletError::ValidationError(msg) => (WalletErrorCode::InvalidFormat, msg),
+            LegacyTariWalletError::TemporaryFailure(msg) => (WalletErrorCode::OperationTimeout, msg),
+        };
+
+        NewTariWalletError::new(code, message).component("legacy")
     }
 }
 
