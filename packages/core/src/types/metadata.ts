@@ -635,7 +635,7 @@ export class MetadataUtils {
 }
 
 // Export utilities
-export { MetadataUtils as Utils };
+// MetadataUtils is already exported with its class declaration
 
 // Common metadata schemas
 export const CommonSchemas = {

@@ -791,7 +791,7 @@ export class EventUtils {
 }
 
 // Export utilities
-export { EventUtils as Utils };
+// EventUtils is already exported with its class declaration
 
 // Re-export enums used in events for convenience
 export { ConnectivityStatus } from './enums.js';

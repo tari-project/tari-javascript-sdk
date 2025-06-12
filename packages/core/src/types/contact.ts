@@ -713,4 +713,4 @@ export class ContactUtils {
 }
 
 // Export utilities
-export { ContactUtils as Utils };
+// ContactUtils is already exported with its class declaration

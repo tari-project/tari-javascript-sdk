@@ -710,4 +710,4 @@ export function createOutputFeaturesBuilder(): OutputFeaturesBuilder {
 }
 
 // Export utilities
-export { OutputFeaturesUtils as Utils };
+// OutputFeaturesUtils is already exported with its class declaration

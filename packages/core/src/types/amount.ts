@@ -626,5 +626,4 @@ export class Amount {
   }
 }
 
-// Export utilities with specific names to avoid conflicts
-export { AmountUtils, AmountSerializer };
+// All utilities are already exported with their class declarations

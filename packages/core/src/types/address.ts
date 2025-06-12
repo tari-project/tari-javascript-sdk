@@ -582,10 +582,4 @@ export function isValidAddress(address: string): address is TariAddressString {
   return AddressValidator.isValid(address);
 }
 
-// Export utilities with specific names to avoid conflicts
-export {
-  AddressValidator,
-  AddressConverter,
-  AddressParser,
-  AddressUtils
-};
+// All utilities are already exported with their class declarations

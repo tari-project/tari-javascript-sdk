@@ -520,7 +520,7 @@ export class CallbackUtils {
 }
 
 // Export utilities
-export { CallbackUtils as Utils };
+// CallbackUtils is already exported with its class declaration
 
 // Type helpers for extracting callback types
 export type ExtractCallbackArgs<T> = T extends (...args: infer A) => any ? A : never;

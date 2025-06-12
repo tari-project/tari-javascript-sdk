@@ -693,4 +693,4 @@ export class TransactionUtils {
 }
 
 // Export utilities
-export { TransactionUtils as Utils };
+// TransactionUtils is already exported with its class declaration

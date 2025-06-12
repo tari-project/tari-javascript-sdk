@@ -40,7 +40,7 @@ export interface ResourceHealth {
 /**
  * Resource monitoring configuration
  */
-export interface MonitoringConfig {
+export interface FFIMonitoringConfig {
   /** Leak detection threshold (ms) */
   leakThreshold: number;
   /** Warning threshold for resource count */
@@ -58,7 +58,7 @@ export interface MonitoringConfig {
 /**
  * Default monitoring configuration
  */
-const DEFAULT_MONITORING_CONFIG: MonitoringConfig = {
+const DEFAULT_MONITORING_CONFIG: FFIFFIMonitoringConfig = {
   leakThreshold: 300000, // 5 minutes
   resourceCountWarning: 100,
   resourceCountCritical: 500,
@@ -71,10 +71,10 @@ const DEFAULT_MONITORING_CONFIG: MonitoringConfig = {
  * Resource diagnostics manager
  */
 export class ResourceDiagnostics {
-  private readonly config: MonitoringConfig;
+  private readonly config: FFIMonitoringConfig;
   private readonly tracker = getResourceTracker();
 
-  constructor(config: Partial<MonitoringConfig> = {}) {
+  constructor(config: Partial<FFIMonitoringConfig> = {}) {
     this.config = { ...DEFAULT_MONITORING_CONFIG, ...config };
   }
 
@@ -377,7 +377,7 @@ export class ResourceDiagnostics {
 /**
  * Perform quick resource health check
  */
-export function checkResourceHealth(config?: Partial<MonitoringConfig>): ResourceHealth {
+export function checkResourceHealth(config?: Partial<FFIMonitoringConfig>): ResourceHealth {
   const diagnostics = new ResourceDiagnostics(config);
   return diagnostics.assessResourceHealth();
 }
@@ -385,7 +385,7 @@ export function checkResourceHealth(config?: Partial<MonitoringConfig>): Resourc
 /**
  * Log resource diagnostics to console
  */
-export function logResourceDiagnostics(config?: Partial<MonitoringConfig>): void {
+export function logResourceDiagnostics(config?: Partial<FFIMonitoringConfig>): void {
   const diagnostics = new ResourceDiagnostics(config);
   diagnostics.logDiagnostics();
 }
@@ -393,7 +393,7 @@ export function logResourceDiagnostics(config?: Partial<MonitoringConfig>): void
 /**
  * Generate comprehensive resource report
  */
-export function generateResourceReport(config?: Partial<MonitoringConfig>) {
+export function generateResourceReport(config?: Partial<FFIMonitoringConfig>) {
   const diagnostics = new ResourceDiagnostics(config);
   return diagnostics.generateDetailedReport();
 }
@@ -405,7 +405,7 @@ export class ResourceMonitor {
   private intervalId?: NodeJS.Timeout;
   private readonly diagnostics: ResourceDiagnostics;
 
-  constructor(config?: Partial<MonitoringConfig>) {
+  constructor(config?: Partial<FFIMonitoringConfig>) {
     this.diagnostics = new ResourceDiagnostics(config);
   }
 

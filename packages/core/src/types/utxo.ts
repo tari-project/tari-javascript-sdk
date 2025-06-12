@@ -731,4 +731,4 @@ export class UtxoUtils {
 }
 
 // Export utilities
-export { UtxoUtils as Utils };
+// UtxoUtils is already exported with its class declaration
