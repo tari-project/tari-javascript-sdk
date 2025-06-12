@@ -11,6 +11,7 @@ export * from './constants.js';
 
 // Branded types and utilities
 export * from './branded.js';
+export * from './conversions.js';
 export * from './utils.js';
 
 // Configuration interfaces

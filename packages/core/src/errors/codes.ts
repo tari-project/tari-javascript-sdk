@@ -58,6 +58,10 @@ export const enum WalletErrorCode {
   TransactionSendFailed = 2022,
   FeeEstimationFailed = 2023,
   InvalidStateTransition = 2024,
+  SelfSendNotAllowed = 2025,
+  AddressResolutionFailed = 2026,
+  DuplicateRecipients = 2027,
+  BalanceFailed = 2028,
   
   // Network errors (3000-3099)
   NetworkUnavailable = 3000,
@@ -246,6 +250,10 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.TransactionSendFailed]: ErrorCategory.Transaction,
   [WalletErrorCode.FeeEstimationFailed]: ErrorCategory.Transaction,
   [WalletErrorCode.InvalidStateTransition]: ErrorCategory.Transaction,
+  [WalletErrorCode.SelfSendNotAllowed]: ErrorCategory.Transaction,
+  [WalletErrorCode.AddressResolutionFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.DuplicateRecipients]: ErrorCategory.Transaction,
+  [WalletErrorCode.BalanceFailed]: ErrorCategory.Transaction,
   
   // Network errors (3000-3099)
   [WalletErrorCode.NetworkUnavailable]: ErrorCategory.Network,

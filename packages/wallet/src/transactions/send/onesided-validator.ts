@@ -12,7 +12,8 @@ import {
   WalletError,
   WalletErrorCode,
   withErrorContext,
-  getFFIBindings
+  getFFIBindings,
+  microTariFromFFI
 } from '@tari-project/tarijs-core';
 import { TariAddress } from '../../models';
 
@@ -186,10 +187,10 @@ export class OneSidedValidator {
       
       // Estimate total cost including fee
       const estimatedFee = feePerGram ? 
-        feePerGram * BigInt(250) : // Estimated transaction size
-        BigInt(Math.ceil(Number(amount) * 0.001)); // 0.1% fee fallback
+        microTariFromFFI((feePerGram as bigint) * BigInt(250)) : // Estimated transaction size
+        microTariFromFFI(BigInt(Math.ceil(Number(amount as bigint) * 0.001))); // 0.1% fee fallback
       
-      const totalCost = amount + estimatedFee;
+      const totalCost = microTariFromFFI((amount as bigint) + (estimatedFee as bigint));
 
       // Check available balance
       if (balance.available < totalCost) {
