@@ -101,6 +101,27 @@ export {
   DEFAULT_CANCELLATION_CONFIG
 } from './cancel/index.js';
 
+// Transaction detail enrichment
+export {
+  DetailService,
+  ConfirmationTracker,
+  MemoService,
+  type DetailServiceConfig,
+  type DetailServiceEvents,
+  type TransactionInput,
+  type TransactionOutput,
+  type TransactionKernel,
+  type FeeBreakdown,
+  type BlockInfo,
+  type TransactionDetails,
+  type DetailStatistics,
+  type ConfirmationTrackerEvents,
+  type ConfirmationStatistics,
+  type MemoServiceEvents,
+  type MemoStatistics,
+  DEFAULT_DETAIL_SERVICE_CONFIG
+} from './details/index.js';
+
 // Re-export core transaction types for convenience
 export type {
   TransactionInfo,
