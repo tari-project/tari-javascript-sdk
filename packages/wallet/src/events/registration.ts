@@ -12,7 +12,7 @@ import {
   createSafeEventCallback,
   type FFIEventCallback,
   type FFIEventPayload
-} from '@tari-project/tarijs-core/ffi/callbacks';
+} from '@tari-project/tarijs-core';
 import type { WalletHandle } from '@tari-project/tarijs-core';
 import type { WalletEventSystem } from './event-system.js';
 
@@ -81,7 +81,7 @@ export class EventRegistrationManager {
       (payloadJson: string) => {
         this.handleFFIEvent(walletHandle, payloadJson, eventSystem);
       },
-      (error, payload) => {
+      (error: Error, payload?: FFIEventPayload) => {
         this.handleFFIError(walletHandle, error, payload, eventSystem);
       }
     );

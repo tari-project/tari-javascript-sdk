@@ -108,8 +108,8 @@ export class StandardSender {
     await this.amountValidator.validateSufficientBalance(amount, options.feePerGram);
 
     // Step 4: Build transaction with all parameters
-    const builder = new TransactionBuilder()
-      .recipient(recipientAddress)
+    const builder = new TransactionBuilder({ walletHandle: this.walletHandle })
+      .to(recipientAddress)
       .amount(amount);
 
     // Add optional parameters
@@ -244,7 +244,7 @@ export class StandardSender {
     try {
       // Check balance
       if (estimatedFee > 0n) {
-        await this.amountValidator.validateSufficientBalance(amount, estimatedFee);
+        await this.amountValidator.validateSufficientBalance(amount, estimatedFee as MicroTari);
       }
     } catch (error: unknown) {
       if (error instanceof WalletError) {
@@ -259,8 +259,8 @@ export class StandardSender {
     return {
       isValid: errors.length === 0,
       recipientAddress: recipientAddress || TariAddress.empty(),
-      estimatedFee,
-      totalCost,
+      estimatedFee: estimatedFee as MicroTari,
+      totalCost: totalCost as MicroTari,
       errors
     };
   }

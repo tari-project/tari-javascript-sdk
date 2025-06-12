@@ -155,7 +155,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
    * Cancel a pending transaction
    */
   @withErrorContext('cancel_transaction', 'cancellation_service')
-  @withRetry(() => RetryConfigs.transaction())
+  @withRetry(RetryConfigs.transaction())
   async cancelTransaction(transactionId: TransactionId): Promise<CancellationResult> {
     this.ensureNotDisposed();
     
@@ -283,7 +283,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
         this.walletHandle
       );
       
-      const pendingTransactions: PendingOutboundTransaction[] = JSON.parse(pendingOutboundJson);
+      const pendingTransactions: PendingOutboundTransaction[] = JSON.parse(pendingOutboundJson) as PendingOutboundTransaction[];
       
       // Filter for cancellable transactions
       const cancellable: PendingOutboundTransaction[] = [];
@@ -405,7 +405,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
         WalletErrorCode.FFIOperationFailed,
         `FFI cancellation failed: ${error}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );
@@ -417,7 +417,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
    */
   private trackFailureReason(error: unknown): void {
     const reason = error instanceof WalletError ? 
-      error.code : 
+      error.code.toString() : 
       'Unknown Error';
     
     const existingReason = this.statistics.commonFailureReasons.find(r => r.reason === reason);

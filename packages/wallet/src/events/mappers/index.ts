@@ -64,7 +64,7 @@ export {
 } from './balance-mapper.js';
 
 // Import the register functions and registry for internal use
-import { defaultMapperRegistry } from './base-mapper.js';
+import { defaultMapperRegistry, EventMapperRegistry } from './base-mapper.js';
 import { registerTransactionMappers } from './transaction-mapper.js';
 import { registerConnectivityMappers } from './connectivity-mapper.js';
 import { registerSyncMappers } from './sync-mapper.js';
