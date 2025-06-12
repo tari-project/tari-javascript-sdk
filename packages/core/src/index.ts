@@ -33,9 +33,9 @@ export * from './types/output-features';
 export * from './types/callbacks';
 export * from './types/guards';
 
-// Re-export specific types from enums/events without conflicts
-export type { NetworkType, LogLevel, TransactionStatus } from './types/enums';
-export type { WalletEventType, TransactionEventType } from './types/events';
+// Re-export specific types and values from enums without conflicts
+export { NetworkType } from './types/enums';
+export type { LogLevel, TransactionStatus } from './types/enums';
 
 // Re-export error system (takes precedence over types for validation)
 export * from './errors/index';
@@ -55,10 +55,11 @@ export * from './ffi/resource';
 export * from './ffi/handle';
 export * from './ffi/tracker';
 export * from './ffi/diagnostics';
-export * from './ffi/call-manager';
-export * from './ffi/retry';
 export * from './ffi/platform-utils';
 export * from './ffi/memory';
+
+// Export specific items from call-manager to avoid CircuitState conflict
+export { FFICallError, ErrorClassification, CircuitState, type CallContext } from './ffi/call-manager';
 
 // Wallet handle wrapper (Task 8)
 export * from './wallet-handle';

@@ -139,13 +139,15 @@ export abstract class FFIResource implements Disposable {
       throw new TariError(
         ErrorCode.FFICallFailed,
         `Failed to dispose ${this.resourceType} resource: ${error instanceof Error ? error.message : String(error)}`,
-        false,
-        error instanceof Error ? error : undefined,
         {
-          resourceType: this.resourceType,
-          handle: this.getHandle?.(),
-          createdAt: this.resourceCreatedAt,
-          trackingId: this.resourceTrackingId,
+          recoverable: false,
+          cause: error instanceof Error ? error : undefined,
+          context: {
+            resourceType: this.resourceType,
+            handle: this.getHandle?.(),
+            createdAt: this.resourceCreatedAt,
+            trackingId: this.resourceTrackingId,
+          }
         }
       );
     }
@@ -180,12 +182,13 @@ export abstract class FFIResource implements Disposable {
       throw new TariError(
         ErrorCode.UseAfterFree,
         `Cannot use disposed ${this.resourceType} resource`,
-        false,
-        undefined,
         {
-          resourceType: this.resourceType,
-          handle: this.getHandle?.(),
-          disposedAt: new Date(),
+          recoverable: false,
+          context: {
+            resourceType: this.resourceType,
+            handle: this.getHandle?.(),
+            disposedAt: new Date(),
+          }
         }
       );
     }
@@ -291,9 +294,10 @@ export async function disposeAll(resources: unknown[]): Promise<void> {
     throw new TariError(
       ErrorCode.FFICallFailed,
       `Failed to dispose ${errors.length} resources`,
-      false,
-      undefined,
-      { errors: errors.map(e => e.message) }
+      {
+        recoverable: false,
+        context: { errors: errors.map(e => e.message) }
+      }
     );
   }
 }

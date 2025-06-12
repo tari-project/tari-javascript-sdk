@@ -401,9 +401,10 @@ export class PlatformManager {
         throw new TariError(
           ErrorCode.Unknown,
           `Unsupported platform: ${platform}`,
-          false,
-          undefined,
-          { platform }
+          {
+            recoverable: false,
+            context: { platform }
+          }
         );
     }
   }

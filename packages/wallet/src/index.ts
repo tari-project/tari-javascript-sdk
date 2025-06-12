@@ -13,9 +13,12 @@
 // Re-export core types for convenience
 export {
   NetworkType,
-  LogLevel,
   TariError,
   ErrorCode,
+} from '@tari-project/tarijs-core';
+
+export type { 
+  LogLevel 
 } from '@tari-project/tarijs-core';
 
 // Export wallet-specific modules

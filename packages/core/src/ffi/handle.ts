@@ -113,11 +113,12 @@ export abstract class ResourceHandle extends FFIResource {
       throw new TariError(
         ErrorCode.InvalidConfig,
         'Invalid handle value provided to ResourceHandle',
-        false,
-        undefined,
         {
-          handle: this.handle,
-          resourceType: this.type,
+          recoverable: false,
+          context: {
+            handle: this.handle,
+            resourceType: this.type,
+          }
         }
       );
     }
@@ -226,9 +227,10 @@ export class HandleFactory {
       throw new TariError(
         ErrorCode.InvalidConfig,
         'Handle must be a positive integer',
-        false,
-        undefined,
-        { rawHandle, resourceType }
+        {
+          recoverable: false,
+          context: { rawHandle, resourceType }
+        }
       );
     }
 
@@ -284,9 +286,10 @@ export function wrapHandle(rawHandle: number): WalletHandle {
     throw new TariError(
       ErrorCode.InvalidConfig,
       'Handle must be a positive integer',
-      false,
-      undefined,
-      { rawHandle }
+      {
+        recoverable: false,
+        context: { rawHandle }
+      }
     );
   }
   return createWalletHandle(rawHandle);
