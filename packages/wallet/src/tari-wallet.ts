@@ -25,6 +25,9 @@ import type {
   Balance,
   BalanceInfo
 } from './types/index.js';
+import { 
+  TariAddress as CoreTariAddress
+} from '@tari-project/tarijs-core';
 import { TariAddress, WalletBalance, TransactionId } from './models/index.js';
 import { 
   WalletState, 
@@ -45,6 +48,14 @@ import {
   type BalanceServiceConfig,
   type BalanceChangeListener
 } from './balance/index.js';
+import {
+  AddressService,
+  AddressFormatter,
+  EmojiConverter,
+  type AddressServiceConfig,
+  type FormattingOptions,
+  type EmojiConversionOptions
+} from './address/index.js';
 
 /**
  * Main Tari wallet class providing high-level wallet operations
@@ -59,6 +70,9 @@ export class TariWallet implements AsyncDisposable {
   private readonly stateManager: WalletStateManager;
   private readonly lifecycleManager: WalletLifecycleManager;
   private readonly balanceService: BalanceService;
+  private readonly addressService: AddressService;
+  private readonly addressFormatter: AddressFormatter;
+  private readonly emojiConverter: EmojiConverter;
   private readonly instanceId: string;
 
   /**
@@ -68,7 +82,8 @@ export class TariWallet implements AsyncDisposable {
     handle: WalletHandle, 
     config: WalletConfig, 
     hooks: LifecycleHooks = {},
-    balanceConfig?: BalanceServiceConfig
+    balanceConfig?: BalanceServiceConfig,
+    addressConfig?: AddressServiceConfig
   ) {
     this.instanceId = `wallet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.handle = handle;
@@ -77,6 +92,18 @@ export class TariWallet implements AsyncDisposable {
     this.stateManager = new WalletStateManager(this.instanceId);
     this.lifecycleManager = new WalletLifecycleManager(this.instanceId, this.stateManager, hooks);
     this.balanceService = new BalanceService(handle, balanceConfig);
+    
+    // Initialize address services
+    const defaultAddressConfig: AddressServiceConfig = {
+      network: config.network,
+      cacheSize: 100,
+      cacheTtl: 5 * 60 * 1000, // 5 minutes
+      autoCleanup: true,
+      ...addressConfig
+    };
+    this.addressService = new AddressService(defaultAddressConfig);
+    this.addressFormatter = new AddressFormatter();
+    this.emojiConverter = new EmojiConverter();
 
     // Initialize lifecycle
     this.initializeLifecycle();
@@ -88,30 +115,80 @@ export class TariWallet implements AsyncDisposable {
   // Core wallet operations
 
   /**
-   * Get wallet's primary address
+   * Get wallet's primary address with caching
    */
-  async getAddress(): Promise<TariAddress> {
-    try {
-      const bindings = getFFIBindings();
-      const addressStr = await bindings.getAddress(this.handle);
-      
-      // Convert FFI address string to TariAddress object
-      // TODO: Implement proper address parsing when address utilities are ready
-      return new TariAddress({
-        publicKey: addressStr,
-        network: this.config.network,
-        checksum: 0 // Will be calculated properly in address implementation
-      });
-    } catch (error) {
-      throw new WalletError(
-        WalletErrorCode.InternalError,
-        'Failed to retrieve wallet address',
-        {
-          severity: ErrorSeverity.Error,
-          cause: error as Error
-        }
-      );
-    }
+  async getAddress(): Promise<CoreTariAddress> {
+    this.ensureNotDestroyed();
+    
+    return this.addressService.getWalletAddress(this.handle);
+  }
+
+  /**
+   * Format address for display
+   */
+  formatAddress(address: CoreTariAddress, options: FormattingOptions): string {
+    this.ensureNotDestroyed();
+    
+    const formatted = this.addressFormatter.format(address, options);
+    return formatted.formatted;
+  }
+
+  /**
+   * Format wallet address for UI display
+   */
+  async formatWalletAddressForUI(maxLength = 20): Promise<string> {
+    this.ensureNotDestroyed();
+    
+    const address = await this.getAddress();
+    return this.formatAddress(address, {
+      format: 'base58' as const,
+      truncate: {
+        maxLength,
+        startChars: 8,
+        endChars: 8,
+        separator: '...'
+      }
+    });
+  }
+
+  /**
+   * Get wallet address as emoji ID
+   */
+  async getAddressAsEmoji(): Promise<string> {
+    this.ensureNotDestroyed();
+    
+    const address = await this.getAddress();
+    const result = await this.emojiConverter.addressToEmoji(address, {
+      network: this.config.network,
+      useCache: true
+    });
+    return result.result;
+  }
+
+  /**
+   * Convert emoji ID to address
+   */
+  async convertEmojiToAddress(emojiId: string): Promise<CoreTariAddress> {
+    this.ensureNotDestroyed();
+    
+    const result = await this.emojiConverter.emojiToAddress(emojiId, {
+      network: this.config.network,
+      validateInput: true,
+      useCache: true
+    });
+    
+    return new CoreTariAddress(result.result);
+  }
+
+  /**
+   * Validate a Tari address
+   */
+  async validateAddress(address: string): Promise<boolean> {
+    this.ensureNotDestroyed();
+    
+    return this.addressService.validateAddress(address, {
+      network: this.config.network
+    });
   }
 
   /**
@@ -626,6 +703,11 @@ export class TariWallet implements AsyncDisposable {
     if (this.stateManager.isDestroyed) {
       return; // Already destroyed
     }
+
+    // Cleanup address services
+    this.addressService.destroy();
+    this.addressFormatter.destroy();
+    this.emojiConverter.destroy();
 
     await this.lifecycleManager.destroy();
   }

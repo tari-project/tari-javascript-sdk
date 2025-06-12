@@ -34,7 +34,7 @@ export * from './types/callbacks';
 export * from './types/guards';
 
 // Re-export specific types and values from enums without conflicts
-export { NetworkType } from './types/enums';
+export { NetworkType, AddressFormat } from './types/enums';
 export type { LogLevel, TransactionStatus } from './types/enums';
 
 // Re-export error system (takes precedence over types for validation)
@@ -68,6 +68,9 @@ export { createWalletHandle, unwrapWalletHandle } from './ffi/types';
 
 // Wallet handle wrapper (Task 8)
 export * from './wallet-handle';
+
+// Domain models
+export * from './models/tari-address';
 
 // Debug utilities (Task 10) - conditional export for tree-shaking
 export * from './ffi/debug';
