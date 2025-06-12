@@ -84,6 +84,23 @@ export {
   type TimeoutStatistics
 } from './pending/index.js';
 
+// Transaction cancellation
+export {
+  CancellationService,
+  CancelValidator,
+  RefundHandler,
+  type CancellationServiceConfig,
+  type CancellationServiceEvents,
+  type CancellationResult,
+  type CancellationStatistics,
+  type CancellationValidationRules,
+  type ValidationResult,
+  type RefundResult,
+  type RefundHandlerEvents,
+  type RefundStatistics,
+  DEFAULT_CANCELLATION_CONFIG
+} from './cancel/index.js';
+
 // Re-export core transaction types for convenience
 export type {
   TransactionInfo,
