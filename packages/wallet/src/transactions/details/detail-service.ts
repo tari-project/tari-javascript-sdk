@@ -492,7 +492,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
   private async getBasicTransactionInfo(transactionId: TransactionId): Promise<TransactionInfo> {
     try {
       const transactionJson = await this.ffiBindings.wallet_get_transaction(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -590,7 +590,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
   private async getTransactionInputs(transactionId: TransactionId): Promise<TransactionInput[]> {
     try {
       const inputsJson = await this.ffiBindings.wallet_get_transaction_inputs?.(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -607,7 +607,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
   private async getTransactionOutputs(transactionId: TransactionId): Promise<TransactionOutput[]> {
     try {
       const outputsJson = await this.ffiBindings.wallet_get_transaction_outputs?.(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -624,7 +624,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
   private async getTransactionKernels(transactionId: TransactionId): Promise<TransactionKernel[]> {
     try {
       const kernelsJson = await this.ffiBindings.wallet_get_transaction_kernels?.(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -641,7 +641,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
   private async getBlockInfo(blockHeight: BlockHeight): Promise<BlockInfo | undefined> {
     try {
       const blockJson = await this.ffiBindings.wallet_get_block_info?.(
-        this.walletHandle.handle,
+        this.walletHandle,
         blockHeight
       );
       

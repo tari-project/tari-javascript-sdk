@@ -2,7 +2,7 @@
  * @fileoverview Tests for wallet models
  */
 
-import { TariAddress, WalletBalance, TransactionId } from './index';
+import { TariAddress, Balance, TransactionId } from './index';
 import { NetworkType } from '@tari-project/tarijs-core';
 
 describe('Wallet Models', () => {
@@ -47,7 +47,7 @@ describe('Wallet Models', () => {
     });
   });
 
-  describe('WalletBalance', () => {
+  describe('Balance', () => {
     const mockBalance = {
       available: 1000n,
       pendingIncoming: 200n,
@@ -56,7 +56,7 @@ describe('Wallet Models', () => {
     };
 
     it('should provide correct balance properties', () => {
-      const balance = new WalletBalance(mockBalance);
+      const balance = new Balance(mockBalance);
       
       expect(balance.available).toBe(1000n);
       expect(balance.pendingIncoming).toBe(200n);
@@ -65,17 +65,17 @@ describe('Wallet Models', () => {
     });
 
     it('should calculate total balance correctly', () => {
-      const balance = new WalletBalance(mockBalance);
+      const balance = new Balance(mockBalance);
       expect(balance.total).toBe(1200n); // available + pendingIncoming
     });
 
     it('should calculate spendable balance correctly', () => {
-      const balance = new WalletBalance(mockBalance);
+      const balance = new Balance(mockBalance);
       expect(balance.spendable).toBe(900n); // available - pendingOutgoing
     });
 
     it('should check sufficient balance correctly', () => {
-      const balance = new WalletBalance(mockBalance);
+      const balance = new Balance(mockBalance);
       
       expect(balance.hasEnoughFor(500n)).toBe(true);
       expect(balance.hasEnoughFor(1000n)).toBe(false);
@@ -83,7 +83,7 @@ describe('Wallet Models', () => {
     });
 
     it('should convert to JSON correctly', () => {
-      const balance = new WalletBalance(mockBalance);
+      const balance = new Balance(mockBalance);
       const json = balance.toJSON();
       
       expect(json).toEqual(mockBalance);

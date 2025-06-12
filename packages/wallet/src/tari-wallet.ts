@@ -28,7 +28,7 @@ import type {
 import { 
   TariAddress as CoreTariAddress
 } from '@tari-project/tarijs-core';
-import { TariAddress, WalletBalance, TransactionId } from './models/index.js';
+import { TariAddress, Balance, TransactionId } from './models/index.js';
 import { 
   WalletState, 
   WalletStateManager

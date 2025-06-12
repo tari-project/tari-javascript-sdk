@@ -96,9 +96,9 @@ export class OneSidedSender {
    * @param options Optional transaction parameters
    * @returns Promise resolving to transaction ID
    * 
-   * @throws {WalletError} WalletErrorCode.INVALID_ADDRESS - Invalid recipient address
-   * @throws {WalletError} WalletErrorCode.INVALID_AMOUNT - Invalid amount or zero
-   * @throws {WalletError} WalletErrorCode.INSUFFICIENT_FUNDS - Not enough balance
+   * @throws {WalletError} WalletErrorCode.InvalidAddress - Invalid recipient address
+   * @throws {WalletError} WalletErrorCode.InvalidAmount - Invalid amount or zero
+   * @throws {WalletError} WalletErrorCode.InsufficientFunds - Not enough balance
    * @throws {WalletError} WalletErrorCode.UTXO_SELECTION_FAILED - Cannot find suitable UTXOs
    * @throws {WalletError} WalletErrorCode.SCRIPT_CONSTRUCTION_FAILED - TariScript generation error
    * @throws {WalletError} WalletErrorCode.TRANSACTION_SEND_FAILED - FFI transaction failure

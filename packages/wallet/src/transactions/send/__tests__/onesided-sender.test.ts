@@ -249,7 +249,7 @@ describe('OneSidedSender', () => {
     it('should return validation errors for invalid recipient', async () => {
       // Mock recipient validator to throw error
       const mockValidateAndResolve = jest.fn().mockRejectedValue(
-        new WalletError(WalletErrorCode.INVALID_ADDRESS, 'Invalid address')
+        new WalletError(WalletErrorCode.InvalidAddress, 'Invalid address')
       );
       
       // Access the private validator and mock it

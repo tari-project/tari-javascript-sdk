@@ -62,7 +62,7 @@ export const enum WalletErrorCode {
   AddressResolutionFailed = 2026,
   DuplicateRecipients = 2027,
   BalanceFailed = 2028,
-  MemoOperationFailed = 2038,
+  MemoOperationFailed = 2029,
   
   // Network errors (3000-3099)
   NetworkUnavailable = 3000,
@@ -195,20 +195,20 @@ export const enum WalletErrorCode {
   // Additional missing error codes referenced in wallet package
   OperationInProgress = 9015,
   FFIError = 5017,
-  TransactionProcessingFailed = 2029,
-  AutoCancellationFailed = 2030,
-  AutoRefreshFailed = 2031,
-  TransactionCancellationFailed = 2032,
-  TransactionQueryFailed = 2033,
-  TransactionDetailRetrievalFailed = 2034,
-  ConfirmationTrackingFailed = 2035,
-  TransactionCancellationNotAllowed = 2036,
-  BalanceQueryFailed = 2037,
-  AmountBelowDustLimit = 2038,
-  AmountExceedsMaximum = 2039,
-  InsufficientUtxos = 2040,
-  UtxoValidationFailed = 2041,
-  InsufficientFundsWithMargin = 2042,
+  TransactionProcessingFailed = 2030,
+  AutoCancellationFailed = 2031,
+  AutoRefreshFailed = 2032,
+  TransactionCancellationFailed = 2033,
+  TransactionQueryFailed = 2034,
+  TransactionDetailRetrievalFailed = 2035,
+  ConfirmationTrackingFailed = 2036,
+  TransactionCancellationNotAllowed = 2037,
+  BalanceQueryFailed = 2038,
+  AmountBelowDustLimit = 2039,
+  AmountExceedsMaximum = 2040,
+  InsufficientUtxos = 2041,
+  UtxoValidationFailed = 2042,
+  InsufficientFundsWithMargin = 2043,
   
   // FFI errors continued
   FFIOperationFailed = 5018,
@@ -417,7 +417,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.OperationInProgress]: ErrorCategory.General,
   [WalletErrorCode.FeatureNotEnabled]: ErrorCategory.General,
 
-  // Additional error codes
+  // Additional error codes 
   [WalletErrorCode.TransactionCancellationFailed]: ErrorCategory.Transaction,
   [WalletErrorCode.TransactionQueryFailed]: ErrorCategory.Transaction,
   [WalletErrorCode.TransactionDetailRetrievalFailed]: ErrorCategory.Transaction,

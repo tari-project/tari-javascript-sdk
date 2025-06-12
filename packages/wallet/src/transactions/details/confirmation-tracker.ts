@@ -349,7 +349,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
   private async getCurrentConfirmationCount(transactionId: TransactionId): Promise<number> {
     try {
       const confirmationsJson = await this.ffiBindings.wallet_get_transaction_confirmations?.(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -371,7 +371,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
   private async getTransactionBlockHeight(transactionId: TransactionId): Promise<BlockHeight | undefined> {
     try {
       const transactionJson = await this.ffiBindings.wallet_get_transaction(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -392,7 +392,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
   private async updateBlockchainHeight(): Promise<void> {
     try {
       const heightJson = await this.ffiBindings.wallet_get_blockchain_height?.(
-        this.walletHandle.handle
+        this.walletHandle
       );
       
       if (heightJson) {

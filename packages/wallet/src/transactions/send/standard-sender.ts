@@ -72,10 +72,10 @@ export class StandardSender {
    * @param options Optional transaction parameters
    * @returns Promise resolving to transaction ID
    * 
-   * @throws {WalletError} WalletErrorCode.INVALID_ADDRESS - Invalid recipient address
-   * @throws {WalletError} WalletErrorCode.INVALID_AMOUNT - Invalid amount or zero
-   * @throws {WalletError} WalletErrorCode.INSUFFICIENT_FUNDS - Not enough balance
-   * @throws {WalletError} WalletErrorCode.SELF_SEND_NOT_ALLOWED - Attempting to send to own address
+   * @throws {WalletError} WalletErrorCode.InvalidAddress - Invalid recipient address
+   * @throws {WalletError} WalletErrorCode.InvalidAmount - Invalid amount or zero
+   * @throws {WalletError} WalletErrorCode.InsufficientFunds - Not enough balance
+   * @throws {WalletError} WalletErrorCode.SelfSendNotAllowed - Attempting to send to own address
    * @throws {WalletError} WalletErrorCode.FEE_ESTIMATION_FAILED - Unable to estimate fees
    * @throws {WalletError} WalletErrorCode.TRANSACTION_SEND_FAILED - FFI transaction failure
    */
@@ -92,7 +92,7 @@ export class StandardSender {
     
     if (amount <= 0n) {
       throw new WalletError(
-        WalletErrorCode.INVALID_AMOUNT,
+        WalletErrorCode.InvalidAmount,
         'Transaction amount must be greater than zero',
         { context: { operation: 'sendTransaction', amount: amount.toString() } }
       );

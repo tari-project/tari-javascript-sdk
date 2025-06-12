@@ -33,9 +33,9 @@ export class RecipientValidator {
    * @param allowSelfSend Whether to allow sending to own addresses
    * @returns Promise resolving to validated TariAddress
    * 
-   * @throws {WalletError} WalletErrorCode.INVALID_ADDRESS - Invalid address format
-   * @throws {WalletError} WalletErrorCode.SELF_SEND_NOT_ALLOWED - Attempting self-send when disabled
-   * @throws {WalletError} WalletErrorCode.ADDRESS_RESOLUTION_FAILED - Cannot resolve address
+   * @throws {WalletError} WalletErrorCode.InvalidAddress - Invalid address format
+   * @throws {WalletError} WalletErrorCode.SelfSendNotAllowed - Attempting self-send when disabled
+   * @throws {WalletError} WalletErrorCode.AddressResolutionFailed - Cannot resolve address
    */
   @withErrorContext('validate_recipient', 'transaction')
   async validateAndResolve(
@@ -86,7 +86,7 @@ export class RecipientValidator {
 
     if (recipients.length === 0) {
       throw new WalletError(
-        WalletErrorCode.INVALID_PARAMETERS,
+        WalletErrorCode.InvalidParameters,
         'At least one recipient is required',
         { context: { operation: 'validateMultipleRecipients' } }
       );
@@ -96,7 +96,7 @@ export class RecipientValidator {
     const validationPromises = recipients.map((recipient, index) =>
       this.validateAndResolve(recipient, allowSelfSend).catch(error => {
         throw new WalletError(
-          error.code || WalletErrorCode.INVALID_ADDRESS,
+          error.code || WalletErrorCode.InvalidAddress,
           `Invalid recipient at index ${index}: ${error.message}`,
           { 
             cause: error,
@@ -201,7 +201,7 @@ export class RecipientValidator {
     // Check if this is a self-send
     if (!allowSelfSend && await this.isSelfSend(address)) {
       throw new WalletError(
-        WalletErrorCode.SELF_SEND_NOT_ALLOWED,
+        WalletErrorCode.SelfSendNotAllowed,
         'Sending to own address is not allowed',
         { 
           context: {
@@ -241,7 +241,7 @@ export class RecipientValidator {
       }
 
       throw new WalletError(
-        WalletErrorCode.ADDRESS_RESOLUTION_FAILED,
+        WalletErrorCode.AddressResolutionFailed,
         `Unable to resolve address: ${addressStr}`,
         { 
           cause: directError,
@@ -261,7 +261,7 @@ export class RecipientValidator {
       return TariAddress.fromPublicKey(publicKey);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.INVALID_ADDRESS,
+        WalletErrorCode.InvalidAddress,
         `Invalid emoji ID: ${emojiId}`,
         { 
           cause: error,
@@ -279,7 +279,7 @@ export class RecipientValidator {
       return TariAddress.fromBase58(base58);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.INVALID_ADDRESS,
+        WalletErrorCode.InvalidAddress,
         `Invalid base58 address: ${base58}`,
         { 
           cause: error,
@@ -297,7 +297,7 @@ export class RecipientValidator {
       return TariAddress.fromHex(hex);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.INVALID_ADDRESS,
+        WalletErrorCode.InvalidAddress,
         `Invalid hex address: ${hex}`,
         { 
           cause: error,
@@ -337,7 +337,7 @@ export class RecipientValidator {
     
     if (uniqueAddresses.size !== addresses.length) {
       throw new WalletError(
-        WalletErrorCode.DUPLICATE_RECIPIENTS,
+        WalletErrorCode.DuplicateRecipients,
         'Duplicate recipient addresses are not allowed',
         { 
           context: {

@@ -10,7 +10,7 @@ import {
   WalletErrorCode,
   FFIBindings 
 } from '@tari-project/tarijs-core';
-import { WalletBalance } from '../../../models';
+import { Balance } from '../../../models';
 import { 
   AmountValidator, 
   type AmountValidationConfig,
@@ -28,9 +28,9 @@ jest.mock('@tari-project/tarijs-core', () => ({
   validateRequired: jest.fn()
 }));
 
-// Mock WalletBalance
+// Mock Balance
 jest.mock('../../../models', () => ({
-  WalletBalance: {
+  Balance: {
     from: jest.fn(),
   }
 }));
@@ -38,7 +38,7 @@ jest.mock('../../../models', () => ({
 describe('AmountValidator', () => {
   let validator: AmountValidator;
   let mockWalletHandle: WalletHandle;
-  let mockBalance: jest.Mocked<WalletBalance>;
+  let mockBalance: jest.Mocked<Balance>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -50,7 +50,7 @@ describe('AmountValidator', () => {
       total: 1000000n,
     } as any;
 
-    (WalletBalance.from as jest.Mock).mockReturnValue(mockBalance);
+    (Balance.from as jest.Mock).mockReturnValue(mockBalance);
     (FFIBindings.walletGetBalance as jest.Mock).mockResolvedValue({
       available: 1000000n,
       pending_incoming: 0n,

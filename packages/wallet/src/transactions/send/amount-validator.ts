@@ -10,7 +10,7 @@ import {
     microTariFromFFI,
     microTariToFFI,
 } from '@tari-project/tarijs-core';
-import { WalletBalance } from '../../models';
+import { Balance } from '../../models';
 
 /**
  * Configuration for amount validation
@@ -49,7 +49,7 @@ export const DEFAULT_AMOUNT_CONFIG: AmountValidationConfig = {
 export class AmountValidator {
     private config: AmountValidationConfig;
     private cachedBalance?: {
-        balance: WalletBalance;
+        balance: Balance;
         timestamp: number;
         ttl: number;
     };
@@ -74,11 +74,11 @@ export class AmountValidator {
      * @param estimatedFee Estimated transaction fee
      * @returns Promise resolving when validation passes
      * 
-     * @throws {WalletError} WalletErrorCode.INVALID_AMOUNT - Invalid amount
-     * @throws {WalletError} WalletErrorCode.AMOUNT_BELOW_DUST_LIMIT - Amount too small
-     * @throws {WalletError} WalletErrorCode.AMOUNT_EXCEEDS_MAXIMUM - Amount too large
-     * @throws {WalletError} WalletErrorCode.INSUFFICIENT_FUNDS - Not enough balance
-     * @throws {WalletError} WalletErrorCode.INSUFFICIENT_UTXOS - UTXOs not available
+     * @throws {WalletError} WalletErrorCode.InvalidAmount - Invalid amount
+     * @throws {WalletError} WalletErrorCode.AmountBelowDustLimit - Amount too small
+     * @throws {WalletError} WalletErrorCode.AmountExceedsMaximum - Amount too large
+     * @throws {WalletError} WalletErrorCode.InsufficientFunds - Not enough balance
+     * @throws {WalletError} WalletErrorCode.InsufficientUtxos - UTXOs not available
      */
     @withErrorContext('validate_sufficient_balance', 'transaction')
     async validateSufficientBalance(
@@ -101,7 +101,7 @@ export class AmountValidator {
         // Check available balance
         if (microTariToFFI(availableBalance) < microTariToFFI(totalRequired)) {
             throw new WalletError(
-                WalletErrorCode.INSUFFICIENT_FUNDS,
+                WalletErrorCode.InsufficientFunds,
                 `Insufficient funds: need ${totalRequired} MicroTari, have ${balance.available} MicroTari`,
                 {
                     context: {
@@ -117,7 +117,7 @@ export class AmountValidator {
         // Check safety margin if enabled
         if (this.config.safetyMarginPercent > 0 && microTariToFFI(availableBalance) < microTariToFFI(totalWithMargin)) {
             throw new WalletError(
-                WalletErrorCode.INSUFFICIENT_FUNDS_WITH_MARGIN,
+                WalletErrorCode.InsufficientFunds_WITH_MARGIN,
                 `Insufficient funds including safety margin: need ${totalWithMargin} MicroTari, have ${balance.available} MicroTari`,
                 {
                     context: {
@@ -153,7 +153,7 @@ export class AmountValidator {
 
         if (amounts.length === 0) {
             throw new WalletError(
-                WalletErrorCode.INVALID_PARAMETERS,
+                WalletErrorCode.InvalidParameters,
                 'At least one amount is required'
             );
         }
@@ -164,7 +164,7 @@ export class AmountValidator {
                 this.validateBasicAmount(amount);
             } catch (error: any) {
                 throw new WalletError(
-                    error.code || WalletErrorCode.INVALID_AMOUNT,
+                    error.code || WalletErrorCode.InvalidAmount,
                     `Invalid amount at index ${index}: ${error.message}`,
                     {
                         context: {
@@ -190,7 +190,7 @@ export class AmountValidator {
         const grandTotalWithMargin = microTariFromFFI(microTariToFFI(grandTotal) + microTariToFFI(safetyMargin));
         if (microTariToFFI(availableBalance) < microTariToFFI(grandTotalWithMargin)) {
             throw new WalletError(
-                WalletErrorCode.INSUFFICIENT_FUNDS,
+                WalletErrorCode.InsufficientFunds,
                 `Insufficient funds for batch transaction: need ${grandTotalWithMargin} MicroTari, have ${balance.available} MicroTari`,
                 {
                     context: {
@@ -251,7 +251,7 @@ export class AmountValidator {
      * @returns Promise resolving to current wallet balance
      */
     @withErrorContext('get_current_balance', 'transaction')
-    async getCurrentBalance(forceRefresh = false): Promise<WalletBalance> {
+    async getCurrentBalance(forceRefresh = false): Promise<Balance> {
         const now = Date.now();
         const cacheExpired = !this.cachedBalance ||
             now > this.cachedBalance.timestamp + this.cachedBalance.ttl;
@@ -262,7 +262,7 @@ export class AmountValidator {
                 const balanceData = await ffiBindings.walletGetBalance(this.walletHandle);
 
                 this.cachedBalance = {
-                    balance: new WalletBalance({
+                    balance: new Balance({
                         available: BigInt(balanceData.available),
                         pendingIncoming: BigInt(balanceData.pendingIncoming),
                         pendingOutgoing: BigInt(balanceData.pendingOutgoing),
@@ -274,7 +274,7 @@ export class AmountValidator {
                 };
             } catch (error: any) {
                 throw new WalletError(
-                    WalletErrorCode.BALANCE_QUERY_FAILED,
+                    WalletErrorCode.BalanceQueryFailed,
                     'Failed to retrieve wallet balance',
                     {
                         cause: error
@@ -328,7 +328,7 @@ export class AmountValidator {
 
         if (microTariToFFI(amount) <= 0n) {
             throw new WalletError(
-                WalletErrorCode.INVALID_AMOUNT,
+                WalletErrorCode.InvalidAmount,
                 'Transaction amount must be greater than zero',
                 {
                     context: {
@@ -340,7 +340,7 @@ export class AmountValidator {
 
         if (!this.isAboveDustLimit(amount)) {
             throw new WalletError(
-                WalletErrorCode.AMOUNT_BELOW_DUST_LIMIT,
+                WalletErrorCode.AmountBelowDustLimit,
                 `Transaction amount ${amount} is below dust limit of ${this.config.minimumAmount}`,
                 {
                     context: {
@@ -353,7 +353,7 @@ export class AmountValidator {
 
         if (!this.isBelowMaximumLimit(amount)) {
             throw new WalletError(
-                WalletErrorCode.AMOUNT_EXCEEDS_MAXIMUM,
+                WalletErrorCode.AmountExceedsMaximum,
                 `Transaction amount ${amount} exceeds maximum limit of ${this.config.maximumAmount}`,
                 {
                     context: {
@@ -388,7 +388,7 @@ export class AmountValidator {
 
             if (microTariToFFI(availableBalance) < microTariToFFI(requiredAmount)) {
                 throw new WalletError(
-                    WalletErrorCode.INSUFFICIENT_UTXOS,
+                    WalletErrorCode.InsufficientUtxos,
                     `Insufficient UTXOs available: need ${requiredAmount}, have ${balance.available}`,
                     {
                         context: {
@@ -404,7 +404,7 @@ export class AmountValidator {
             }
 
             throw new WalletError(
-                WalletErrorCode.UTXO_VALIDATION_FAILED,
+                WalletErrorCode.UtxoValidationFailed,
                 'Failed to validate UTXO availability',
                 {
                     context: {

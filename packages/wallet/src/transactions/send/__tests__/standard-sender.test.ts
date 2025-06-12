@@ -211,7 +211,7 @@ describe('StandardSender', () => {
 
     it('should return invalid result for invalid recipient', async () => {
       (TariAddress.fromString as jest.Mock).mockRejectedValue(
-        new WalletError(WalletErrorCode.INVALID_ADDRESS, 'Invalid address')
+        new WalletError(WalletErrorCode.InvalidAddress, 'Invalid address')
       );
 
       const result = await standardSender.validateTransactionParams(

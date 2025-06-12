@@ -19,7 +19,7 @@ import {
   type MicroTari,
   type PendingOutboundTransaction,
   type UnixTimestamp,
-  type WalletBalance
+  type Balance
 } from '@tari-project/tarijs-core';
 import type { CancellationServiceConfig } from './cancellation-service.js';
 
@@ -40,7 +40,7 @@ export interface RefundResult {
   /** Timestamp when refund was processed */
   timestamp: UnixTimestamp;
   /** Updated wallet balance after refund */
-  newBalance?: WalletBalance;
+  newBalance?: Balance;
   /** Error details if refund failed */
   error?: Error;
 }
@@ -52,7 +52,7 @@ export interface RefundHandlerEvents {
   'refund:started': (transactionId: TransactionId) => void;
   'refund:processed': (transactionId: TransactionId, amount: MicroTari) => void;
   'refund:failed': (transactionId: TransactionId, error: Error) => void;
-  'balance:updated': (newBalance: WalletBalance) => void;
+  'balance:updated': (newBalance: Balance) => void;
 }
 
 /**
@@ -128,7 +128,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
       const totalRefund = (BigInt(refundAmount) + BigInt(refundFee)) as MicroTari;
       
       // Process the refund by updating wallet state
-      const newBalance = await this.updateWalletBalance(currentBalance, totalRefund);
+      const newBalance = await this.updateBalance(currentBalance, totalRefund);
       
       // Update statistics
       this.updateStatistics(refundAmount, refundFee);
@@ -276,7 +276,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
       const currentBalance = await this.getCurrentBalance();
       
       // Update balance with total refund
-      const newBalance = await this.updateWalletBalance(
+      const newBalance = await this.updateBalance(
         currentBalance, 
         totalRefundAmount as MicroTari
       );
@@ -331,13 +331,13 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
   /**
    * Get current wallet balance
    */
-  private async getCurrentBalance(): Promise<WalletBalance> {
+  private async getCurrentBalance(): Promise<Balance> {
     try {
       const balanceJson = await this.ffiBindings.walletGetBalance(this.walletHandle);
       return JSON.parse(balanceJson);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.BALANCE_QUERY_FAILED,
+        WalletErrorCode.BalanceQueryFailed,
         `Failed to get current balance: ${error}`,
         { cause: error }
       );
@@ -347,10 +347,10 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
   /**
    * Update wallet balance with refund amount
    */
-  private async updateWalletBalance(
-    currentBalance: WalletBalance,
+  private async updateBalance(
+    currentBalance: Balance,
     refundAmount: MicroTari
-  ): Promise<WalletBalance> {
+  ): Promise<Balance> {
     // In a real implementation, this would call FFI to update the balance
     // For now, we calculate the new balance locally
     
@@ -358,7 +358,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
     const newPendingIncoming = currentBalance.pendingIncoming;
     const newPendingOutgoing = (BigInt(currentBalance.pendingOutgoing) - BigInt(refundAmount)) as MicroTari;
     
-    const newBalance: WalletBalance = {
+    const newBalance: Balance = {
       available: newAvailable,
       pendingIncoming: newPendingIncoming,
       pendingOutgoing: microTariFromFFI(BigInt(Math.max(0, Number(newPendingOutgoing)))),
@@ -367,7 +367,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
     
     // Note: In a real implementation, you would likely need to call an FFI function
     // to properly update the wallet's internal state, such as:
-    // await this.ffiBindings.wallet_update_balance(this.walletHandle.handle, newBalance);
+    // await this.ffiBindings.wallet_update_balance(this.walletHandle, newBalance);
     
     return newBalance;
   }

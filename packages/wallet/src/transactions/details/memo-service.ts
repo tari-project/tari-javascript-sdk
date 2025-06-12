@@ -460,7 +460,7 @@ export class MemoService extends TypedEventEmitter {
       }
       
       await this.ffiBindings.wallet_set_transaction_memo(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId,
         memo,
         encrypted
@@ -487,7 +487,7 @@ export class MemoService extends TypedEventEmitter {
       }
       
       const memoJson = await this.ffiBindings.wallet_get_transaction_memo(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -507,7 +507,7 @@ export class MemoService extends TypedEventEmitter {
       }
       
       await this.ffiBindings.wallet_delete_transaction_memo(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
     } catch (error) {
@@ -524,7 +524,7 @@ export class MemoService extends TypedEventEmitter {
         return;
       }
       
-      await this.ffiBindings.wallet_clear_transaction_memos(this.walletHandle.handle);
+      await this.ffiBindings.wallet_clear_transaction_memos(this.walletHandle);
     } catch (error) {
       // FFI memo clearing failed, continue with cache-only clearing
     }
@@ -541,7 +541,7 @@ export class MemoService extends TypedEventEmitter {
       }
       
       const memosJson = await this.ffiBindings.wallet_get_all_transaction_memos(
-        this.walletHandle.handle
+        this.walletHandle
       );
       
       if (memosJson) {
