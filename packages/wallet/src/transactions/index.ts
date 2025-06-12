@@ -70,6 +70,20 @@ export {
   FILTER_PRESETS
 } from './history/index.js';
 
+// Pending transaction management
+export {
+  PendingTransactionManager,
+  PendingTransactionTracker,
+  TimeoutHandler,
+  type PendingManagerConfig,
+  type PendingManagerEvents,
+  type PendingManagerStatistics,
+  type PendingTrackerEvents,
+  type PendingTrackerStatistics,
+  type TimeoutHandlerEvents,
+  type TimeoutStatistics
+} from './pending/index.js';
+
 // Re-export core transaction types for convenience
 export type {
   TransactionInfo,
