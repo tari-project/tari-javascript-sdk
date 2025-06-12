@@ -149,19 +149,18 @@ export class StandardSender {
 
     // Step 7: Submit transaction via FFI
     try {
-      const txId = await FFIBindings.walletSendTransaction(
+      const txId = await FFIBindings.sendTransaction(
         this.walletHandle,
-        recipientAddress.handle,
+        recipientAddress.toString(),
         amount,
         feePerGram,
-        transactionParams.message || '',
-        false // isOneSided = false for standard transactions
+        transactionParams.message || ''
       );
 
-      return TransactionId.from(txId);
+      return txId as TransactionId;
     } catch (error: unknown) {
       throw new WalletError(
-        WalletErrorCode.TRANSACTION_SEND_FAILED,
+        WalletErrorCode.TransactionSendFailed,
         'Failed to send transaction via FFI',
         {
           cause: error,

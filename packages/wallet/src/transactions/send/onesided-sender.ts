@@ -141,8 +141,8 @@ export class OneSidedSender {
     );
 
     // Step 5: Build transaction with one-sided parameters
-    const builder = new TransactionBuilder()
-      .recipient(targetAddress)
+    const builder = new TransactionBuilder({ walletHandle: this.walletHandle })
+      .to(targetAddress)
       .amount(amount)
       .oneSided(true); // Mark as one-sided transaction
 

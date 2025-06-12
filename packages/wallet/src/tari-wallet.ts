@@ -22,13 +22,14 @@ import type {
   WalletEventHandlers,
   Contact,
   PeerInfo,
+  Balance,
   BalanceInfo
 } from './types/index.js';
 import { 
   TariAddress as CoreTariAddress,
   type TransactionId
 } from '@tari-project/tarijs-core';
-import { TariAddress, Balance } from './models/index.js';
+import { TariAddress, BalanceModel } from './models/index.js';
 import { 
   WalletState, 
   WalletStateManager
@@ -924,28 +925,7 @@ export class TariWallet implements AsyncDisposable {
     }
   }
 
-  /**
-   * Cancel a pending transaction
-   */
-  async cancelTransaction(_transactionId: TransactionId): Promise<void> {
-    try {
-      // TODO: Implement when transaction cancellation FFI is available
-      throw new WalletError(
-        WalletErrorCode.NotImplemented,
-        'Transaction cancellation not yet implemented'
-      );
-    } catch (error: unknown) {
-      throw new WalletError(
-        WalletErrorCode.TransactionFailed,
-        'Failed to cancel transaction',
-        {
-          severity: ErrorSeverity.Error,
-          cause: error as Error,
-          
-        }
-      );
-    }
-  }
+
 
   // Contact management
 
@@ -1046,9 +1026,9 @@ export class TariWallet implements AsyncDisposable {
   // Event handling
 
   /**
-   * Register event handlers
+   * Register simple event handlers (legacy)
    */
-  on<K extends keyof WalletEventHandlers>(
+  addHandler<K extends keyof WalletEventHandlers>(
     event: K,
     handler: WalletEventHandlers[K]
   ): void {
@@ -1058,9 +1038,9 @@ export class TariWallet implements AsyncDisposable {
   }
 
   /**
-   * Unregister event handlers
+   * Unregister simple event handlers (legacy)
    */
-  off<K extends keyof WalletEventHandlers>(
+  removeHandler<K extends keyof WalletEventHandlers>(
     event: K,
     handler: WalletEventHandlers[K]
   ): void {

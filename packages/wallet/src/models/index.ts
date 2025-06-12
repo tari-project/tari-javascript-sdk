@@ -7,16 +7,16 @@
 
 import { TariError, ErrorCode, TariAddress } from '@tari-project/tarijs-core';
 import type { 
-  Balance
+  Balance as BalanceData
 } from '../types/index';
 
 /**
  * Enhanced balance model with computed properties
  */
 class Balance {
-  private readonly balance: Balance;
+  private readonly balance: BalanceData;
 
-  constructor(balance: Balance) {
+  constructor(balance: BalanceData) {
     this.balance = { ...balance };
   }
 
@@ -67,7 +67,7 @@ class Balance {
   /**
    * Get balance as plain object
    */
-  toJSON(): Balance {
+  toJSON(): BalanceData {
     return { ...this.balance };
   }
 }
@@ -111,4 +111,4 @@ class TransactionId {
 }
 
 // Export all models
-export { TariAddress, Balance, TransactionId };
+export { TariAddress, Balance as BalanceModel, TransactionId };

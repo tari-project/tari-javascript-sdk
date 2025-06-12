@@ -10,7 +10,6 @@ import {
   WalletError,
   WalletErrorCode,
   withErrorContext,
-  TypedEventEmitter,
   type TransactionId,
   type WalletHandle,
   type TariAddress,
@@ -52,6 +51,7 @@ import {
   type HistoryEntry
 } from '../transactions/history/history-service.js';
 import { TransactionRepository } from '../transactions/transaction-repository.js';
+import { EventEmitter } from 'events';
 
 /**
  * Configuration for the transaction API
@@ -171,7 +171,7 @@ export interface TransactionAPIStatistics {
  * - Event forwarding and management
  * - Statistics and monitoring
  */
-export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
+export class TransactionAPI extends EventEmitter {
   private readonly walletHandle: WalletHandle;
   private readonly config: TransactionAPIConfig;
   
@@ -684,16 +684,21 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       this.emit('pending:auto_cancelled', transactionId, reason));
     
     // Forward cancellation service events
-    this.cancellationService.on('cancellation:started', (transactionId: TransactionId) => 
-      this.emit('cancellation:started', transactionId));
-    this.cancellationService.on('cancellation:completed', (transactionId: TransactionId, refundAmount: MicroTari) => 
-      this.emit('cancellation:completed', transactionId, refundAmount));
-    this.cancellationService.on('cancellation:failed', (transactionId: TransactionId, error: Error) => 
-      this.emit('cancellation:failed', transactionId, error));
-    this.cancellationService.on('refund:processed', (transactionId: TransactionId, amount: MicroTari) => 
-      this.emit('refund:processed', transactionId, amount));
-    this.cancellationService.on('refund:failed', (transactionId: TransactionId, error: Error) => 
-      this.emit('refund:failed', transactionId, error));
+    this.cancellationService.on('cancellation:started', (transactionId: TransactionId) => {
+      this.emit('cancellation:started', transactionId);
+    });
+    this.cancellationService.on('cancellation:completed', (transactionId: TransactionId, refundAmount: MicroTari) => {
+      this.emit('cancellation:completed', transactionId, refundAmount);
+    });
+    this.cancellationService.on('cancellation:failed', (transactionId: TransactionId, error: Error) => {
+      this.emit('cancellation:failed', transactionId, error);
+    });
+    this.cancellationService.on('refund:processed', (transactionId: TransactionId, amount: MicroTari) => {
+      this.emit('refund:processed', transactionId, amount);
+    });
+    this.cancellationService.on('refund:failed', (transactionId: TransactionId, error: Error) => {
+      this.emit('refund:failed', transactionId, error);
+    });
     
     // Forward detail service events
     this.detailService.on('details:enriched', (transactionId: TransactionId, details: any) => 
