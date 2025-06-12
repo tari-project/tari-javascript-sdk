@@ -14,6 +14,7 @@ import {
   type TransactionId,
   type WalletHandle,
   type TariAddress,
+  type TariAddressString,
   type MicroTari,
   type TransactionInfo,
   type TransactionFilter,
@@ -311,18 +312,20 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
   ): Promise<TransactionId> {
     this.ensureInitialized();
     
+    const addressString = typeof address === 'string' ? address : address.toString();
+    
     if (options.oneSided) {
       return await this.transactionService.sendOneSidedTransaction({
-        recipient: address,
+        recipient: addressString as TariAddressString,
         amount,
         feePerGram: options.fee,
         message: options.message
       });
     } else {
       return await this.transactionService.sendTransaction({
-        recipient: address,
+        recipient: addressString as TariAddressString,
         amount,
-        feePerGram: options.fee,
+        feePerGram: options.fee || amount / 100n, // Default fee if not provided
         message: options.message
       });
     }
@@ -339,8 +342,10 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
   ): Promise<TransactionId> {
     this.ensureInitialized();
     
+    const addressString = typeof address === 'string' ? address : address.toString();
+    
     return await this.transactionService.sendOneSidedTransaction({
-      recipient: address,
+      recipient: addressString as TariAddressString,
       amount,
       feePerGram: options.fee,
       message: options.message
@@ -565,7 +570,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     let feeCount = 0;
     
     for (const entry of history) {
-      if (entry.direction === 'Outbound') {
+      if (entry.direction === 'outbound') {
         totalSent++;
         totalValueSent += BigInt(entry.amount);
         if (entry.fee) {
@@ -671,31 +676,31 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       this.emit('pending:updated', update));
     this.pendingManager.on('pending:timeout', (transactionId, timeoutSeconds) => 
       this.emit('pending:timeout', transactionId, timeoutSeconds));
-    this.pendingManager.on('pending:refreshed', (inboundCount, outboundCount) => 
+    this.pendingManager.on('pending:refreshed', (inboundCount: number, outboundCount: number) => 
       this.emit('pending:refreshed', inboundCount, outboundCount));
-    this.pendingManager.on('pending:error', (error, transactionId) => 
+    this.pendingManager.on('pending:error', (error: Error, transactionId?: TransactionId) => 
       this.emit('pending:error', error, transactionId));
-    this.pendingManager.on('pending:auto_cancelled', (transactionId, reason) => 
+    this.pendingManager.on('pending:auto_cancelled', (transactionId: TransactionId, reason: string) => 
       this.emit('pending:auto_cancelled', transactionId, reason));
     
     // Forward cancellation service events
-    this.cancellationService.on('cancellation:started', (transactionId) => 
+    this.cancellationService.on('cancellation:started', (transactionId: TransactionId) => 
       this.emit('cancellation:started', transactionId));
-    this.cancellationService.on('cancellation:completed', (transactionId, refundAmount) => 
+    this.cancellationService.on('cancellation:completed', (transactionId: TransactionId, refundAmount: MicroTari) => 
       this.emit('cancellation:completed', transactionId, refundAmount));
-    this.cancellationService.on('cancellation:failed', (transactionId, error) => 
+    this.cancellationService.on('cancellation:failed', (transactionId: TransactionId, error: Error) => 
       this.emit('cancellation:failed', transactionId, error));
-    this.cancellationService.on('refund:processed', (transactionId, amount) => 
+    this.cancellationService.on('refund:processed', (transactionId: TransactionId, amount: MicroTari) => 
       this.emit('refund:processed', transactionId, amount));
-    this.cancellationService.on('refund:failed', (transactionId, error) => 
+    this.cancellationService.on('refund:failed', (transactionId: TransactionId, error: Error) => 
       this.emit('refund:failed', transactionId, error));
     
     // Forward detail service events
-    this.detailService.on('details:enriched', (transactionId, details) => 
+    this.detailService.on('details:enriched', (transactionId: TransactionId, details: any) => 
       this.emit('details:enriched', transactionId, details));
-    this.detailService.on('confirmations:changed', (transactionId, newCount, oldCount) => 
+    this.detailService.on('confirmations:changed', (transactionId: TransactionId, newCount: number, oldCount: number) => 
       this.emit('confirmations:changed', transactionId, newCount, oldCount));
-    this.detailService.on('transaction:finalized', (transactionId, details) => 
+    this.detailService.on('transaction:finalized', (transactionId: TransactionId, details: any) => 
       this.emit('transaction:finalized', transactionId, details));
     
     // Forward history service events

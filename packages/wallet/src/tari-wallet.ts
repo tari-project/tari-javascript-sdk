@@ -22,13 +22,13 @@ import type {
   WalletEventHandlers,
   Contact,
   PeerInfo,
-  Balance,
   BalanceInfo
 } from './types/index.js';
 import { 
-  TariAddress as CoreTariAddress
+  TariAddress as CoreTariAddress,
+  type TransactionId
 } from '@tari-project/tarijs-core';
-import { TariAddress, Balance, TransactionId } from './models/index.js';
+import { TariAddress, Balance } from './models/index.js';
 import { 
   WalletState, 
   WalletStateManager
