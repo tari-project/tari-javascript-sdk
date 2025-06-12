@@ -368,9 +368,6 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.FeatureDisabled]: ErrorCategory.General,
   [WalletErrorCode.QuotaExceeded]: ErrorCategory.General,
   [WalletErrorCode.InternalError]: ErrorCategory.General,
-  [WalletErrorCode.UnknownError]: ErrorCategory.General,
-  [WalletErrorCode.FEE_ESTIMATION_FAILED]: ErrorCategory.Transaction,
-  [WalletErrorCode.TRANSACTION_SEND_FAILED]: ErrorCategory.Transaction,
 };
 
 /**

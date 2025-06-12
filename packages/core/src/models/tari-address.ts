@@ -390,24 +390,17 @@ export class TariAddress {
   }
 
   /**
-   * Create address from string
-   */
-  static fromString(address: string): TariAddress {
-    return new TariAddress(address);
-  }
-
-  /**
    * Get a display-friendly string representation
    */
   toDisplayString(): string {
     switch (this._format) {
       case AddressFormat.Emoji:
-        return this.toEmoji();
+        return this.emoji;
       case AddressFormat.Base58:
-        return this.toBase58();
+        return this.base58;
       case AddressFormat.Hex:
         // Shorten hex addresses for display
-        const hex = this.toHex();
+        const hex = this.hex;
         if (hex.length > 16) {
           return `${hex.slice(0, 8)}...${hex.slice(-8)}`;
         }
