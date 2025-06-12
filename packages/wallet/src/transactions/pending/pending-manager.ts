@@ -100,6 +100,22 @@ export interface RefreshResult {
 }
 
 /**
+ * Pending manager statistics
+ */
+export interface PendingManagerStatistics {
+  /** Total number of refreshes performed */
+  totalRefreshCount: number;
+  /** Last refresh timestamp */
+  lastRefreshTime: number;
+  /** Whether currently refreshing */
+  isCurrentlyRefreshing: boolean;
+  /** Average refresh interval */
+  averageRefreshInterval: number;
+  /** Next scheduled refresh time */
+  nextScheduledRefresh?: number;
+}
+
+/**
  * Pending transaction manager providing comprehensive pending transaction handling
  * 
  * Features:

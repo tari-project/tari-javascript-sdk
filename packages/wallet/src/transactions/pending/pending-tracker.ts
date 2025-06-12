@@ -5,11 +5,11 @@
  * performance monitoring, and lifecycle management.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   WalletError,
   WalletErrorCode,
   withErrorContext,
+  TypedEventEmitter,
   type TransactionId,
   type UnixTimestamp
 } from '@tari-project/tarijs-core';
@@ -80,7 +80,7 @@ export interface TrackerStatistics {
  * - Detailed statistics and reporting
  * - Custom metadata attachment
  */
-export class PendingTracker extends EventEmitter<PendingTrackerEvents> {
+export class PendingTracker extends TypedEventEmitter {
   private readonly config: PendingManagerConfig;
   private readonly trackedTransactions = new Map<TransactionId, PendingTrackingInfo>();
   private isDisposed = false;

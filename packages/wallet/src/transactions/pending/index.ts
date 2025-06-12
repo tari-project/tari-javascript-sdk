@@ -5,8 +5,8 @@
  * and automatic refresh capabilities for the Tari wallet SDK.
  */
 
-export { PendingTransactionManager } from './pending-manager.js';
-export { PendingTransactionTracker } from './pending-tracker.js';
+export { PendingManager as PendingTransactionManager } from './pending-manager.js';
+export { PendingTracker as PendingTransactionTracker } from './pending-tracker.js';
 export { TimeoutHandler } from './timeout-handler.js';
 
 export type {
@@ -17,7 +17,7 @@ export type {
 
 export type {
   PendingTrackerEvents,
-  PendingTrackerStatistics
+  TrackerStatistics as PendingTrackerStatistics
 } from './pending-tracker.js';
 
 export type {

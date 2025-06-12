@@ -6,7 +6,6 @@
  * conditions and maintains statistical models for offline estimation.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
@@ -14,6 +13,7 @@ import {
   ErrorSeverity,
   withErrorContext,
   withRetry,
+  TypedEventEmitter,
   type WalletHandle,
   type MicroTari
 } from '@tari-project/tarijs-core';
@@ -122,7 +122,7 @@ export interface NetworkFeesServiceEvents {
 /**
  * Service for fetching and analyzing network fee data
  */
-export class NetworkFeesService extends EventEmitter<NetworkFeesServiceEvents> {
+export class NetworkFeesService extends TypedEventEmitter {
   private readonly config: NetworkFeesServiceConfig;
   private readonly ffi = getFFIBindings();
   private currentStats: NetworkFeeStatistics | null = null;

@@ -171,6 +171,13 @@ export interface NativeBindings {
   }>;
   walletGenerateStealthAddress(handle: WalletHandle, recipientAddress: string): Promise<string>;
 
+  // Transaction memo operations
+  walletSetTransactionMemo(handle: WalletHandle, transactionId: string, memo: string): Promise<void>;
+  walletGetTransactionMemo(handle: WalletHandle, transactionId: string): Promise<string | null>;
+  walletDeleteTransactionMemo(handle: WalletHandle, transactionId: string): Promise<void>;
+  walletClearTransactionMemos(handle: WalletHandle): Promise<void>;
+  walletGetAllTransactionMemos(handle: WalletHandle): Promise<Record<string, string>>;
+
   // Event callbacks (Phase 8)
   walletSetEventCallback(handle: WalletHandle, callback: (payload: string) => void): Promise<void>;
   walletRemoveEventCallback(handle: WalletHandle): Promise<void>;

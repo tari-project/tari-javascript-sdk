@@ -28,7 +28,7 @@ import {
   type TransactionServiceEvents
 } from '../transactions/transaction-service.js';
 import {
-  PendingTransactionManager,
+  PendingManager as PendingTransactionManager,
   type PendingManagerConfig,
   type PendingManagerEvents
 } from '../transactions/pending/pending-manager.js';

@@ -122,4 +122,5 @@ export interface PeerInfo {
   port: number;
 }
 
-// Types are already exported above - no need to re-export
+// Transaction extensions for wallet-specific interfaces
+export * from './transaction-extensions.js';

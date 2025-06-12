@@ -6,7 +6,6 @@
  * the FFI transaction functions.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
@@ -15,6 +14,9 @@ import {
   withErrorContext,
   withRetry,
   withRecovery,
+  TypedEventEmitter,
+  microTariFromFFI,
+  microTariToFFI,
   type WalletHandle,
   type MicroTari,
   type TransactionId,
@@ -27,9 +29,6 @@ import type {
   CompletedTransaction,
   CancelledTransaction,
   Transaction,
-  TransactionFilter,
-  TransactionQueryOptions,
-  SendTransactionParams,
   SendOneSidedParams,
   TransactionStatusUpdate,
   TransactionBuildResult,
@@ -37,6 +36,11 @@ import type {
   TransactionValidationResult,
   TransactionStatistics
 } from '@tari-project/tarijs-core';
+import type {
+  TransactionFilter,
+  TransactionQueryOptions,
+  SendTransactionParams
+} from '../types/transaction-extensions.js';
 import { TransactionStatus, TransactionDirection } from '@tari-project/tarijs-core';
 import { TariAddress } from '../models/index.js';
 import { TransactionRepository } from './transaction-repository.js';
@@ -90,7 +94,7 @@ export interface TransactionServiceEvents {
 /**
  * Core transaction service providing centralized transaction management
  */
-export class TransactionService extends EventEmitter<TransactionServiceEvents> {
+export class TransactionService extends TypedEventEmitter<TransactionServiceEvents> {
   private readonly config: TransactionServiceConfig;
   private readonly repository: TransactionRepository;
   private readonly stateManager: TransactionStateManager;
@@ -190,7 +194,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       const pendingTx: PendingOutboundTransaction = {
         id: transactionId,
         amount: params.amount,
-        fee: params.feePerGram * BigInt(250), // Estimated size in grams
+        fee: microTariFromFFI(microTariToFFI(params.feePerGram) * BigInt(250)), // Estimated size in grams
         status: TransactionStatus.Pending,
         direction: TransactionDirection.Outbound,
         message: params.message || '',
@@ -249,7 +253,7 @@ export class TransactionService extends EventEmitter<TransactionServiceEvents> {
       const pendingTx: PendingOutboundTransaction = {
         id: transactionId,
         amount: params.amount,
-        fee: params.feePerGram ? params.feePerGram * BigInt(300) : BigInt(Math.ceil(Number(params.amount) * 0.002)), // Higher estimated fee for one-sided
+        fee: params.feePerGram ? microTariFromFFI(microTariToFFI(params.feePerGram) * BigInt(300)) : microTariFromFFI(BigInt(Math.ceil(Number(params.amount) * 0.002))), // Higher estimated fee for one-sided
         status: TransactionStatus.Pending,
         direction: TransactionDirection.Outbound,
         message: params.message || '',

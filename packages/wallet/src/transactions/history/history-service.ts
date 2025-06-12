@@ -6,13 +6,13 @@
  * transactions into unified views with performance optimizations.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
   WalletErrorCode,
   withErrorContext,
   withRetry,
+  TypedEventEmitter,
   type WalletHandle,
   type TransactionId,
   type UnixTimestamp,
@@ -104,7 +104,7 @@ export interface SearchResult {
  * - Statistics and analytics generation
  * - Export capabilities for external analysis
  */
-export class HistoryService extends EventEmitter<HistoryServiceEvents> {
+export class HistoryService extends TypedEventEmitter {
   private readonly config: HistoryServiceConfig;
   private readonly repository: TransactionRepository;
   private readonly queryBuilder: HistoryQueryBuilder;

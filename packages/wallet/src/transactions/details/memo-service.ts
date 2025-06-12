@@ -5,12 +5,12 @@
  * encryption support, and comprehensive memo management.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
   WalletErrorCode,
   withErrorContext,
+  TypedEventEmitter,
   type TransactionId,
   type WalletHandle,
   type UnixTimestamp
@@ -71,7 +71,7 @@ export interface MemoStatistics {
  * - Bulk memo operations
  * - Storage statistics and management
  */
-export class MemoService extends EventEmitter<MemoServiceEvents> {
+export class MemoService extends TypedEventEmitter {
   private readonly walletHandle: WalletHandle;
   private readonly config: DetailServiceConfig;
   private readonly ffiBindings = getFFIBindings();

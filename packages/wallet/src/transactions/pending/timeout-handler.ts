@@ -5,11 +5,11 @@
  * with configurable thresholds and automatic cleanup.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   WalletError,
   WalletErrorCode,
   withErrorContext,
+  TypedEventEmitter,
   type TransactionId,
   type UnixTimestamp
 } from '@tari-project/tarijs-core';
@@ -71,16 +71,16 @@ export interface TimeoutStatistics {
  * - Custom timeout multipliers for different transaction types
  * - Detailed timeout statistics and reporting
  */
-export class TimeoutHandler extends EventEmitter<TimeoutHandlerEvents> {
+export class TimeoutHandler extends TypedEventEmitter {
   private readonly config: PendingManagerConfig;
-  private readonly parentEmitter: EventEmitter;
+  private readonly parentEmitter: TypedEventEmitter;
   private readonly monitoredTransactions = new Map<TransactionId, TimeoutMonitorInfo>();
   private batchCheckTimer?: NodeJS.Timeout;
   private isDisposed = false;
   private timeoutsDetected = 0;
   private warningsSent = 0;
 
-  constructor(config: PendingManagerConfig, parentEmitter: EventEmitter) {
+  constructor(config: PendingManagerConfig, parentEmitter: TypedEventEmitter) {
     super();
     this.config = config;
     this.parentEmitter = parentEmitter;

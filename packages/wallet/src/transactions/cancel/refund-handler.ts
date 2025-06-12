@@ -13,6 +13,7 @@ import {
   withErrorContext,
   withRetry,
   RetryConfigs,
+  microTariFromFFI,
   type TransactionId,
   type WalletHandle,
   type MicroTari,
@@ -332,11 +333,11 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
    */
   private async getCurrentBalance(): Promise<WalletBalance> {
     try {
-      const balanceJson = await this.ffiBindings.wallet_get_balance(this.walletHandle.handle);
+      const balanceJson = await this.ffiBindings.walletGetBalance(this.walletHandle);
       return JSON.parse(balanceJson);
     } catch (error) {
       throw new WalletError(
-        WalletErrorCode.BalanceQueryFailed,
+        WalletErrorCode.BALANCE_QUERY_FAILED,
         `Failed to get current balance: ${error}`,
         { cause: error }
       );
@@ -360,7 +361,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
     const newBalance: WalletBalance = {
       available: newAvailable,
       pendingIncoming: newPendingIncoming,
-      pendingOutgoing: Math.max(0, Number(newPendingOutgoing)) as MicroTari,
+      pendingOutgoing: microTariFromFFI(BigInt(Math.max(0, Number(newPendingOutgoing)))),
       timelocked: currentBalance.timelocked
     };
     

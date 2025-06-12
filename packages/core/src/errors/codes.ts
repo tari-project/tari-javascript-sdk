@@ -62,6 +62,7 @@ export const enum WalletErrorCode {
   AddressResolutionFailed = 2026,
   DuplicateRecipients = 2027,
   BalanceFailed = 2028,
+  MemoOperationFailed = 2038,
   
   // Network errors (3000-3099)
   NetworkUnavailable = 3000,
@@ -79,6 +80,7 @@ export const enum WalletErrorCode {
   InvalidBlock = 3012,
   ChainReorg = 3013,
   ForkDetected = 3014,
+  NetworkError = 3015,
   
   // Validation errors (4000-4099)
   RequiredFieldMissing = 4000,
@@ -96,6 +98,8 @@ export const enum WalletErrorCode {
   InvalidTimestamp = 4012,
   InvalidUrl = 4013,
   InvalidPortNumber = 4014,
+  InvalidArgument = 4015,
+  InvalidInput = 4016,
   
   // FFI errors (5000-5099)
   FFICallFailed = 5000,
@@ -183,6 +187,7 @@ export const enum WalletErrorCode {
   FeatureDisabled = 9012,
   QuotaExceeded = 9013,
   InternalError = 9014,
+  FeatureNotEnabled = 9016,
   
   // Resource errors
   ResourceDisposed = 6017,
@@ -283,6 +288,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.INSUFFICIENT_UTXOS]: ErrorCategory.Transaction,
   [WalletErrorCode.UTXO_VALIDATION_FAILED]: ErrorCategory.Transaction,
   [WalletErrorCode.BALANCE_QUERY_FAILED]: ErrorCategory.Transaction,
+  [WalletErrorCode.MemoOperationFailed]: ErrorCategory.Transaction,
   
   // Network errors (3000-3099)
   [WalletErrorCode.NetworkUnavailable]: ErrorCategory.Network,
@@ -300,6 +306,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.InvalidBlock]: ErrorCategory.Network,
   [WalletErrorCode.ChainReorg]: ErrorCategory.Network,
   [WalletErrorCode.ForkDetected]: ErrorCategory.Network,
+  [WalletErrorCode.NetworkError]: ErrorCategory.Network,
   
   // Validation errors (4000-4099)
   [WalletErrorCode.RequiredFieldMissing]: ErrorCategory.Validation,
@@ -317,6 +324,8 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.InvalidTimestamp]: ErrorCategory.Validation,
   [WalletErrorCode.InvalidUrl]: ErrorCategory.Validation,
   [WalletErrorCode.InvalidPortNumber]: ErrorCategory.Validation,
+  [WalletErrorCode.InvalidArgument]: ErrorCategory.Validation,
+  [WalletErrorCode.InvalidInput]: ErrorCategory.Validation,
   
   // FFI errors (5000-5099)
   [WalletErrorCode.FFICallFailed]: ErrorCategory.FFI,
@@ -407,6 +416,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.QuotaExceeded]: ErrorCategory.General,
   [WalletErrorCode.InternalError]: ErrorCategory.General,
   [WalletErrorCode.OperationInProgress]: ErrorCategory.General,
+  [WalletErrorCode.FeatureNotEnabled]: ErrorCategory.General,
 };
 
 /**

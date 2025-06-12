@@ -21,6 +21,7 @@ interface MockWalletState {
   seedWords: string[];
   destroyed: boolean;
   eventCallback?: (payload: string) => void;
+  transactionMemos: Map<string, string>;
 }
 
 /**
@@ -61,6 +62,7 @@ class MockNativeBindings implements NativeBindings {
       address: `tari://testnet/mock_address_${handle}`,
       seedWords: this.generateMockSeedWords(),
       destroyed: false,
+      transactionMemos: new Map(),
     });
 
     return handle;
@@ -438,6 +440,57 @@ class MockNativeBindings implements NativeBindings {
     // Generate mock stealth address
     const hash = recipientAddress.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return `stealth_${hash.toString(16).padStart(8, '0')}_mock`;
+  }
+
+  // Transaction memo operations
+  async walletSetTransactionMemo(handle: number, transactionId: string, memo: string): Promise<void> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock set transaction memo failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    wallet.transactionMemos.set(transactionId, memo);
+  }
+
+  async walletGetTransactionMemo(handle: number, transactionId: string): Promise<string | null> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get transaction memo failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return wallet.transactionMemos.get(transactionId) || null;
+  }
+
+  async walletDeleteTransactionMemo(handle: number, transactionId: string): Promise<void> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock delete transaction memo failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    wallet.transactionMemos.delete(transactionId);
+  }
+
+  async walletClearTransactionMemos(handle: number): Promise<void> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock clear transaction memos failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    wallet.transactionMemos.clear();
+  }
+
+  async walletGetAllTransactionMemos(handle: number): Promise<Record<string, string>> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get all transaction memos failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return Object.fromEntries(wallet.transactionMemos.entries());
   }
 
   // Mock control methods (not part of NativeBindings interface)

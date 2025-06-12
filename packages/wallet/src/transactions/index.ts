@@ -31,21 +31,18 @@ export {
 // Transaction building and fee estimation
 export {
   TransactionBuilder,
-  type TransactionBuildOptions,
-  type TransactionParams
+  type TransactionBuildOptions
 } from './builder/index.js';
 
 export {
   FeeEstimator,
   type FeeEstimatorConfig,
-  type FeeEstimate,
-  NetworkFees
+  NetworkFeesService as NetworkFees
 } from './fees/index.js';
 
 // Transaction sending
 export {
   StandardSender,
-  type StandardSendOptions,
   RecipientValidator,
   AmountValidator,
   type AmountValidationConfig,
@@ -127,8 +124,6 @@ export {
   TransactionAPI,
   type TransactionAPIConfig,
   type TransactionAPIEvents,
-  type StandardSendOptions,
-  type TransactionQueryOptions,
   type TransactionAPIStatistics,
   DEFAULT_TRANSACTION_API_CONFIG
 } from '../api/transaction-api.js';
@@ -142,10 +137,7 @@ export type {
   CancelledTransaction,
   CoinbaseTransaction,
   Transaction,
-  SendTransactionParams,
   SendOneSidedParams,
-  TransactionFilter,
-  TransactionQueryOptions,
   TransactionStatusUpdate,
   TransactionBuildResult,
   FeeEstimate,
@@ -154,6 +146,15 @@ export type {
   TransactionHistoryEntry,
   TransactionSortBy
 } from '@tari-project/tarijs-core';
+
+// Re-export wallet-specific extended types
+export type {
+  TransactionFilter,
+  TransactionQueryOptions,
+  SendTransactionParams,
+  StandardSendOptions,
+  TransactionParams
+} from '../types/transaction-extensions.js';
 
 export {
   TransactionStatus,

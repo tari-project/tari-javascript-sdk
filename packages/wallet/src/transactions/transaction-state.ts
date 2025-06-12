@@ -6,12 +6,12 @@
  * timeout detection and state consistency verification.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   WalletError,
   WalletErrorCode,
   ErrorSeverity,
   withErrorContext,
+  TypedEventEmitter,
   type TransactionId,
   type UnixTimestamp
 } from '@tari-project/tarijs-core';
@@ -78,7 +78,7 @@ interface StateTransition {
 /**
  * Transaction state manager for lifecycle tracking
  */
-export class TransactionStateManager extends EventEmitter<TransactionStateManagerEvents> {
+export class TransactionStateManager extends TypedEventEmitter {
   private readonly config: TransactionStateManagerConfig;
   private readonly states = new Map<TransactionId, TransactionState>();
   private readonly timeoutIndex = new Map<number, Set<TransactionId>>(); // bucket -> transaction IDs

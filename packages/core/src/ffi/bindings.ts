@@ -572,6 +572,85 @@ export class FFIBindings {
       recipientAddress
     );
   }
+
+  // Transaction memo operations
+
+  /**
+   * Set a memo for a transaction
+   */
+  public async walletSetTransactionMemo(
+    handle: WalletHandle,
+    transactionId: string,
+    memo: string
+  ): Promise<void> {
+    if (!transactionId || typeof transactionId !== 'string') {
+      throw new Error('Transaction ID is required');
+    }
+    if (!memo || typeof memo !== 'string') {
+      throw new Error('Memo is required');
+    }
+
+    const native = this.getNativeModule();
+    return native.walletSetTransactionMemo(
+      unwrapWalletHandle(handle),
+      transactionId,
+      memo
+    );
+  }
+
+  /**
+   * Get a memo for a transaction
+   */
+  public async walletGetTransactionMemo(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string | null> {
+    if (!transactionId || typeof transactionId !== 'string') {
+      throw new Error('Transaction ID is required');
+    }
+
+    const native = this.getNativeModule();
+    return native.walletGetTransactionMemo(
+      unwrapWalletHandle(handle),
+      transactionId
+    );
+  }
+
+  /**
+   * Delete a memo for a transaction
+   */
+  public async walletDeleteTransactionMemo(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<void> {
+    if (!transactionId || typeof transactionId !== 'string') {
+      throw new Error('Transaction ID is required');
+    }
+
+    const native = this.getNativeModule();
+    return native.walletDeleteTransactionMemo(
+      unwrapWalletHandle(handle),
+      transactionId
+    );
+  }
+
+  /**
+   * Clear all transaction memos
+   */
+  public async walletClearTransactionMemos(handle: WalletHandle): Promise<void> {
+    const native = this.getNativeModule();
+    return native.walletClearTransactionMemos(unwrapWalletHandle(handle));
+  }
+
+  /**
+   * Get all transaction memos
+   */
+  public async walletGetAllTransactionMemos(
+    handle: WalletHandle
+  ): Promise<Record<string, string>> {
+    const native = this.getNativeModule();
+    return native.walletGetAllTransactionMemos(unwrapWalletHandle(handle));
+  }
 }
 
 // Singleton instance

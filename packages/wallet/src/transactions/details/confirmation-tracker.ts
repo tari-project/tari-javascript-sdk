@@ -5,12 +5,12 @@
  * to the blockchain, providing automatic updates and finalization detection.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
   WalletErrorCode,
   withErrorContext,
+  TypedEventEmitter,
   type TransactionId,
   type WalletHandle,
   type BlockHeight,
@@ -82,7 +82,7 @@ export interface ConfirmationStatistics {
  * - Automatic cleanup of finalized transactions
  * - Performance monitoring and statistics
  */
-export class ConfirmationTracker extends EventEmitter<ConfirmationTrackerEvents> {
+export class ConfirmationTracker extends TypedEventEmitter {
   private readonly walletHandle: WalletHandle;
   private readonly config: DetailServiceConfig;
   private readonly ffiBindings = getFFIBindings();
