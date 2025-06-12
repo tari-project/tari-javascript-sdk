@@ -280,7 +280,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
     try {
       // Get all pending outbound transactions
       const pendingOutboundJson = await this.ffiBindings.wallet_get_pending_outbound_transactions(
-        this.walletHandle.handle
+        this.walletHandle
       );
       
       const pendingTransactions: PendingOutboundTransaction[] = JSON.parse(pendingOutboundJson);
@@ -374,7 +374,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
   private async getPendingTransaction(transactionId: TransactionId): Promise<PendingOutboundTransaction | null> {
     try {
       const transactionJson = await this.ffiBindings.wallet_get_pending_outbound_transaction(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       
@@ -395,7 +395,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
   private async performCancellation(transactionId: TransactionId): Promise<boolean> {
     try {
       const result = await this.ffiBindings.wallet_cancel_pending_transaction(
-        this.walletHandle.handle,
+        this.walletHandle,
         transactionId
       );
       

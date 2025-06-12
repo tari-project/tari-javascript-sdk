@@ -198,19 +198,23 @@ export const enum WalletErrorCode {
   TransactionProcessingFailed = 2029,
   AutoCancellationFailed = 2030,
   AutoRefreshFailed = 2031,
-  INSUFFICIENT_FUNDS = 2000, // Alias for InsufficientFunds
-  INSUFFICIENT_FUNDS_WITH_MARGIN = 2032,
-  INVALID_PARAMETERS = 5011, // Alias for InvalidParameters
-  INVALID_AMOUNT = 2002, // Alias for InvalidAmount
-  AMOUNT_BELOW_DUST_LIMIT = 2033,
-  AMOUNT_EXCEEDS_MAXIMUM = 2034,
-  INSUFFICIENT_UTXOS = 2035,
-  UTXO_VALIDATION_FAILED = 2036,
-  BALANCE_QUERY_FAILED = 2037,
-  INVALID_ADDRESS = 2001, // Alias for InvalidAddress
-  SELF_SEND_NOT_ALLOWED = 2025, // Alias for SelfSendNotAllowed
-  ADDRESS_RESOLUTION_FAILED = 2026, // Alias for AddressResolutionFailed
-  DUPLICATE_RECIPIENTS = 2027, // Alias for DuplicateRecipients
+  TransactionCancellationFailed = 2032,
+  TransactionQueryFailed = 2033,
+  TransactionDetailRetrievalFailed = 2034,
+  ConfirmationTrackingFailed = 2035,
+  TransactionCancellationNotAllowed = 2036,
+  BalanceQueryFailed = 2037,
+  AmountBelowDustLimit = 2038,
+  AmountExceedsMaximum = 2039,
+  InsufficientUtxos = 2040,
+  UtxoValidationFailed = 2041,
+  InsufficientFundsWithMargin = 2042,
+  
+  // FFI errors continued
+  FFIOperationFailed = 5018,
+  
+  // Configuration errors continued  
+  InvalidConfiguration = 8015,
   
   // Legacy aliases for compatibility
   UnknownError = 9000, // Alias for Unknown
@@ -282,12 +286,7 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.TransactionProcessingFailed]: ErrorCategory.Transaction,
   [WalletErrorCode.AutoCancellationFailed]: ErrorCategory.Transaction,
   [WalletErrorCode.AutoRefreshFailed]: ErrorCategory.Transaction,
-  [WalletErrorCode.INSUFFICIENT_FUNDS_WITH_MARGIN]: ErrorCategory.Transaction,
-  [WalletErrorCode.AMOUNT_BELOW_DUST_LIMIT]: ErrorCategory.Transaction,
-  [WalletErrorCode.AMOUNT_EXCEEDS_MAXIMUM]: ErrorCategory.Transaction,
-  [WalletErrorCode.INSUFFICIENT_UTXOS]: ErrorCategory.Transaction,
-  [WalletErrorCode.UTXO_VALIDATION_FAILED]: ErrorCategory.Transaction,
-  [WalletErrorCode.BALANCE_QUERY_FAILED]: ErrorCategory.Transaction,
+  [WalletErrorCode.InsufficientFundsWithMargin]: ErrorCategory.Transaction,
   [WalletErrorCode.MemoOperationFailed]: ErrorCategory.Transaction,
   
   // Network errors (3000-3099)
@@ -417,6 +416,20 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.InternalError]: ErrorCategory.General,
   [WalletErrorCode.OperationInProgress]: ErrorCategory.General,
   [WalletErrorCode.FeatureNotEnabled]: ErrorCategory.General,
+
+  // Additional error codes
+  [WalletErrorCode.TransactionCancellationFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.TransactionQueryFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.TransactionDetailRetrievalFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.ConfirmationTrackingFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.TransactionCancellationNotAllowed]: ErrorCategory.Transaction,
+  [WalletErrorCode.BalanceQueryFailed]: ErrorCategory.Transaction,
+  [WalletErrorCode.AmountBelowDustLimit]: ErrorCategory.Validation,
+  [WalletErrorCode.AmountExceedsMaximum]: ErrorCategory.Validation,
+  [WalletErrorCode.InsufficientUtxos]: ErrorCategory.Transaction,
+  [WalletErrorCode.UtxoValidationFailed]: ErrorCategory.Validation,
+  [WalletErrorCode.FFIOperationFailed]: ErrorCategory.FFI,
+  [WalletErrorCode.InvalidConfiguration]: ErrorCategory.Configuration,
 };
 
 /**

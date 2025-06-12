@@ -22,6 +22,31 @@ interface MockWalletState {
   destroyed: boolean;
   eventCallback?: (payload: string) => void;
   transactionMemos: Map<string, string>;
+  transactions: Array<{
+    id: string;
+    amount: string;
+    fee: string;
+    status: string;
+    message: string;
+    timestamp: number;
+    is_inbound: boolean;
+    address: string;
+  }>;
+  pendingInbound: Array<{
+    id: string;
+    amount: string;
+    message: string;
+    timestamp: number;
+    sender_address: string;
+  }>;
+  pendingOutbound: Array<{
+    id: string;
+    amount: string;
+    fee: string;
+    message: string;
+    timestamp: number;
+    recipient_address: string;
+  }>;
 }
 
 /**
@@ -63,6 +88,9 @@ class MockNativeBindings implements NativeBindings {
       seedWords: this.generateMockSeedWords(),
       destroyed: false,
       transactionMemos: new Map(),
+      transactions: [],
+      pendingInbound: [],
+      pendingOutbound: [],
     });
 
     return handle;
@@ -491,6 +519,104 @@ class MockNativeBindings implements NativeBindings {
 
     const wallet = this.getWallet(handle);
     return Object.fromEntries(wallet.transactionMemos.entries());
+  }
+
+  // Additional transaction operations
+  async walletGetTransaction(handle: number, transactionId: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get transaction failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    const tx = wallet.transactions.find(t => t.id === transactionId);
+    return tx ? JSON.stringify(tx) : '';
+  }
+
+  async walletGetPendingOutboundTransaction(handle: number, transactionId: string): Promise<string | null> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get pending outbound transaction failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    const tx = wallet.pendingOutbound.find(t => t.id === transactionId);
+    return tx ? JSON.stringify(tx) : null;
+  }
+
+  async walletCancelPendingTransaction(handle: number, transactionId: string): Promise<boolean> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock cancel pending transaction failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    const index = wallet.pendingOutbound.findIndex(t => t.id === transactionId);
+    if (index !== -1) {
+      wallet.pendingOutbound.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  async walletGetTransactionConfirmations(handle: number, transactionId: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get transaction confirmations failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return JSON.stringify({ confirmations: 3, required: 1 });
+  }
+
+  async walletGetBlockchainHeight(handle: number): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get blockchain height failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return JSON.stringify({ height: 12345 });
+  }
+
+  async walletGetTransactionInputs(handle: number, transactionId: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get transaction inputs failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return JSON.stringify([]);
+  }
+
+  async walletGetTransactionOutputs(handle: number, transactionId: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get transaction outputs failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return JSON.stringify([]);
+  }
+
+  async walletGetTransactionKernels(handle: number, transactionId: string): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get transaction kernels failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return JSON.stringify([]);
+  }
+
+  async walletGetBlockInfo(handle: number, blockHeight: number): Promise<string> {
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock get block info failed');
+    }
+    await this.simulateLatency();
+
+    const wallet = this.getWallet(handle);
+    return JSON.stringify({ height: blockHeight, hash: 'mock_hash' });
   }
 
   // Mock control methods (not part of NativeBindings interface)

@@ -178,6 +178,17 @@ export interface NativeBindings {
   walletClearTransactionMemos(handle: WalletHandle): Promise<void>;
   walletGetAllTransactionMemos(handle: WalletHandle): Promise<Record<string, string>>;
 
+  // Additional transaction operations
+  walletGetTransaction(handle: WalletHandle, transactionId: string): Promise<string>;
+  walletGetPendingOutboundTransaction(handle: WalletHandle, transactionId: string): Promise<string | null>;
+  walletCancelPendingTransaction(handle: WalletHandle, transactionId: string): Promise<boolean>;
+  walletGetTransactionConfirmations(handle: WalletHandle, transactionId: string): Promise<string>;
+  walletGetBlockchainHeight(handle: WalletHandle): Promise<string>;
+  walletGetTransactionInputs(handle: WalletHandle, transactionId: string): Promise<string>;
+  walletGetTransactionOutputs(handle: WalletHandle, transactionId: string): Promise<string>;
+  walletGetTransactionKernels(handle: WalletHandle, transactionId: string): Promise<string>;
+  walletGetBlockInfo(handle: WalletHandle, blockHeight: number): Promise<string>;
+
   // Event callbacks (Phase 8)
   walletSetEventCallback(handle: WalletHandle, callback: (payload: string) => void): Promise<void>;
   walletRemoveEventCallback(handle: WalletHandle): Promise<void>;

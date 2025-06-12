@@ -651,6 +651,170 @@ export class FFIBindings {
     const native = this.getNativeModule();
     return native.walletGetAllTransactionMemos(unwrapWalletHandle(handle));
   }
+
+  // Additional FFI methods needed by wallet package
+
+  /**
+   * Get a specific transaction by ID
+   */
+  public async walletGetTransaction(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    return native.walletGetTransaction(unwrapWalletHandle(handle), transactionId);
+  }
+
+  /**
+   * Get a specific pending outbound transaction by ID
+   */
+  public async walletGetPendingOutboundTransaction(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string | null> {
+    const native = this.getNativeModule();
+    return native.walletGetPendingOutboundTransaction(unwrapWalletHandle(handle), transactionId);
+  }
+
+  /**
+   * Cancel a pending transaction
+   */
+  public async walletCancelPendingTransaction(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<boolean> {
+    const native = this.getNativeModule();
+    return native.walletCancelPendingTransaction(unwrapWalletHandle(handle), transactionId);
+  }
+
+  /**
+   * Get transaction confirmations
+   */
+  public async walletGetTransactionConfirmations(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    return native.walletGetTransactionConfirmations(unwrapWalletHandle(handle), transactionId);
+  }
+
+  /**
+   * Get blockchain height
+   */
+  public async walletGetBlockchainHeight(handle: WalletHandle): Promise<string> {
+    const native = this.getNativeModule();
+    return native.walletGetBlockchainHeight(unwrapWalletHandle(handle));
+  }
+
+  /**
+   * Get transaction inputs
+   */
+  public async walletGetTransactionInputs(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    return native.walletGetTransactionInputs(unwrapWalletHandle(handle), transactionId);
+  }
+
+  /**
+   * Get transaction outputs
+   */
+  public async walletGetTransactionOutputs(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    return native.walletGetTransactionOutputs(unwrapWalletHandle(handle), transactionId);
+  }
+
+  /**
+   * Get transaction kernels
+   */
+  public async walletGetTransactionKernels(
+    handle: WalletHandle,
+    transactionId: string
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    return native.walletGetTransactionKernels(unwrapWalletHandle(handle), transactionId);
+  }
+
+  /**
+   * Get block info
+   */
+  public async walletGetBlockInfo(
+    handle: WalletHandle,
+    blockHeight: number
+  ): Promise<string> {
+    const native = this.getNativeModule();
+    return native.walletGetBlockInfo(unwrapWalletHandle(handle), blockHeight);
+  }
+
+  // Convenience methods with snake_case aliases for legacy compatibility
+
+  public async wallet_get_pending_outbound_transactions(handle: WalletHandle): Promise<any[]> {
+    return this.walletGetPendingOutboundTransactions(handle);
+  }
+
+  public async wallet_get_pending_inbound_transactions(handle: WalletHandle): Promise<any[]> {
+    return this.walletGetPendingInboundTransactions(handle);
+  }
+
+  public async wallet_get_transaction(handle: WalletHandle, transactionId: string): Promise<string> {
+    return this.walletGetTransaction(handle, transactionId);
+  }
+
+  public async wallet_get_pending_outbound_transaction(handle: WalletHandle, transactionId: string): Promise<string | null> {
+    return this.walletGetPendingOutboundTransaction(handle, transactionId);
+  }
+
+  public async wallet_cancel_pending_transaction(handle: WalletHandle, transactionId: string): Promise<boolean> {
+    return this.walletCancelPendingTransaction(handle, transactionId);
+  }
+
+  public async wallet_get_transaction_confirmations(handle: WalletHandle, transactionId: string): Promise<string> {
+    return this.walletGetTransactionConfirmations(handle, transactionId);
+  }
+
+  public async wallet_get_blockchain_height(handle: WalletHandle): Promise<string> {
+    return this.walletGetBlockchainHeight(handle);
+  }
+
+  public async wallet_get_transaction_inputs(handle: WalletHandle, transactionId: string): Promise<string> {
+    return this.walletGetTransactionInputs(handle, transactionId);
+  }
+
+  public async wallet_get_transaction_outputs(handle: WalletHandle, transactionId: string): Promise<string> {
+    return this.walletGetTransactionOutputs(handle, transactionId);
+  }
+
+  public async wallet_get_transaction_kernels(handle: WalletHandle, transactionId: string): Promise<string> {
+    return this.walletGetTransactionKernels(handle, transactionId);
+  }
+
+  public async wallet_get_block_info(handle: WalletHandle, blockHeight: number): Promise<string> {
+    return this.walletGetBlockInfo(handle, blockHeight);
+  }
+
+  public async wallet_set_transaction_memo(handle: WalletHandle, transactionId: string, memo: string): Promise<void> {
+    return this.walletSetTransactionMemo(handle, transactionId, memo);
+  }
+
+  public async wallet_get_transaction_memo(handle: WalletHandle, transactionId: string): Promise<string | null> {
+    return this.walletGetTransactionMemo(handle, transactionId);
+  }
+
+  public async wallet_delete_transaction_memo(handle: WalletHandle, transactionId: string): Promise<void> {
+    return this.walletDeleteTransactionMemo(handle, transactionId);
+  }
+
+  public async wallet_clear_transaction_memos(handle: WalletHandle): Promise<void> {
+    return this.walletClearTransactionMemos(handle);
+  }
+
+  public async wallet_get_all_transaction_memos(handle: WalletHandle): Promise<Record<string, string>> {
+    return this.walletGetAllTransactionMemos(handle);
+  }
 }
 
 // Singleton instance
