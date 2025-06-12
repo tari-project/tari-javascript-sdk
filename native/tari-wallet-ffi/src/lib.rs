@@ -21,6 +21,8 @@ mod error_codes;
 mod error_mapping;
 mod types;
 mod wallet;
+mod callbacks;
+mod event_bridge;
 
 // Export legacy error types for backward compatibility
 pub use error::{LegacyTariWalletError, TariResult, JsErrorCode, JsErrorInfo};
@@ -32,6 +34,8 @@ pub use error_mapping::{TariWalletError, ErrorContext, ErrorMapper};
 // Export other modules
 pub use types::*;
 pub use wallet::*;
+pub use callbacks::*;
+pub use event_bridge::*;
 
 /// Initialize logging for the FFI module
 #[napi]

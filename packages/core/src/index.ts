@@ -69,6 +69,21 @@ export { getFFIBindings, initializeFFI, resetFFI, FFIBindings } from './ffi/bind
 export type { FFIWalletConfig, WalletHandle, FFIBalance } from './ffi/types';
 export { createWalletHandle, unwrapWalletHandle, validateTariAddress } from './ffi/types';
 
+// FFI callbacks (Phase 8)
+export {
+  setWalletEventCallback,
+  removeWalletEventCallback,
+  getCallbackStats,
+  cleanupAllCallbacks,
+  parseFFIEventPayload,
+  validateEventCallback,
+  createSafeEventCallback,
+  testUtils as callbackTestUtils,
+  type FFIEventPayload,
+  type FFIEventCallback,
+  type CallbackStats
+} from './ffi/callbacks';
+
 // Wallet handle wrapper (Task 8)
 export * from './wallet-handle';
 

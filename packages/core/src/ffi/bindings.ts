@@ -331,6 +331,46 @@ export class FFIBindings {
     this.initialized = false;
     this.nativeModule = null;
   }
+
+  // Event callback methods (Phase 8)
+
+  /**
+   * Set event callback for a wallet
+   */
+  public async walletSetEventCallback(
+    walletHandle: WalletHandle, 
+    callback: (payload: string) => void
+  ): Promise<void> {
+    const native = this.getNativeModule();
+    return native.walletSetEventCallback(unwrapWalletHandle(walletHandle), callback);
+  }
+
+  /**
+   * Remove event callback for a wallet
+   */
+  public async walletRemoveEventCallback(walletHandle: WalletHandle): Promise<void> {
+    const native = this.getNativeModule();
+    return native.walletRemoveEventCallback(unwrapWalletHandle(walletHandle));
+  }
+
+  /**
+   * Get callback statistics
+   */
+  public async getCallbackStats(): Promise<{
+    registeredWallets: number;
+    activeCallbacks: number;
+  }> {
+    const native = this.getNativeModule();
+    return native.getCallbackStats();
+  }
+
+  /**
+   * Cleanup all callbacks (for testing)
+   */
+  public async cleanupAllCallbacks(): Promise<void> {
+    const native = this.getNativeModule();
+    return native.cleanupAllCallbacks();
+  }
 }
 
 // Singleton instance

@@ -131,6 +131,12 @@ export interface NativeBindings {
   validateAddress(address: string, network: string): Promise<boolean>;
   emojiIdToAddress(emojiId: string, network: string): Promise<string>;
   addressToEmojiId(address: string): Promise<string>;
+
+  // Event callbacks (Phase 8)
+  walletSetEventCallback(handle: WalletHandle, callback: (payload: string) => void): Promise<void>;
+  walletRemoveEventCallback(handle: WalletHandle): Promise<void>;
+  getCallbackStats(): Promise<{ registeredWallets: number; activeCallbacks: number }>;
+  cleanupAllCallbacks(): Promise<void>;
 }
 
 // Default export type for the native module

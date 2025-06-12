@@ -20,6 +20,7 @@ interface MockWalletState {
   address: string;
   seedWords: string[];
   destroyed: boolean;
+  eventCallback?: (payload: string) => void;
 }
 
 /**
@@ -199,6 +200,64 @@ class MockNativeBindings implements NativeBindings {
 
     const hash = address.split('/').pop() || 'unknown';
     return this.generateMockEmojiId(hash);
+  }
+
+  // Event callbacks (Phase 8) - Mock implementations
+  async walletSetEventCallback(handle: number, callback: (payload: string) => void): Promise<void> {
+    await this.simulateLatency();
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock: Failed to set event callback');
+    }
+
+    const wallet = this.getWallet(handle);
+    wallet.eventCallback = callback;
+    
+    // Simulate a test event
+    setTimeout(() => {
+      if (wallet.eventCallback) {
+        const testEvent = {
+          event_type: 'test:event',
+          wallet_handle: handle,
+          data: { message: 'Mock test event' },
+          timestamp: Date.now()
+        };
+        wallet.eventCallback(JSON.stringify(testEvent));
+      }
+    }, 100);
+  }
+
+  async walletRemoveEventCallback(handle: number): Promise<void> {
+    await this.simulateLatency();
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock: Failed to remove event callback');
+    }
+
+    const wallet = this.getWallet(handle);
+    wallet.eventCallback = undefined;
+  }
+
+  async getCallbackStats(): Promise<{ registeredWallets: number; activeCallbacks: number }> {
+    await this.simulateLatency();
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock: Failed to get callback stats');
+    }
+
+    const registeredWallets = Array.from(this.wallets.values()).filter(w => w.eventCallback).length;
+    return {
+      registeredWallets,
+      activeCallbacks: registeredWallets
+    };
+  }
+
+  async cleanupAllCallbacks(): Promise<void> {
+    await this.simulateLatency();
+    if (this.shouldSimulateFailure()) {
+      throw new Error('Mock: Failed to cleanup callbacks');
+    }
+
+    for (const wallet of this.wallets.values()) {
+      wallet.eventCallback = undefined;
+    }
   }
 
   // Mock control methods (not part of NativeBindings interface)

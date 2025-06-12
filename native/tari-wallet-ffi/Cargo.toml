@@ -19,7 +19,7 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 once_cell = { workspace = true }
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { workspace = true }
 
 # Tari FFI dependency (path will be set dynamically during build)
 # minotari_wallet_ffi = { path = "../../.tari-cache/tari-current/base_layer/wallet_ffi" }

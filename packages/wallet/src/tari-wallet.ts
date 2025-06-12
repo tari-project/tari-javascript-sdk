@@ -97,6 +97,17 @@ import type {
   CancellationResult,
   HistoryEntry
 } from './transactions/index.js';
+import {
+  WalletEventSystem,
+  getGlobalLifecycleManager,
+  type WalletEventMap,
+  type EventListener,
+  type EventSubscription,
+  type MultiEventSubscription,
+  type EventHandlerMap,
+  type EventOptions,
+  type EventSystemConfig
+} from './events/index.js';
 
 /**
  * Main Tari wallet class providing high-level wallet operations
@@ -108,6 +119,7 @@ export class TariWallet implements AsyncDisposable {
   private readonly handle: WalletHandle;
   private readonly config: WalletConfig;
   private readonly eventEmitter: EventEmitter;
+  private readonly eventSystem: WalletEventSystem;
   private readonly stateManager: WalletStateManager;
   private readonly lifecycleManager: WalletLifecycleManager;
   private readonly balanceService: BalanceService;
@@ -134,13 +146,17 @@ export class TariWallet implements AsyncDisposable {
     balanceConfig?: BalanceServiceConfig,
     addressConfig?: AddressServiceConfig,
     walletInfoConfig?: WalletInfoConfig,
-    transactionConfig?: Partial<TransactionAPIConfig>
+    transactionConfig?: Partial<TransactionAPIConfig>,
+    eventSystemConfig?: EventSystemConfig
   ) {
     this.instanceId = `wallet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.handle = handle;
     this.config = { ...config };
     this.eventEmitter = new EventEmitter();
     this.stateManager = new WalletStateManager(this.instanceId);
+    
+    // Initialize event system (will be set up async in initializeLifecycle)
+    this.eventSystem = new WalletEventSystem(eventSystemConfig);
     this.lifecycleManager = new WalletLifecycleManager(this.instanceId, this.stateManager, hooks);
     this.balanceService = new BalanceService(handle, balanceConfig);
     
@@ -1180,8 +1196,14 @@ export class TariWallet implements AsyncDisposable {
       this.balanceService.dispose();
     });
 
-    // Initialize the lifecycle
+    // Add event system cleanup
+    this.lifecycleManager.addCleanup(async () => {
+      this.eventSystem.dispose();
+    });
+
+    // Initialize the lifecycle and event system
     await this.lifecycleManager.initialize(this.handle);
+    await this.initializeEventSystem();
   }
 
   /**
@@ -1236,6 +1258,96 @@ export class TariWallet implements AsyncDisposable {
     this.transactionAPI.on('history:updated', (entries) => {
       this.eventEmitter.emit('transactionHistoryUpdated', entries);
     });
+  }
+
+  // ==================== EVENT SYSTEM METHODS ====================
+
+  /**
+   * Add an event listener for wallet events
+   */
+  on<K extends keyof WalletEventMap>(
+    event: K,
+    listener: EventListener<WalletEventMap[K]>,
+    options?: EventOptions
+  ): EventSubscription {
+    return this.eventSystem.on(event, listener, options);
+  }
+
+  /**
+   * Add a one-time event listener
+   */
+  once<K extends keyof WalletEventMap>(
+    event: K,
+    listener: EventListener<WalletEventMap[K]>
+  ): EventSubscription {
+    return this.eventSystem.once(event, listener);
+  }
+
+  /**
+   * Remove an event listener
+   */
+  off<K extends keyof WalletEventMap>(
+    event: K,
+    listener: EventListener<WalletEventMap[K]>
+  ): void {
+    this.eventSystem.off(event, listener);
+  }
+
+  /**
+   * Remove all listeners for an event or all events
+   */
+  removeAllListeners<K extends keyof WalletEventMap>(event?: K): void {
+    this.eventSystem.removeAllListeners(event);
+  }
+
+  /**
+   * Subscribe to multiple events at once
+   */
+  subscribe(handlers: EventHandlerMap): MultiEventSubscription {
+    return this.eventSystem.subscribe(handlers);
+  }
+
+  /**
+   * Check if there are listeners for an event
+   */
+  hasListeners<K extends keyof WalletEventMap>(event: K): boolean {
+    return this.eventSystem.hasListeners(event);
+  }
+
+  /**
+   * Get the number of listeners for an event
+   */
+  getListenerCount<K extends keyof WalletEventMap>(event: K): number {
+    return this.eventSystem.getListenerCount(event);
+  }
+
+  /**
+   * Get all event names that have listeners
+   */
+  getEventNames(): Array<keyof WalletEventMap> {
+    return this.eventSystem.getEventNames();
+  }
+
+  /**
+   * Get event system statistics
+   */
+  getEventStats() {
+    return this.eventSystem.getStats();
+  }
+
+  /**
+   * Check if FFI callback is registered for events
+   */
+  isEventCallbackRegistered(): boolean {
+    return this.eventSystem.isFFICallbackRegistered();
+  }
+
+  /**
+   * Initialize event system (internal use)
+   */
+  private async initializeEventSystem(): Promise<void> {
+    const lifecycleManager = getGlobalLifecycleManager();
+    await lifecycleManager.getOrCreateEventSystem(this.handle);
   }
 }
 
