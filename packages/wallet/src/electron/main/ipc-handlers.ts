@@ -314,7 +314,7 @@ export class IpcHandlersManager {
 
       const transaction = await wallet.sendTransaction(
         request.recipient,
-        String(request.amount),
+        BigInt(request.amount),
         { message: request.message }
       );
 
