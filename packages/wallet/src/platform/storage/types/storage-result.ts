@@ -1,49 +1,65 @@
 /**
- * @fileoverview Enhanced StorageResult interface with strict generic constraints
+ * @fileoverview Enhanced StorageResult with FFI-safe discriminated union pattern
  * 
- * Provides type-safe storage result types that properly handle success/failure states
- * with correct typing for data fields in all scenarios.
+ * Provides type-safe storage result types using discriminated unions for predictable
+ * FFI boundary crossing with serializable error types and ergonomic helper functions.
  */
 
 /**
- * Base storage result for operations that return data
+ * Storage error types for cross-language compatibility
+ */
+export type StorageErrorCode = 
+  | "not_found"
+  | "permission_denied" 
+  | "validation_error"
+  | "quota_exceeded"
+  | "connection_failed"
+  | "authentication_required"
+  | "operation_cancelled"
+  | "unsupported_operation"
+  | "internal_error";
+
+/**
+ * FFI-safe storage error with serializable data
+ */
+export interface StorageError {
+  /** Error type for pattern matching */
+  code: StorageErrorCode;
+  /** Human-readable error message */
+  message?: string;
+  /** Additional context data (must be JSON-serializable) */
+  details?: Record<string, string | number | boolean>;
+  /** Whether user interaction is required to resolve */
+  requiresUserInteraction?: boolean;
+}
+
+/**
+ * Success result with data using discriminated union
  */
 export interface StorageSuccess<T> {
-  success: true;
-  data: T;
-  error?: undefined;
+  kind: "ok";
+  value: T;
   requiresUserInteraction?: boolean;
 }
 
 /**
- * Storage error result
+ * Error result using discriminated union
  */
 export interface StorageFailure {
-  success: false;
-  data?: undefined;
-  error: string;
-  requiresUserInteraction?: boolean;
+  kind: "error";
+  error: StorageError;
 }
 
 /**
- * Union type for storage results that may return data
+ * Primary StorageResult type using discriminated union pattern
+ * This replaces the boolean-based approach for better FFI compatibility
  */
 export type StorageResult<T> = StorageSuccess<T> | StorageFailure;
 
 /**
- * For operations that don't return data (like store, delete)
+ * Operation-only result for methods that don't return data
  */
-export interface StorageOperationSuccess {
-  success: true;
-  data?: undefined;
-  error?: undefined;
-  requiresUserInteraction?: boolean;
-}
-
-/**
- * Union type for storage operations that don't return data
- */
-export type StorageOperationResult = StorageOperationSuccess | StorageFailure;
+export type StorageOperationResult = StorageResult<void>;
 
 /**
  * Helper functions for creating properly typed storage results
@@ -52,42 +68,92 @@ export const StorageResults = {
   /**
    * Create a success result with data
    */
-  success<T>(data: T, requiresUserInteraction?: boolean): StorageSuccess<T> {
-    return { success: true, data, requiresUserInteraction };
+  ok<T>(value: T, requiresUserInteraction?: boolean): StorageSuccess<T> {
+    return { kind: "ok", value, requiresUserInteraction };
   },
 
   /**
-   * Create a success result for operations without data
+   * Create an error result
    */
-  operationSuccess(requiresUserInteraction?: boolean): StorageOperationSuccess {
-    return { success: true, requiresUserInteraction };
+  error(
+    code: StorageErrorCode, 
+    message?: string, 
+    details?: Record<string, string | number | boolean>,
+    requiresUserInteraction?: boolean
+  ): StorageFailure {
+    return { 
+      kind: "error", 
+      error: { code, message, details, requiresUserInteraction } 
+    };
   },
 
   /**
-   * Create a failure result
+   * Create common error types
    */
-  failure(error: string, requiresUserInteraction?: boolean): StorageFailure {
-    return { success: false, error, requiresUserInteraction };
+  notFound(message?: string, details?: Record<string, string | number | boolean>): StorageFailure {
+    return this.error("not_found", message || "Item not found", details);
+  },
+
+  permissionDenied(message?: string, requiresUserInteraction?: boolean): StorageFailure {
+    return this.error("permission_denied", message || "Permission denied", undefined, requiresUserInteraction);
+  },
+
+  validationError(message: string, details?: Record<string, string | number | boolean>): StorageFailure {
+    return this.error("validation_error", message, details);
+  },
+
+  quotaExceeded(message?: string): StorageFailure {
+    return this.error("quota_exceeded", message || "Storage quota exceeded");
+  },
+
+  operationCancelled(message?: string): StorageFailure {
+    return this.error("operation_cancelled", message || "Operation was cancelled", undefined, true);
+  },
+
+  internalError(message: string, details?: Record<string, string | number | boolean>): StorageFailure {
+    return this.error("internal_error", message, details);
   },
 
   /**
    * Type guard for success results
    */
-  isSuccess<T>(result: StorageResult<T>): result is StorageSuccess<T> {
-    return result.success === true;
+  isOk<T>(result: StorageResult<T>): result is StorageSuccess<T> {
+    return result.kind === "ok";
   },
 
   /**
-   * Type guard for failure results
+   * Type guard for error results
    */
-  isFailure<T>(result: StorageResult<T>): result is StorageFailure {
-    return result.success === false;
+  isError<T>(result: StorageResult<T>): result is StorageFailure {
+    return result.kind === "error";
+  },
+
+  /**
+   * Pattern matching for StorageResult
+   */
+  match<T, U>(
+    result: StorageResult<T>,
+    patterns: {
+      ok: (value: T, requiresUserInteraction?: boolean) => U;
+      error: (error: StorageError) => U;
+    }
+  ): U {
+    switch (result.kind) {
+      case "ok":
+        return patterns.ok(result.value, result.requiresUserInteraction);
+      case "error":
+        return patterns.error(result.error);
+      default:
+        // TypeScript exhaustiveness check
+        const _exhaustive: never = result;
+        throw new Error(`Unhandled StorageResult variant: ${_exhaustive}`);
+    }
   }
 };
 
 /**
  * Legacy StorageResult interface for backward compatibility
- * @deprecated Use the new union types instead
+ * @deprecated Use the new discriminated union types instead
  */
 export interface LegacyStorageResult<T = void> {
   success: boolean;
@@ -97,21 +163,39 @@ export interface LegacyStorageResult<T = void> {
 }
 
 /**
- * Convert legacy result to new typed result
+ * Convert legacy result to new discriminated union format
  */
 export function convertLegacyResult<T>(
   legacy: LegacyStorageResult<T>
-): StorageResult<T> | StorageOperationResult {
+): StorageResult<T> {
   if (legacy.success) {
-    if (legacy.data !== undefined) {
-      return StorageResults.success(legacy.data, legacy.requiresUserInteraction);
-    } else {
-      return StorageResults.operationSuccess(legacy.requiresUserInteraction);
-    }
+    // Handle both data and void operations
+    const value = legacy.data !== undefined ? legacy.data : (undefined as unknown as T);
+    return StorageResults.ok(value, legacy.requiresUserInteraction);
   } else {
-    return StorageResults.failure(
-      legacy.error || 'Unknown error',
+    return StorageResults.error(
+      "internal_error",
+      legacy.error || 'Unknown legacy error',
+      undefined,
       legacy.requiresUserInteraction
     );
   }
+}
+
+/**
+ * Convert new discriminated union to legacy format
+ */
+export function convertToLegacy<T>(result: StorageResult<T>): LegacyStorageResult<T> {
+  return StorageResults.match(result, {
+    ok: (value, requiresUserInteraction) => ({
+      success: true,
+      data: value,
+      requiresUserInteraction
+    }),
+    error: (error) => ({
+      success: false,
+      error: error.message || `${error.code} error`,
+      requiresUserInteraction: error.requiresUserInteraction
+    })
+  });
 }
