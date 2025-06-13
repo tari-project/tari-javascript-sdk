@@ -1553,6 +1553,38 @@ export class TariWallet implements AsyncDisposable {
   }
 
   /**
+   * Get wallet information (alias for getWalletInfo)
+   */
+  async getInfo(forceRefresh = false): Promise<WalletInfo> {
+    return this.getWalletInfo(forceRefresh);
+  }
+
+  /**
+   * Estimate transaction fee
+   */
+  async estimateFee(amount: bigint, priority: 'low' | 'normal' | 'high' = 'normal'): Promise<bigint> {
+    this.ensureNotDestroyed();
+    
+    // Basic fee estimation based on priority
+    const baseFee = 1000000n; // 1 mT base fee
+    const priorityMultiplier = priority === 'low' ? 0.5 : priority === 'high' ? 2.0 : 1.0;
+    
+    // Calculate fee based on amount and priority
+    const estimatedFee = BigInt(Math.floor(Number(baseFee) * priorityMultiplier));
+    
+    return estimatedFee;
+  }
+
+  /**
+   * Static factory method for creating wallet instances
+   */
+  static async create(config: WalletConfig): Promise<TariWallet> {
+    // This will be delegated to WalletFactory to avoid circular imports
+    const { WalletFactory } = await import('./wallet-factory.js');
+    return WalletFactory.create(config);
+  }
+
+  /**
    * Initialize event system (internal use)
    */
   private async initializeEventSystem(): Promise<void> {
