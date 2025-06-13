@@ -127,6 +127,7 @@ function removeEventListener(event: string, handler: Function): void {
  * Remove all event listeners
  */
 function removeAllEventListeners(): void {
+  const ipcRenderer = ElectronSafe.getIpcRenderer();
   for (const event of eventListeners.keys()) {
     ipcRenderer.removeAllListeners(`wallet-${event}`);
   }

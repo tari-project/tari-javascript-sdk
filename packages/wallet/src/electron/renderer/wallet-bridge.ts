@@ -445,6 +445,7 @@ export class ElectronWalletBridge {
     this.removeAllListeners();
     
     // Remove IPC listeners
+    const ipcRenderer = ElectronSafe.getIpcRenderer();
     ipcRenderer.removeAllListeners('wallet-event');
     ipcRenderer.removeAllListeners('transaction-received');
     ipcRenderer.removeAllListeners('balance-updated');

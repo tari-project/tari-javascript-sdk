@@ -132,6 +132,10 @@ export interface StorageConfig {
   enableCompression?: boolean;
   /** Compression threshold */
   compressionThreshold?: number;
+  /** Enable validation of storage operations */
+  enableValidation?: boolean;
+  /** Enable debug logging */
+  enableLogging?: boolean;
 }
 
 /**

@@ -66,7 +66,7 @@ export class BalanceMapper {
         available,
         pendingIncoming,
         pendingOutgoing,
-        timelocked: BigInt(0), // TODO: Extract from FFI when available
+        timelocked,
         total,
         lastUpdated: new Date()
       };
@@ -156,6 +156,7 @@ export class BalanceMapper {
       available: balance1.available + balance2.available,
       pendingIncoming: balance1.pendingIncoming + balance2.pendingIncoming,
       pendingOutgoing: balance1.pendingOutgoing + balance2.pendingOutgoing,
+      timelocked: balance1.timelocked + balance2.timelocked,
       total: balance1.total + balance2.total,
       lastUpdated: new Date()
     };
@@ -169,6 +170,7 @@ export class BalanceMapper {
       available: balance1.available - balance2.available,
       pendingIncoming: balance1.pendingIncoming - balance2.pendingIncoming,
       pendingOutgoing: balance1.pendingOutgoing - balance2.pendingOutgoing,
+      timelocked: balance1.timelocked - balance2.timelocked,
       total: balance1.total - balance2.total,
       lastUpdated: new Date()
     };
@@ -182,6 +184,7 @@ export class BalanceMapper {
       balance1.available === balance2.available &&
       balance1.pendingIncoming === balance2.pendingIncoming &&
       balance1.pendingOutgoing === balance2.pendingOutgoing &&
+      balance1.timelocked === balance2.timelocked &&
       balance1.total === balance2.total
     );
   }
@@ -299,7 +302,7 @@ export class BalanceMapper {
       return false;
     }
 
-    const requiredFields = ['available', 'pendingIncoming', 'pendingOutgoing', 'total', 'lastUpdated'];
+    const requiredFields = ['available', 'pendingIncoming', 'pendingOutgoing', 'timelocked', 'total', 'lastUpdated'];
     
     for (const field of requiredFields) {
       if (!(field in balance)) {
@@ -312,6 +315,7 @@ export class BalanceMapper {
       typeof balance.available !== 'bigint' ||
       typeof balance.pendingIncoming !== 'bigint' ||
       typeof balance.pendingOutgoing !== 'bigint' ||
+      typeof balance.timelocked !== 'bigint' ||
       typeof balance.total !== 'bigint'
     ) {
       return false;

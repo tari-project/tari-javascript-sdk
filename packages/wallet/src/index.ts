@@ -19,7 +19,7 @@ export {
   WalletError,
   WalletErrorCode,
   ErrorSeverity,
-  TariAddress
+  TariAddress as CoreTariAddress
 } from '@tari-project/tarijs-core';
 
 export type { 

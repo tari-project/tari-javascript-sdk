@@ -13,7 +13,7 @@ export type PerformanceLevel = 'minimal' | 'standard' | 'comprehensive';
 /**
  * GC strategy configuration
  */
-export type GCStrategy = 'aggressive' | 'balanced' | 'conservative';
+export type GCStrategy = 'aggressive' | 'balanced' | 'conservative' | 'adaptive';
 
 /**
  * Performance metrics data structure

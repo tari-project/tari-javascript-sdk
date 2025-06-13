@@ -7,6 +7,9 @@
 
 import { IPCTypeConverter, type IPCError, type IpcResponse } from '../types/ipc-types.js';
 
+// Re-export IPCTypeConverter for external use
+export { IPCTypeConverter };
+
 /**
  * Branded type for validated IPC addresses
  */

@@ -20,6 +20,7 @@ interface FFIBalanceData {
   total?: unknown;
   lastUpdated?: unknown;
   last_updated?: unknown; // Alternative naming
+  timelocked?: unknown;
   timeLocked?: unknown;
   time_locked?: unknown; // Alternative naming
   confirmed?: unknown;
@@ -71,6 +72,12 @@ export class BalanceMapper extends BaseEventMapper<Balance> {
     // Calculate total if not provided
     let total = ffi.total ? ValidationUtils.toBigInt(ffi.total) : available + pendingIncoming;
     
+    // Handle different naming conventions for timelocked
+    const timelocked = this.extractBigInt(
+      ffi.timelocked || ffi.timeLocked || ffi.time_locked, 
+      0n
+    );
+    
     // Handle different timestamp naming conventions
     const lastUpdated = ffi.lastUpdated || ffi.last_updated;
     
@@ -78,6 +85,7 @@ export class BalanceMapper extends BaseEventMapper<Balance> {
       available,
       pendingIncoming,
       pendingOutgoing,
+      timelocked,
       total,
       lastUpdated: lastUpdated ? ValidationUtils.toDate(lastUpdated) : new Date()
     };
@@ -252,6 +260,10 @@ export function validateBalanceConsistency(balance: Balance): {
   if (balance.pendingOutgoing < 0n) {
     errors.push('Pending outgoing balance cannot be negative');
   }
+  
+  if (balance.timelocked < 0n) {
+    errors.push('Timelocked balance cannot be negative');
+  }
 
   // Check total calculation
   const expectedTotal = balance.available + balance.pendingIncoming;
@@ -281,11 +293,13 @@ export function formatBalance(balance: Balance): {
   available: string;
   pendingIncoming: string;
   pendingOutgoing: string;
+  timelocked: string;
   total: string;
   formatted: {
     available: string;
     pendingIncoming: string;
     pendingOutgoing: string;
+    timelocked: string;
     total: string;
   };
 } {
@@ -299,11 +313,13 @@ export function formatBalance(balance: Balance): {
     available: balance.available.toString(),
     pendingIncoming: balance.pendingIncoming.toString(),
     pendingOutgoing: balance.pendingOutgoing.toString(),
+    timelocked: balance.timelocked.toString(),
     total: balance.total.toString(),
     formatted: {
       available: `${toTari(balance.available)} XTR`,
       pendingIncoming: `${toTari(balance.pendingIncoming)} XTR`,
       pendingOutgoing: `${toTari(balance.pendingOutgoing)} XTR`,
+      timelocked: `${toTari(balance.timelocked)} XTR`,
       total: `${toTari(balance.total)} XTR`
     }
   };
@@ -319,20 +335,23 @@ export function calculateBalanceChange(
   availableChange: bigint;
   pendingIncomingChange: bigint;
   pendingOutgoingChange: bigint;
+  timelockedChange: bigint;
   totalChange: bigint;
   hasChanges: boolean;
 } {
   const availableChange = current.available - previous.available;
   const pendingIncomingChange = current.pendingIncoming - previous.pendingIncoming;
   const pendingOutgoingChange = current.pendingOutgoing - previous.pendingOutgoing;
+  const timelockedChange = current.timelocked - previous.timelocked;
   const totalChange = current.total - previous.total;
 
   return {
     availableChange,
     pendingIncomingChange,
     pendingOutgoingChange,
+    timelockedChange,
     totalChange,
     hasChanges: availableChange !== 0n || pendingIncomingChange !== 0n || 
-                pendingOutgoingChange !== 0n || totalChange !== 0n
+                pendingOutgoingChange !== 0n || timelockedChange !== 0n || totalChange !== 0n
   };
 }

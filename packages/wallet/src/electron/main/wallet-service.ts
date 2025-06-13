@@ -172,7 +172,9 @@ export class ElectronWalletService {
       await this.saveWalletState(id);
 
       // Dispose wallet resources
-      await instance.wallet[Symbol.dispose]();
+      if (typeof (instance.wallet as any)[Symbol.dispose] === 'function') {
+        await (instance.wallet as any)[Symbol.dispose]();
+      }
 
       this.wallets.delete(id);
       this.emit('wallet-closed', { id });

@@ -129,7 +129,8 @@ export * from './ffi/debug';
 export * from './ffi/trace';
 
 // Memory management and performance (Phase 10) - specific exports to avoid conflicts
-export { safeDispose, isDisposable, isAsyncDisposable } from './memory/using-polyfill';
+export { safeDispose, isDisposable, isAsyncDisposable, DisposableStack, AsyncDisposableStack } from './memory/using-polyfill';
+export type { Disposable, AsyncDisposable } from './memory/using-polyfill';
 export { DisposableResource as MemoryDisposableResource } from './memory/disposable';
 export { TariFFIResource } from './memory/resource-base';
 export { SecureBuffer } from './memory/secure-buffer';
@@ -145,11 +146,70 @@ export { HeapStatsCollector } from './memory/heap-stats';
 
 // Performance optimization - specific exports to avoid conflicts
 export { CallBatcher } from './performance/call-batcher';
-export type { BatchResult, BatchConfig } from './performance/call-batcher';
+export type { BatchResult, BatchConfig, BatchStats as QueueStats, PendingCall as CallBatchResult } from './performance/call-batcher';
 export { BatchQueue } from './performance/batch-queue';
 export { BatchExecutor } from './performance/batch-executor';
 export type { RetryConfig as PerformanceRetryConfig } from './performance/batch-executor';
 export type { CircuitBreakerConfig as PerformanceCircuitBreakerConfig } from './performance/batch-executor';
+
+// Resource and memory types
+export type ResourceMetrics = {
+  memoryUsage: number;
+  allocations: number;
+  deallocations: number;
+  activeResources: number;
+};
+
+export type SecureView<T> = Readonly<T> & { 
+  readonly __secure: true;
+  readonly __viewType: string;
+};
+
+// Using helper types for resource management
+export type UsingFunction = <T extends Disposable, R>(
+  resource: T,
+  operation: (resource: T) => R | Promise<R>
+) => Promise<R>;
+
+export type UsingAsyncFunction = <T extends AsyncDisposable, R>(
+  resource: T,
+  operation: (resource: T) => Promise<R>
+) => Promise<R>;
+
+// Create using helper functions
+export const using: UsingFunction = async <T extends Disposable, R>(
+  resource: T,
+  operation: (resource: T) => R | Promise<R>
+): Promise<R> => {
+  try {
+    return await operation(resource);
+  } finally {
+    if (resource && typeof (resource as any)[Symbol.dispose] === 'function') {
+      try {
+        (resource as any)[Symbol.dispose]();
+      } catch (error) {
+        console.warn('Error disposing resource:', error);
+      }
+    }
+  }
+};
+
+export const usingAsync: UsingAsyncFunction = async <T extends AsyncDisposable, R>(
+  resource: T,
+  operation: (resource: T) => Promise<R>
+): Promise<R> => {
+  try {
+    return await operation(resource);
+  } finally {
+    if (resource && typeof (resource as any)[Symbol.asyncDispose] === 'function') {
+      try {
+        await (resource as any)[Symbol.asyncDispose]();
+      } catch (error) {
+        console.warn('Error disposing async resource:', error);
+      }
+    }
+  }
+};
 
 // Version information
 export const VERSION = '0.0.1';

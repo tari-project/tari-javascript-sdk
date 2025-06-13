@@ -73,7 +73,7 @@ export class PerformanceManager extends DisposableResource {
       },
       workers: {
         enableWorkerPool: true,
-        poolSize: Math.max(1, require('os').cpus().length - 1),
+        poolSize: Math.max(1, (require('os').cpus()?.length || 4) - 1),
         enableAutoScaling: true,
         loadBalancingStrategy: 'adaptive'
       },
@@ -174,7 +174,7 @@ export class PerformanceManager extends DisposableResource {
     let workersRecycled = 0;
 
     // Trigger memory cleanup
-    if (this.features.memoryPressureMonitoring) {
+    if (this.features.memoryPressureMonitoring && this.memoryMonitor?.triggerCleanup) {
       memoryFreed = await this.memoryMonitor.triggerCleanup();
     }
 
@@ -210,7 +210,7 @@ export class PerformanceManager extends DisposableResource {
     }
 
     // Force GC
-    if (this.features.gcCoordination) {
+    if (this.features.gcCoordination && this.gcCoordinator?.forceGC) {
       await this.gcCoordinator.forceGC('performance-manager-cleanup');
     }
 
@@ -232,19 +232,19 @@ export class PerformanceManager extends DisposableResource {
     const metrics = this.getMetrics();
 
     // Memory optimizations
-    if (metrics.memory.pressureLevel !== 'normal') {
+    if (metrics.memory?.pressureLevel !== 'normal') {
       await this.forceCleanup();
       optimizations.push('Triggered memory cleanup');
     }
 
     // Cache optimizations
-    if (metrics.cache.hitRatio < 0.5) {
+    if (metrics.cache?.hitRatio && metrics.cache.hitRatio < 0.5) {
       this.optimizeCacheConfiguration();
       optimizations.push('Optimized cache configuration');
     }
 
     // Worker pool optimizations
-    if (metrics.workers.poolUtilization.default > 0.8 && this.workerManager) {
+    if (metrics.workers?.poolUtilization?.default > 0.8 && this.workerManager) {
       if ('scalePool' in this.workerManager) {
         await (this.workerManager as any).scalePool('default', 
           Math.min(8, metrics.workers.totalWorkers + 2));
@@ -253,7 +253,7 @@ export class PerformanceManager extends DisposableResource {
     }
 
     // Batching optimizations
-    if (metrics.batching.pendingCalls > this.config.batching.maxBatchSize * 2) {
+    if (metrics.batching?.pendingCalls && metrics.batching.pendingCalls > this.config.batching.maxBatchSize * 2) {
       await this.callBatcher.flush();
       optimizations.push('Flushed pending batched calls');
     }
@@ -321,13 +321,17 @@ export class PerformanceManager extends DisposableResource {
     // Initialize memory monitoring
     if (this.features.memoryPressureMonitoring) {
       this.memoryMonitor = getGlobalMemoryMonitor();
-      this.setupMemoryMonitoring();
+      if (this.memoryMonitor) {
+        this.setupMemoryMonitoring();
+      }
     }
 
     // Initialize GC coordination
     if (this.features.gcCoordination) {
       this.gcCoordinator = getGlobalGCCoordinator();
-      this.setupGCCoordination();
+      if (this.gcCoordinator) {
+        this.setupGCCoordination();
+      }
     }
 
     // Initialize heap statistics
