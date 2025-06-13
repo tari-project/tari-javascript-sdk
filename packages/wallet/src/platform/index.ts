@@ -21,10 +21,10 @@ export { SecretServiceStorage } from './storage/secret-service.js';
 export { EncryptedFileStorage } from './storage/encrypted-file.js';
 export { MemoryStorage } from './storage/memory-storage.js';
 
-// Electron integration
-export * from './electron/main/wallet-service.js';
-export * from './electron/main/ipc-handlers.js';
-export * from './electron/renderer/wallet-bridge.js';
+// Electron integration (conditional exports)
+export type { ElectronWalletService } from '../electron/main/wallet-service.js';
+export type { ElectronIPCHandlers } from '../electron/main/ipc-handlers.js';
+export type { ElectronWalletBridge } from '../electron/renderer/wallet-bridge.js';
 
 // Worker integration
 export * from '../workers/ffi-proxy.js';
@@ -33,8 +33,8 @@ import { PlatformDetector, type PlatformInfo } from './detector.js';
 import { getCapabilitiesManager, type CapabilityAssessment, type OptimizationRecommendations } from './capabilities.js';
 import { getRuntimeManager, type RuntimeContext } from './runtime.js';
 import { createSecureStorage, type StorageBackend } from './storage/storage-factory.js';
-import { getElectronWalletService } from './electron/main/wallet-service.js';
-import { getElectronWalletBridge } from './electron/renderer/wallet-bridge.js';
+import { getElectronWalletService } from '../electron/main/wallet-service.js';
+import { getElectronWalletBridge } from '../electron/renderer/wallet-bridge.js';
 import { getWorkerFFIProxy } from '../workers/ffi-proxy.js';
 
 /**

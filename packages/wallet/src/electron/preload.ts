@@ -5,7 +5,7 @@
  * with proper type safety and security validation.
  */
 
-import { contextBridge, ipcRenderer } from 'electron';
+import { ElectronSafe } from './types/electron-fallbacks.js';
 import type { WalletConfig } from '../types/index.js';
 
 /**
@@ -171,6 +171,7 @@ function sanitizeError(error: Error): string {
  */
 async function secureInvoke(channel: string, ...args: any[]): Promise<any> {
   try {
+    const ipcRenderer = ElectronSafe.getIpcRenderer();
     const result = await ipcRenderer.invoke(channel, ...args);
     
     if (result && !result.success) {
@@ -184,8 +185,9 @@ async function secureInvoke(channel: string, ...args: any[]): Promise<any> {
 }
 
 // Expose APIs through context bridge
-if (process.contextIsolated) {
+if (ElectronSafe.hasContextBridge() && typeof process !== 'undefined' && (process as any).contextIsolated) {
   try {
+    const contextBridge = ElectronSafe.getContextBridge();
     // Main wallet API
     contextBridge.exposeInMainWorld('tariWallet', {
       // Wallet lifecycle

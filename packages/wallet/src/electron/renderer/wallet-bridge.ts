@@ -5,7 +5,7 @@
  * automatic IPC communication and event handling.
  */
 
-import { ipcRenderer, IpcRendererEvent } from 'electron';
+import { ElectronSafe, type IpcRendererEvent } from '../types/electron-fallbacks.js';
 import type { WalletConfig } from '../../types/index.js';
 import type { 
   IpcResponse, 
@@ -366,6 +366,7 @@ export class ElectronWalletBridge {
    */
   private async invoke<T>(channel: string, request: any): Promise<IpcResponse<T>> {
     try {
+      const ipcRenderer = ElectronSafe.getIpcRenderer();
       const response: IpcResponse<T> = await ipcRenderer.invoke(channel, request);
       
       if (!response.success) {
