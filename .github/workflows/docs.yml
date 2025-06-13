@@ -1,0 +1,306 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'packages/**'
+      - 'README.md'
+      - 'typedoc.json'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'packages/**'
+      - 'README.md'
+      - 'typedoc.json'
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Deployment target'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper git info
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install documentation dependencies
+        run: |
+          cd docs
+          npm ci
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Generate TypeDoc API documentation
+        run: |
+          npm install -g typedoc
+          typedoc
+
+      - name: Build documentation site
+        run: |
+          cd docs
+          npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-build
+          path: docs/build/
+          retention-days: 30
+
+      - name: Setup Pages (for main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages (for main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
+
+  # Deploy job for main branch pushes
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Link checker job
+  link-check:
+    runs-on: ubuntu-latest
+    needs: build
+    if: always() && needs.build.result == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-build
+          path: docs/build/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install link checker
+        run: npm install -g broken-link-checker
+
+      - name: Start local server
+        run: |
+          cd docs/build
+          python3 -m http.server 8080 &
+          sleep 5
+
+      - name: Check internal links
+        run: |
+          blc http://localhost:8080 \
+            --recursive \
+            --ordered \
+            --exclude-external \
+            --filter-level 3 \
+            --get || true
+
+      - name: Check for broken internal links
+        run: |
+          cd docs/build
+          find . -name "*.html" -exec grep -l "404\|Not Found\|broken" {} \; | tee broken_pages.txt
+          if [ -s broken_pages.txt ]; then
+            echo "⚠️ Found pages with potential issues:"
+            cat broken_pages.txt
+          else
+            echo "✅ No obvious broken pages found"
+          fi
+
+  # Documentation quality checks
+  quality-check:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-build
+          path: docs/build/
+
+      - name: Check documentation completeness
+        run: |
+          echo "📊 Documentation Quality Report"
+          echo "================================"
+          
+          # Check for essential pages
+          ESSENTIAL_PAGES=(
+            "docs/build/index.html"
+            "docs/build/docs/introduction/index.html"
+            "docs/build/docs/getting-started/installation/index.html"
+            "docs/build/docs/getting-started/quick-start/index.html"
+          )
+          
+          echo "✅ Essential pages check:"
+          for page in "${ESSENTIAL_PAGES[@]}"; do
+            if [ -f "$page" ]; then
+              echo "  ✅ $page"
+            else
+              echo "  ❌ $page (missing)"
+            fi
+          done
+          
+          # Check build size
+          BUILD_SIZE=$(du -sh docs/build | cut -f1)
+          echo "📦 Build size: $BUILD_SIZE"
+          
+          # Count documentation files
+          HTML_COUNT=$(find docs/build -name "*.html" | wc -l)
+          echo "📄 HTML pages: $HTML_COUNT"
+          
+          # Check for API documentation
+          if [ -d "docs/build/api" ] || [ -d "docs/static/api" ]; then
+            echo "✅ API documentation found"
+          else
+            echo "⚠️  API documentation not found"
+          fi
+          
+          # Check for search functionality
+          if grep -q "algolia\|search" docs/build/index.html; then
+            echo "✅ Search functionality detected"
+          else
+            echo "ℹ️  Search functionality not configured"
+          fi
+
+      - name: Validate HTML
+        run: |
+          # Install HTML validator
+          npm install -g html-validate
+          
+          # Create basic HTML validation config
+          cat > .htmlvalidate.json << 'EOF'
+          {
+            "extends": ["html-validate:recommended"],
+            "rules": {
+              "no-trailing-whitespace": "off",
+              "void-content": "off",
+              "no-inline-style": "off"
+            }
+          }
+          EOF
+          
+          # Validate key pages (limit output)
+          echo "🔍 HTML Validation Summary:"
+          html-validate docs/build/index.html || echo "⚠️ Index page has validation issues"
+          
+          # Count total validation issues
+          ISSUE_COUNT=$(find docs/build -name "*.html" -exec html-validate {} \; 2>&1 | grep -c "error\|warning" || echo "0")
+          echo "📊 Total validation issues: $ISSUE_COUNT"
+
+  # Performance check
+  performance-check:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-build
+          path: docs/build/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Start local server
+        run: |
+          cd docs/build
+          python3 -m http.server 9001 &
+          sleep 5
+
+      - name: Run Lighthouse audit
+        run: |
+          lhci collect \
+            --url=http://localhost:9001 \
+            --numberOfRuns=1 \
+            --headful=false || true
+
+      - name: Check bundle sizes
+        run: |
+          echo "📦 Documentation Asset Sizes:"
+          echo "============================="
+          
+          # Check CSS bundle sizes
+          find docs/build -name "*.css" -exec du -h {} \; | sort -rh | head -10
+          
+          # Check JavaScript bundle sizes  
+          find docs/build -name "*.js" -exec du -h {} \; | sort -rh | head -10
+          
+          # Check for large images
+          find docs/build -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.svg" | \
+            xargs du -h | sort -rh | head -10
+
+  # Deployment notification
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy, link-check, quality-check, performance-check]
+    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "🚀 Documentation Deployment Summary"
+          echo "=================================="
+          echo "📅 Deployed: $(date)"
+          echo "🌍 URL: https://tari-project.github.io/tari-javascript-sdk/"
+          echo "📊 Build Status: ${{ needs.build.result }}"
+          echo "🚀 Deploy Status: ${{ needs.deploy.result }}"
+          echo "🔗 Link Check: ${{ needs.link-check.result }}"
+          echo "✅ Quality Check: ${{ needs.quality-check.result }}"
+          echo "⚡ Performance Check: ${{ needs.performance-check.result }}"
+          echo ""
+          echo "📖 Key pages:"
+          echo "  • Getting Started: https://tari-project.github.io/tari-javascript-sdk/docs/getting-started/installation"
+          echo "  • Quick Start: https://tari-project.github.io/tari-javascript-sdk/docs/getting-started/quick-start"
+          echo "  • API Reference: https://tari-project.github.io/tari-javascript-sdk/api/"

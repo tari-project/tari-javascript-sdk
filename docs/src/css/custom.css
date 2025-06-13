@@ -1,0 +1,223 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #9C1A9C;
+  --ifm-color-primary-dark: #8D178D;
+  --ifm-color-primary-darker: #85158F;
+  --ifm-color-primary-darkest: #6E1179;
+  --ifm-color-primary-light: #AB1DAB;
+  --ifm-color-primary-lighter: #B31FB3;
+  --ifm-color-primary-lightest: #C92CC9;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability purposes, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #CB5ACB;
+  --ifm-color-primary-dark: #C142C1;
+  --ifm-color-primary-darker: #BC3CBC;
+  --ifm-color-primary-darkest: #A228A2;
+  --ifm-color-primary-light: #D572D5;
+  --ifm-color-primary-lighter: #DA7EDA;
+  --ifm-color-primary-lightest: #E99EE9;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Custom Tari styles */
+.hero__title {
+  background: linear-gradient(45deg, #9C1A9C, #CB5ACB);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 400% 400%;
+  animation: gradient 4s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Code block enhancements */
+.prism-code {
+  border-radius: 8px;
+}
+
+/* Callout boxes */
+.alert {
+  border-radius: 8px;
+  border-left: 4px solid var(--ifm-color-primary);
+}
+
+.alert--tip {
+  border-left-color: #00d2d3;
+}
+
+.alert--warning {
+  border-left-color: #ffba00;
+}
+
+.alert--danger {
+  border-left-color: #fa383e;
+}
+
+/* Custom components */
+.feature-card {
+  padding: 1rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 4px 12px rgba(156, 26, 156, 0.1);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--ifm-color-primary);
+}
+
+/* API reference styling */
+.api-method {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-right: 0.5rem;
+}
+
+.api-method--get {
+  background-color: #49cc90;
+  color: white;
+}
+
+.api-method--post {
+  background-color: #fca130;
+  color: white;
+}
+
+.api-method--put {
+  background-color: #9C1A9C;
+  color: white;
+}
+
+.api-method--delete {
+  background-color: #f93e3e;
+  color: white;
+}
+
+/* Navigation enhancements */
+.navbar {
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.navbar__brand:hover {
+  color: var(--ifm-color-primary);
+}
+
+/* Table styling */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  border-radius: 8px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+th {
+  background-color: var(--ifm-color-emphasis-100);
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .hero__title {
+    font-size: 2rem;
+  }
+  
+  .feature-card {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Syntax highlighting improvements */
+.token.keyword {
+  color: var(--ifm-color-primary);
+}
+
+.token.string {
+  color: #032f62;
+}
+
+[data-theme='dark'] .token.string {
+  color: #9ecbff;
+}
+
+/* Search improvements */
+.DocSearch-Button {
+  border-radius: 8px;
+}
+
+/* Footer styling */
+.footer {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+/* Badge styles for version info */
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+}
+
+.badge--primary {
+  color: #fff;
+  background-color: var(--ifm-color-primary);
+}
+
+.badge--secondary {
+  color: #fff;
+  background-color: #6c757d;
+}
+
+.badge--success {
+  color: #fff;
+  background-color: #28a745;
+}
+
+.badge--warning {
+  color: #212529;
+  background-color: #ffc107;
+}
+
+.badge--danger {
+  color: #fff;
+  background-color: #dc3545;
+}

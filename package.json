@@ -49,7 +49,13 @@
     "test:ci": "npm run test:ci --workspaces --if-present",
     "test:native": "./scripts/test-native.sh",
     "benchmark": "node packages/wallet/src/__benchmarks__/runner.js",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "docs:build": "./scripts/build-docs.sh",
+    "docs:deploy": "./scripts/deploy-docs.sh",
+    "docs:deploy:staging": "./scripts/deploy-docs.sh --staging",
+    "docs:serve": "cd docs && npm run serve",
+    "docs:api": "typedoc",
+    "docs:dev": "cd docs && npm start"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
