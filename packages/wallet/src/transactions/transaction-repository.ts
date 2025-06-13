@@ -261,13 +261,13 @@ export class TransactionRepository extends TypedEventEmitter {
     // Apply additional filtering
     let filtered = candidates;
     if (filter) {
-      filtered = TransactionUtils.filter(candidates, filter);
+      filtered = TransactionUtils.filter(candidates as any, filter);
     }
 
     // Apply sorting
     const sortBy = options?.sortBy || 'timestamp' as TransactionSortBy;
     const sortOrder = options?.sortOrder || 'desc';
-    const sorted = TransactionUtils.sort(filtered, sortBy, sortOrder);
+    const sorted = TransactionUtils.sort(filtered as any, sortBy, sortOrder);
 
     // Apply pagination
     const offset = options?.offset || 0;

@@ -120,17 +120,24 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
     });
     
     // Initialize fee estimator and senders
-    this.feeEstimator = new FeeEstimator(config.walletHandle, {
-      defaultFeePerGram: config.defaultFeePerGram
+    this.feeEstimator = new FeeEstimator({
+      walletHandle: config.walletHandle,
+      defaultPriority: 'normal' as any,
+      minimumFeePerGram: BigInt(1) as MicroTari,
+      maximumFeePerGram: BigInt(1000) as MicroTari,
+      networkDataCacheDuration: 300000,
+      enableMLModels: false,
+      priorityMultipliers: { low: 0.5, normal: 1.0, high: 2.0 } as any,
+      networkRefreshInterval: 60000
     });
     this.standardSender = new StandardSender(config.walletHandle, this.feeEstimator);
     this.oneSidedSender = new OneSidedSender(config.walletHandle, this.feeEstimator);
     
     // Initialize history service
-    const historyConfig: HistoryServiceConfig = {
+    const historyConfig = {
       walletHandle: config.walletHandle,
       ...DEFAULT_HISTORY_SERVICE_CONFIG
-    };
+    } as HistoryServiceConfig;
     this.historyService = new HistoryService(historyConfig, this.repository);
 
     // Set up event forwarding
@@ -179,7 +186,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
       const sendOptions: StandardSendOptions = {
         feePerGram: params.feePerGram,
         message: params.message,
-        lockHeight: params.lockHeight,
+        lockHeight: params.lockHeight ? Number(params.lockHeight) : undefined,
         allowSelfSend: false // Default to false for safety
       };
 
@@ -707,7 +714,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
         `Invalid recipient address: ${address}`,
         { 
           severity: ErrorSeverity.Error,
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { address }
         }
       );

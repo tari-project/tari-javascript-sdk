@@ -1,5 +1,5 @@
-import { FFIBindings } from '@tari-project/tarijs-core';
 import {
+  getFFIBindings,
   WalletHandle,
   TransactionId,
   MicroTari,
@@ -162,7 +162,7 @@ export class StandardSender {
         options.message || ''
       );
 
-      return txId as TransactionId;
+      return txId as unknown as TransactionId;
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TransactionSendFailed,
@@ -295,7 +295,7 @@ export class StandardSender {
     const estimatedFeePerGram = feePerGram || 
       await this.feeEstimator.estimateFeePerGram(amount, 1);
     
-    const estimatedSizeGrams = this.feeEstimator.estimateTransactionSize(1); // 1 output
+    const estimatedSizeGrams = this.feeEstimator.estimateTransactionSize(BigInt(1) as MicroTari); // 1 output
     const estimatedFee = estimatedFeePerGram * BigInt(estimatedSizeGrams);
     const totalCost = amount + estimatedFee;
 
