@@ -1,5 +1,5 @@
-import { DisposableResource } from '@tari/core/memory/disposable';
-import { MemoryUtils } from '@tari/core/memory/memory-utils';
+import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
+// Note: MemoryUtils might need to be implemented or imported differently
 
 /**
  * Intelligent caching layer for expensive queries

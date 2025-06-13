@@ -49,7 +49,7 @@ export const DEFAULT_AMOUNT_CONFIG: AmountValidationConfig = {
 export class AmountValidator {
     private config: AmountValidationConfig;
     private cachedBalance?: {
-        balance: Balance;
+        balance: InstanceType<typeof Balance>;
         timestamp: number;
         ttl: number;
     };
@@ -251,7 +251,7 @@ export class AmountValidator {
      * @returns Promise resolving to current wallet balance
      */
     @withErrorContext('get_current_balance', 'transaction')
-    async getCurrentBalance(forceRefresh = false): Promise<Balance> {
+    async getCurrentBalance(forceRefresh = false): Promise<InstanceType<typeof Balance>> {
         const now = Date.now();
         const cacheExpired = !this.cachedBalance ||
             now > this.cachedBalance.timestamp + this.cachedBalance.ttl;
