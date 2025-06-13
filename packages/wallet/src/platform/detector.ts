@@ -6,6 +6,8 @@
  * platform-specific capability identification.
  */
 
+// Use type assertions for browser globals to avoid compilation errors
+
 /**
  * Operating system types
  */
@@ -296,12 +298,12 @@ export class PlatformDetector {
   private static detectTauriVersion(): string | undefined {
     try {
       // Access Tauri version from window.__TAURI__
-      if (typeof window !== 'undefined' && window.__TAURI__) {
-        return window.__TAURI__.version || window.__TAURI__.__version;
+      if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+        return (window as any).__TAURI__.version || (window as any).__TAURI__.__version;
       }
       
       // Alternative: try to get version from app API
-      if (typeof window !== 'undefined' && window.__TAURI__?.app?.getTauriVersion) {
+      if (typeof window !== 'undefined' && (window as any).__TAURI__?.app?.getTauriVersion) {
         // This is async, but we'll try to return synchronously for now
         // In practice, version info should be available in the main object
         return undefined;
@@ -446,8 +448,8 @@ export class PlatformDetector {
     // Tauri has IPC via invoke system
     if (runtime === 'tauri') {
       return typeof window !== 'undefined' && 
-             window.__TAURI__ !== undefined &&
-             typeof window.__TAURI__.invoke === 'function';
+             (window as any).__TAURI__ !== undefined &&
+             typeof (window as any).__TAURI__.invoke === 'function';
     }
 
     return false;
@@ -494,7 +496,7 @@ export class PlatformDetector {
    */
   private static isTauriEnvironment(): boolean {
     // Check for Tauri global object
-    if (typeof window !== 'undefined' && window.__TAURI__) {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       return true;
     }
 
