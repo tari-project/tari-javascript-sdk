@@ -8,7 +8,8 @@
 import {
   WalletError,
   WalletErrorCode,
-  type UnixTimestamp
+  type UnixTimestamp,
+  type TariAddressString
 } from '@tari-project/tarijs-core';
 import type { TransactionSortBy } from '@tari-project/tarijs-core';
 import type {
@@ -114,7 +115,7 @@ export class HistoryQueryBuilder {
    */
   withAddress(address: string, exactMatch: boolean = false): this {
     if (exactMatch) {
-      this.filter.address = address;
+      this.filter.address = address as TariAddressString;
     } else {
       // For partial matching, we'd need to implement this in the repository
       this.filter.addressPattern = address;
@@ -509,9 +510,9 @@ export class HistoryQueryBuilder {
   private orderStatusesBySelectivity(statuses: TransactionStatus[]): TransactionStatus[] {
     const selectivityOrder = [
       TransactionStatus.Cancelled,
-      TransactionStatus.Failed,
       TransactionStatus.Pending,
-      TransactionStatus.Completed
+      TransactionStatus.MinedConfirmed,
+      TransactionStatus.MinedUnconfirmed
     ];
 
     return statuses.sort((a, b) => {
