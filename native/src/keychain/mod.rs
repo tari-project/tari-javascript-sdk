@@ -10,6 +10,13 @@ use napi::{Result, Env};
 // Module definitions commented out until Security framework API is fully compatible
 // pub mod security_framework;
 // pub mod access_control;
+pub mod touch_id;
+
+// Re-export key functionality
+pub use touch_id::{
+    AuthenticationContext, BiometricManager, BiometricPolicy, BiometricType, BiometricError,
+    get_biometric_manager, utils as biometric_utils
+};
 
 /// Initialize macOS keychain support
 pub fn init(_env: Env) -> Result<()> {

@@ -20,6 +20,14 @@ pub mod linux;
 pub mod keychain_bridge;
 pub use keychain_bridge::*;
 
+// Enhanced keychain bridge with Touch ID support
+// Temporarily disabled due to Security Framework compatibility issues
+// #[cfg(target_os = "macos")]
+// #[path = "../keychain-bridge-enhanced.rs"]
+// pub mod keychain_bridge_enhanced;
+// #[cfg(target_os = "macos")]
+// pub use keychain_bridge_enhanced::*;
+
 // Windows credential store bridge
 #[path = "../windows-credential-bridge.rs"]
 pub mod windows_credential_bridge;
