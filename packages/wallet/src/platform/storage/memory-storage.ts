@@ -39,9 +39,9 @@ export class MemoryStorage extends BaseSecureStorage {
       };
       this.metadata.set(key, metadata);
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
-      return this.createResult(false, undefined, `Memory storage error: ${error}`);
+      return StorageResults.internalError(`Memory storage error: ${error}`);
     }
   }
 
@@ -54,13 +54,13 @@ export class MemoryStorage extends BaseSecureStorage {
 
       const data = this.storage.get(key);
       if (!data) {
-        return this.createResult(false, undefined, 'Key not found');
+        return StorageResults.notFound('Key not found');
       }
 
       // Return a copy to prevent external modification
-      return this.createResult(true, Buffer.from(data));
+      return StorageResults.ok(Buffer.from(data));
     } catch (error) {
-      return this.createResult(false, undefined, `Memory retrieval error: ${error}`);
+      return StorageResults.internalError(`Memory retrieval error: ${error}`);
     }
   }
 
@@ -75,12 +75,12 @@ export class MemoryStorage extends BaseSecureStorage {
       this.metadata.delete(key);
 
       if (!existed) {
-        return this.createResult(false, undefined, 'Key not found');
+        return StorageResults.notFound('Key not found');
       }
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
-      return this.createResult(false, undefined, `Memory removal error: ${error}`);
+      return StorageResults.internalError(`Memory removal error: ${error}`);
     }
   }
 
@@ -91,9 +91,9 @@ export class MemoryStorage extends BaseSecureStorage {
     try {
       this.validateKey(key);
       const exists = this.storage.has(key);
-      return this.createResult(true, exists);
+      return StorageResults.ok(exists);
     } catch (error) {
-      return this.createResult(false, undefined, `Memory check error: ${error}`);
+      return StorageResults.internalError(`Memory check error: ${error}`);
     }
   }
 
@@ -103,9 +103,9 @@ export class MemoryStorage extends BaseSecureStorage {
   async list(): Promise<StorageResult<string[]>> {
     try {
       const keys = Array.from(this.storage.keys());
-      return this.createResult(true, keys);
+      return StorageResults.ok(keys);
     } catch (error) {
-      return this.createResult(false, undefined, `Memory listing error: ${error}`);
+      return StorageResults.internalError(`Memory listing error: ${error}`);
     }
   }
 
@@ -118,12 +118,12 @@ export class MemoryStorage extends BaseSecureStorage {
 
       const metadata = this.metadata.get(key);
       if (!metadata) {
-        return this.createResult(false, undefined, 'Key not found');
+        return StorageResults.notFound('Key not found');
       }
 
-      return this.createResult(true, { ...metadata });
+      return StorageResults.ok({ ...metadata });
     } catch (error) {
-      return this.createResult(false, undefined, `Memory metadata error: ${error}`);
+      return StorageResults.internalError(`Memory metadata error: ${error}`);
     }
   }
 
@@ -134,9 +134,9 @@ export class MemoryStorage extends BaseSecureStorage {
     try {
       this.storage.clear();
       this.metadata.clear();
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
-      return this.createResult(false, undefined, `Memory clear error: ${error}`);
+      return StorageResults.internalError(`Memory clear error: ${error}`);
     }
   }
 
@@ -160,9 +160,9 @@ export class MemoryStorage extends BaseSecureStorage {
         supportsTtl: false,
       };
 
-      return this.createResult(true, info);
+      return StorageResults.ok(info);
     } catch (error) {
-      return this.createResult(false, undefined, `Memory info error: ${error}`);
+      return StorageResults.internalError(`Memory info error: ${error}`);
     }
   }
 
@@ -179,12 +179,12 @@ export class MemoryStorage extends BaseSecureStorage {
       await this.remove(testKey);
 
       if (StorageResults.isOk(retrieved) && retrieved.value?.equals(testData)) {
-        return this.createResult(true);
+        return StorageResults.ok(undefined);
       }
 
-      return this.createResult(false, undefined, 'Test failed');
+      return StorageResults.internalError('Test failed');
     } catch (error) {
-      return this.createResult(false, undefined, `Memory test error: ${error}`);
+      return StorageResults.internalError(`Memory test error: ${error}`);
     }
   }
 }

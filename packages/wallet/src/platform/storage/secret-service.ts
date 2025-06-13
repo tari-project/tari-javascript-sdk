@@ -98,7 +98,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
 
       const searchResult = await this.secretService.searchItems(this.collection.path, attributes);
       if (!searchResult.success || !searchResult.data || searchResult.data.length === 0) {
-        return this.createResult(false, undefined, 'Key not found');
+        return StorageResults.notFound('Key not found');
       }
 
       // Get the first matching item
@@ -111,7 +111,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
         if (Date.now() > expirationTime) {
           // Item expired, delete it
           await this.secretService.deleteItem(itemPath);
-          return this.createResult(false, undefined, 'Key expired');
+          return StorageResults.notFound('Key expired');
         }
       }
 
@@ -119,14 +119,14 @@ export class SecretServiceStorage extends BaseSecureStorage {
       const secretResult = await this.secretService.getSecret(itemPath);
       if (!secretResult.success) {
         if (secretResult.error?.includes('authentication required')) {
-          return this.createResult(false, undefined, secretResult.error, true);
+          return StorageResults.permissionDenied(secretResult.error, true);
         }
-        return this.createResult(false, undefined, `Failed to retrieve secret: ${secretResult.error}`);
+        return StorageResults.internalError(`Failed to retrieve secret: ${secretResult.error}`);
       }
 
-      return this.createResult(true, Buffer.from(secretResult.data!));
+      return StorageResults.ok(Buffer.from(secretResult.data!));
     } catch (error) {
-      return this.createResult(false, undefined, `Secret service retrieve failed: ${error}`);
+      return StorageResults.internalError(`Secret service retrieve failed: ${error}`);
     }
   }
 
@@ -174,7 +174,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
    */
   async exists(key: string): Promise<StorageResult<boolean>> {
     if (!this.isAvailable || !this.collection) {
-      return this.createResult(false, undefined, 'Secret service not available');
+      return StorageResults.internalError('Secret service not available');
     }
 
     try {
@@ -185,13 +185,13 @@ export class SecretServiceStorage extends BaseSecureStorage {
 
       const searchResult = await this.secretService.searchItems(this.collection.path, attributes);
       if (!searchResult.success) {
-        return this.createResult(false, undefined, searchResult.error);
+        return StorageResults.internalError(searchResult.error || 'Search failed');
       }
 
-      const exists = searchResult.data && searchResult.data.length > 0;
-      return this.createResult(true, exists);
+      const exists = !!(searchResult.data && searchResult.data.length > 0);
+      return StorageResults.ok(exists);
     } catch (error) {
-      return this.createResult(false, undefined, `Failed to check existence: ${error}`);
+      return StorageResults.internalError(`Failed to check existence: ${error}`);
     }
   }
 
@@ -200,7 +200,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
    */
   async list(): Promise<StorageResult<string[]>> {
     if (!this.isAvailable || !this.collection) {
-      return this.createResult(false, undefined, 'Secret service not available');
+      return StorageResults.internalError('Secret service not available');
     }
 
     try {
@@ -210,7 +210,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
 
       const searchResult = await this.secretService.searchItems(this.collection.path, attributes);
       if (!searchResult.success) {
-        return this.createResult(false, undefined, searchResult.error);
+        return StorageResults.internalError(searchResult.error || 'Search failed');
       }
 
       const keys: string[] = [];
@@ -223,9 +223,9 @@ export class SecretServiceStorage extends BaseSecureStorage {
         }
       }
 
-      return this.createResult(true, keys);
+      return StorageResults.ok(keys);
     } catch (error) {
-      return this.createResult(false, undefined, `Failed to list keys: ${error}`);
+      return StorageResults.internalError(`Failed to list keys: ${error}`);
     }
   }
 
@@ -234,7 +234,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
    */
   async getMetadata(key: string): Promise<StorageResult<StorageMetadata>> {
     if (!this.isAvailable || !this.collection) {
-      return this.createResult(false, undefined, 'Secret service not available');
+      return StorageResults.internalError('Secret service not available');
     }
 
     try {
@@ -245,13 +245,13 @@ export class SecretServiceStorage extends BaseSecureStorage {
 
       const searchResult = await this.secretService.searchItems(this.collection.path, attributes);
       if (!searchResult.success || !searchResult.data || searchResult.data.length === 0) {
-        return this.createResult(false, undefined, 'Key not found');
+        return StorageResults.notFound('Key not found');
       }
 
       const itemPath = searchResult.data[0];
       const itemInfo = await this.secretService.getItemInfo(itemPath);
       if (!itemInfo.success) {
-        return this.createResult(false, undefined, `Failed to get item info: ${itemInfo.error}`);
+        return StorageResults.internalError(`Failed to get item info: ${itemInfo.error || 'Unknown error'}`);
       }
 
       // Get secret to determine size
@@ -265,9 +265,9 @@ export class SecretServiceStorage extends BaseSecureStorage {
         encryption: 'secret-service',
       };
 
-      return this.createResult(true, metadata);
+      return StorageResults.ok(metadata);
     } catch (error) {
-      return this.createResult(false, undefined, `Failed to get metadata: ${error}`);
+      return StorageResults.internalError(`Failed to get metadata: ${error}`);
     }
   }
 
@@ -317,7 +317,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
       supportsAuth: true,
       supportsTtl: false,
     };
-    return this.createResult(true, info);
+    return StorageResults.ok(info);
   }
 
   /**

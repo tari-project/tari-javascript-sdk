@@ -75,13 +75,13 @@ export class KeychainStorage extends BaseSecureStorage {
    * Store data in keychain with automatic chunking
    */
   async store(key: string, value: Buffer, options: StorageOptions = {}): Promise<StorageResult<void>> {
-    try {
-      this.validateKey(key);
-      this.validateDataSize(value);
+  try {
+  this.validateKey(key);
+  this.validateDataSize(value);
 
-      if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Keychain not available');
-      }
+  if (!this.isAvailable) {
+  return StorageResults.internalError('Keychain not available');
+  }
 
       // Compress data if beneficial
       const compressedData = await this.compressData(value);
@@ -134,7 +134,7 @@ export class KeychainStorage extends BaseSecureStorage {
         await this.keychain!.setItem(metadataItem);
       }
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
       return this.handleError(error, 'store');
     }
@@ -148,7 +148,7 @@ export class KeychainStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Keychain not available');
+        return StorageResults.internalError('Keychain not available');
       }
 
       // Try to get metadata first
@@ -164,7 +164,7 @@ export class KeychainStorage extends BaseSecureStorage {
           const chunkData = await this.keychain!.getItem(KeychainStorage.SERVICE_NAME, chunkKey);
           
           if (!chunkData) {
-            return this.createResult(false, undefined, `Missing chunk ${i} for key ${key}`);
+            return StorageResults.internalError(`Missing chunk ${i} for key ${key}`);
           }
           
           chunks.push(chunkData);
@@ -173,17 +173,17 @@ export class KeychainStorage extends BaseSecureStorage {
         const reassembled = this.reassembleChunks(chunks);
         const decompressed = await this.decompressData(reassembled);
         
-        return this.createResult(true, decompressed);
+        return StorageResults.ok(decompressed);
       } else {
         // Try to get single item
         const data = await this.keychain!.getItem(KeychainStorage.SERVICE_NAME, key);
         
         if (!data) {
-          return this.createResult(false, undefined, 'Key not found');
+          return StorageResults.notFound('Key not found');
         }
         
         const decompressed = await this.decompressData(data);
-        return this.createResult(true, decompressed);
+        return StorageResults.ok(decompressed);
       }
     } catch (error) {
       return this.handleError(error, 'retrieve');
@@ -198,7 +198,7 @@ export class KeychainStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Keychain not available');
+        return StorageResults.internalError('Keychain not available');
       }
 
       // Check if data is chunked
@@ -228,7 +228,7 @@ export class KeychainStorage extends BaseSecureStorage {
         await this.keychain!.deleteItem(KeychainStorage.SERVICE_NAME, key);
       }
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
       return this.handleError(error, 'remove');
     }
@@ -242,11 +242,11 @@ export class KeychainStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Keychain not available');
+        return StorageResults.internalError('Keychain not available');
       }
 
       const exists = await this.keychain!.itemExists(KeychainStorage.SERVICE_NAME, key);
-      return this.createResult(true, exists);
+      return StorageResults.ok(exists);
     } catch (error) {
       return this.handleError(error, 'exists');
     }
@@ -258,7 +258,7 @@ export class KeychainStorage extends BaseSecureStorage {
   async list(): Promise<StorageResult<string[]>> {
     try {
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Keychain not available');
+        return StorageResults.internalError('Keychain not available');
       }
 
       const allItems = await this.keychain!.findItems(KeychainStorage.SERVICE_NAME);
@@ -269,7 +269,7 @@ export class KeychainStorage extends BaseSecureStorage {
         !item.includes(KeychainStorage.METADATA_SUFFIX)
       );
 
-      return this.createResult(true, keys);
+      return StorageResults.ok(keys);
     } catch (error) {
       return this.handleError(error, 'list');
     }
@@ -283,12 +283,12 @@ export class KeychainStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Keychain not available');
+        return StorageResults.internalError('Keychain not available');
       }
 
       const result = await this.getStoredMetadata(key);
       if (StorageResults.isOk(result) && result.value) {
-        return this.createResult(true, result.value);
+        return StorageResults.ok(result.value);
       }
 
       // Generate metadata for non-chunked items
@@ -302,10 +302,10 @@ export class KeychainStorage extends BaseSecureStorage {
           encryption: 'none',
         };
         
-        return this.createResult(true, metadata);
+        return StorageResults.ok(metadata);
       }
 
-      return this.createResult(false, undefined, 'Key not found');
+      return StorageResults.notFound('Key not found');
     } catch (error) {
       return this.handleError(error, 'getMetadata');
     }
@@ -333,7 +333,7 @@ export class KeychainStorage extends BaseSecureStorage {
   async getInfo(): Promise<StorageResult<StorageInfo>> {
     try {
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Keychain not available');
+        return StorageResults.internalError('Keychain not available');
       }
 
       const info: StorageInfo = {
@@ -346,7 +346,7 @@ export class KeychainStorage extends BaseSecureStorage {
         supportsTtl: false,
       };
 
-      return this.createResult(true, info);
+      return StorageResults.ok(info);
     } catch (error) {
       return this.handleError(error, 'getInfo');
     }
@@ -490,12 +490,12 @@ export class KeychainStorage extends BaseSecureStorage {
       
       if (metadataBuffer) {
         const metadata = JSON.parse(metadataBuffer.toString('utf8'));
-        return this.createResult(true, metadata);
+        return StorageResults.ok(metadata);
       }
       
-      return this.createResult(false, undefined, 'No metadata found');
+      return StorageResults.notFound('No metadata found');
     } catch (error) {
-      return this.createResult(false, undefined, `Failed to get metadata: ${error}`);
+      return StorageResults.internalError(`Failed to get metadata: ${error}`);
     }
   }
 
