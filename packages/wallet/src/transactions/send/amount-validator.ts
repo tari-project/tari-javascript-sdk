@@ -10,7 +10,7 @@ import {
     microTariFromFFI,
     microTariToFFI,
 } from '@tari-project/tarijs-core';
-import { Balance } from '../../models';
+import { BalanceModel as Balance } from '../../models';
 
 /**
  * Configuration for amount validation
@@ -117,7 +117,7 @@ export class AmountValidator {
         // Check safety margin if enabled
         if (this.config.safetyMarginPercent > 0 && microTariToFFI(availableBalance) < microTariToFFI(totalWithMargin)) {
             throw new WalletError(
-                WalletErrorCode.InsufficientFunds_WITH_MARGIN,
+                WalletErrorCode.InsufficientFundsWithMargin,
                 `Insufficient funds including safety margin: need ${totalWithMargin} MicroTari, have ${balance.available} MicroTari`,
                 {
                     context: {
@@ -164,14 +164,14 @@ export class AmountValidator {
                 this.validateBasicAmount(amount);
             } catch (error: unknown) {
                 throw new WalletError(
-                    error.code || WalletErrorCode.InvalidAmount,
-                    `Invalid amount at index ${index}: ${error.message}`,
+                    (error as any)?.code || WalletErrorCode.InvalidAmount,
+                    `Invalid amount at index ${index}: ${(error as any)?.message || String(error)}`,
                     {
                         context: {
                             amountIndex: index,
                             amount: amount.toString()
                         },
-                        cause: error
+                        cause: error instanceof Error ? error : undefined
                     }
                 );
             }
@@ -277,7 +277,7 @@ export class AmountValidator {
                     WalletErrorCode.BalanceQueryFailed,
                     'Failed to retrieve wallet balance',
                     {
-                        cause: error
+                        cause: error instanceof Error ? error : undefined
                     }
                 );
             }
@@ -410,7 +410,7 @@ export class AmountValidator {
                     context: {
                         required: requiredAmount.toString()
                     },
-                    cause: error
+                    cause: error instanceof Error ? error : undefined
                 }
             );
         }

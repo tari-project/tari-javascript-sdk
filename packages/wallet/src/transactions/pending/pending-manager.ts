@@ -15,6 +15,7 @@ import {
   withRetry,
   type WalletHandle,
   type TransactionId,
+  type TransactionInfo,
   type UnixTimestamp
 } from '@tari-project/tarijs-core';
 import type {
@@ -576,7 +577,7 @@ export class PendingManager extends TypedEventEmitter {
         ...baseTx,
         direction: 'Inbound' as any,
         senderId: ffiTx.senderId
-      } as PendingInboundTransaction;
+      } as unknown as PendingInboundTransaction;
     } else {
       return {
         ...baseTx,
@@ -594,7 +595,7 @@ export class PendingManager extends TypedEventEmitter {
       WalletErrorCode.TransactionProcessingFailed,
       `Failed to process pending transaction ${transactionId}`,
       { 
-        cause: error,
+        cause: error instanceof Error ? error : undefined,
         context: { transactionId: transactionId.toString() }
       }
     );
@@ -618,7 +619,7 @@ export class PendingManager extends TypedEventEmitter {
           WalletErrorCode.AutoCancellationFailed,
           `Failed to auto-cancel transaction ${transactionId}`,
           { 
-            cause: error,
+            cause: error instanceof Error ? error : undefined,
             context: { transactionId: transactionId.toString(), reason }
           }
         ),

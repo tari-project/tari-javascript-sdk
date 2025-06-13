@@ -142,7 +142,12 @@ export class OneSidedSender {
     );
 
     // Step 5: Build transaction with one-sided parameters
-    const builder = new TransactionBuilder({ walletHandle: this.walletHandle })
+    const builder = new TransactionBuilder({
+      feeEstimator: this.feeEstimator,
+      validator: this.validator,
+      strictValidation: false,
+      defaultOptions: this.config.defaultOptions || {}
+    } as any)
       .to(targetAddress)
       .amount(amount)
       .oneSided(true); // Mark as one-sided transaction
@@ -152,9 +157,10 @@ export class OneSidedSender {
       builder.message(options.message);
     }
 
-    if (options.recoveryData) {
-      builder.metadata('recovery_data', options.recoveryData);
-    }
+    // TODO: Add recovery data support when TransactionBuilder.metadata is implemented
+    // if (options.recoveryData) {
+    //   builder.metadata('recovery_data', options.recoveryData);
+    // }
 
     // Step 6: Estimate fee accounting for script complexity
     let feePerGram = options.feePerGram;
@@ -166,7 +172,7 @@ export class OneSidedSender {
           WalletErrorCode.FEE_ESTIMATION_FAILED,
           'Failed to estimate one-sided transaction fee',
           { 
-            cause: error,
+            cause: error instanceof Error ? error : undefined,
             context: {
               operation: 'sendOneSidedTransaction',
               amount: amount.toString(),
@@ -188,19 +194,19 @@ export class OneSidedSender {
       const txId = await this.ffi.walletSendTransaction(
         this.walletHandle,
         targetAddress.base58,
-        amount,
+        amount.toString(),
         feePerGram,
-        transactionParams.message || '',
+        options.message || '',
         true // isOneSided = true for one-sided transactions
       );
 
-      return txId as TransactionId;
+      return txId as unknown as TransactionId;
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.TransactionFailed,
         'Failed to send one-sided transaction via FFI',
         {
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: {
             operation: 'sendOneSidedTransaction',
             amount: amount.toString(),
@@ -355,7 +361,7 @@ export class OneSidedSender {
         WalletErrorCode.InvalidAddress,
         'Failed to generate stealth address for one-sided transaction',
         {
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: {
             operation: 'generateStealthAddress',
             recipient: recipientAddress.toString()
