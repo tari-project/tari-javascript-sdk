@@ -3,26 +3,26 @@
  * Provides high-level wallet operations with automatic resource lifecycle management
  */
 
-import { FFIResource, ResourceType } from './ffi/resource.js';
-import { HandleFactory, type ResourceHandle } from './ffi/handle.js';
-import { getFFIBindings } from './ffi/bindings.js';
-import { FFICallManager, type CallOptions } from './ffi/call-manager.js';
-import { getRetryPolicyForOperation, policyToCallOptions } from './ffi/retry.js';
-import { TariError, ErrorCode } from './errors/index.js';
+import { FFIResource, ResourceType } from './ffi/resource';
+import { HandleFactory, type ResourceHandle } from './ffi/handle';
+import { getFFIBindings } from './ffi/bindings';
+import { FFICallManager, type CallOptions } from './ffi/call-manager';
+import { getRetryPolicyForOperation, policyToCallOptions } from './ffi/retry';
+import { TariError, ErrorCode } from './errors/index';
 import type { 
   WalletHandle, 
   FFIWalletConfig, 
   FFIBalance, 
   FFISendTransactionOptions,
   FFIBaseNodePeer 
-} from './ffi/types.js';
+} from './ffi/types';
 import { 
   validateFFIWalletConfig,
   validateTransactionAmount,
   validateTariAddress,
   createWalletHandle as createWalletHandleType,
   unwrapWalletHandle 
-} from './ffi/types.js';
+} from './ffi/types';
 
 /**
  * Wallet handle wrapper configuration

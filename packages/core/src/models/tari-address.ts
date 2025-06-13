@@ -11,8 +11,8 @@ import type {
   Base58Address,
   HexAddress,
   PublicKey
-} from '../types/branded.js';
-import { AddressFormat } from '../types/enums.js';
+} from '../types/branded';
+import { AddressFormat } from '../types/enums';
 import {
   AddressValidator,
   AddressConverter,
@@ -20,7 +20,7 @@ import {
   AddressUtils,
   type AddressValidationResult,
   type ParsedAddress
-} from '../types/address.js';
+} from '../types/address';
 
 // TariAddress class for object-oriented address handling
 export class TariAddress {
