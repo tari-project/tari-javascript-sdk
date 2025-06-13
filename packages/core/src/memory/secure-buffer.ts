@@ -9,7 +9,7 @@ export class SecureBuffer extends DisposableResource {
   private buffer: Buffer;
   private cleared = false;
   private readonly originalLength: number;
-  private readonly createdAt: number;
+  private readonly _createdAt: number;
 
   constructor(data: Buffer | string | Uint8Array) {
     super();
@@ -26,7 +26,7 @@ export class SecureBuffer extends DisposableResource {
     }
     
     this.originalLength = this.buffer.length;
-    this.createdAt = Date.now();
+    this._createdAt = Date.now();
 
     // Attempt to lock memory pages (platform-specific, may fail silently)
     this.tryLockMemory();
@@ -97,7 +97,7 @@ export class SecureBuffer extends DisposableResource {
    * Get creation timestamp
    */
   get createdAt(): number {
-    return this.createdAt;
+    return this._createdAt;
   }
 
   /**

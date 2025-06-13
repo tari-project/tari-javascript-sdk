@@ -6,14 +6,14 @@ import { FFIResource } from './disposable';
  */
 export abstract class TariFFIResource extends FFIResource {
   protected resourceType: string;
-  private createdAt: number;
-  private lastAccessedAt: number;
+  private _createdAt: number;
+  private _lastAccessedAt: number;
 
   constructor(handle: any, resourceType: string) {
     super(handle);
     this.resourceType = resourceType;
-    this.createdAt = Date.now();
-    this.lastAccessedAt = this.createdAt;
+    this._createdAt = Date.now();
+    this._lastAccessedAt = this._createdAt;
   }
 
   /**
@@ -27,28 +27,28 @@ export abstract class TariFFIResource extends FFIResource {
    * Get creation timestamp
    */
   get createdAt(): number {
-    return this.createdAt;
+    return this._createdAt;
   }
 
   /**
    * Get last accessed timestamp
    */
   get lastAccessedAt(): number {
-    return this.lastAccessedAt;
+    return this._lastAccessedAt;
   }
 
   /**
    * Get resource age in milliseconds
    */
   get age(): number {
-    return Date.now() - this.createdAt;
+    return Date.now() - this._createdAt;
   }
 
   /**
    * Get time since last access in milliseconds
    */
   get timeSinceLastAccess(): number {
-    return Date.now() - this.lastAccessedAt;
+    return Date.now() - this._lastAccessedAt;
   }
 
   /**
@@ -56,7 +56,7 @@ export abstract class TariFFIResource extends FFIResource {
    */
   get nativeHandle(): any {
     this.checkDisposed();
-    this.lastAccessedAt = Date.now();
+    this._lastAccessedAt = Date.now();
     return this.handle;
   }
 

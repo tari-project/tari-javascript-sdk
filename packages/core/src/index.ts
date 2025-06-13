@@ -107,21 +107,30 @@ export * from './models/tari-address';
 export * from './ffi/debug';
 export * from './ffi/trace';
 
-// Memory management and performance (Phase 10)
-export * from './memory/using-polyfill';
-export * from './memory/disposable';
-export * from './memory/resource-base';
-export * from './memory/secure-buffer';
-export * from './memory/crypto-helpers';
-export * from './memory/memory-utils';
-export * from './memory/pressure-monitor';
-export * from './memory/gc-coordinator';
-export * from './memory/heap-stats';
+// Memory management and performance (Phase 10) - specific exports to avoid conflicts
+export { using, usingAsync, DisposableResource } from './memory/using-polyfill';
+export { DisposableResource as MemoryDisposableResource } from './memory/disposable';
+export { TariFFIResource, ResourceMetrics } from './memory/resource-base';
+export { SecureBuffer, SecureView } from './memory/secure-buffer';
+export { encrypt, decrypt, hashData, secureCompare } from './memory/crypto-helpers';
+export { cleanupWalletResources, optimizeMemoryUsage, forceGarbageCollection } from './memory/memory-utils';
+export { 
+  MemoryPressureMonitor, 
+  type MemoryPressureLevel as MemoryPressureType, 
+  type MemoryMetrics,
+  type CleanupHandler as MemoryCleanupHandler 
+} from './memory/pressure-monitor';
+export { GCCoordinator } from './memory/gc-coordinator';
+export { HeapStatsCollector, type HeapUsageStats } from './memory/heap-stats';
 
-// Performance optimization
-export * from './performance/call-batcher';
-export * from './performance/batch-queue';
-export * from './performance/batch-executor';
+// Performance optimization - specific exports to avoid conflicts
+export { CallBatcher, CallBatchResult, BatchConfig } from './performance/call-batcher';
+export { BatchQueue, QueueStats } from './performance/batch-queue';
+export { 
+  BatchExecutor, 
+  type RetryConfig as PerformanceRetryConfig,
+  type CircuitBreakerConfig as PerformanceCircuitBreakerConfig 
+} from './performance/batch-executor';
 
 // Version information
 export const VERSION = '0.0.1';

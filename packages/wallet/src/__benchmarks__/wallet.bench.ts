@@ -378,13 +378,13 @@ export class WalletBenchmarkSuite {
    */
   private generateReport(): void {
     console.log('\n📊 Wallet Benchmark Results\n');
-    console.log('=' * 80);
+    console.log('='.repeat(80));
     
     // Sort results by performance (ops/sec)
     const sortedResults = this.results.sort((a, b) => b.hz - a.hz);
     
-    console.log(`${'Operation'.<40} ${'Ops/sec'.<12} ${'Mean (ms)'.<12} ${'±'.<8} ${'Samples'.<8}`);
-    console.log('-' * 80);
+    console.log(`${'Operation'.padEnd(40)} ${'Ops/sec'.padEnd(12)} ${'Mean (ms)'.padEnd(12)} ${'±'.padEnd(8)} ${'Samples'.padEnd(8)}`);
+    console.log('-'.repeat(80));
     
     for (const result of sortedResults) {
       const opsPerSec = result.hz.toFixed(2);
@@ -392,11 +392,11 @@ export class WalletBenchmarkSuite {
       const deviation = (result.deviation * 1000).toFixed(2);
       
       console.log(
-        `${result.name.<40} ${opsPerSec.<12} ${meanMs.<12} ${`±${deviation}`.<8} ${result.samples.<8}`
+        `${result.name.padEnd(40)} ${opsPerSec.padEnd(12)} ${meanMs.padEnd(12)} ${`±${deviation}`.padEnd(8)} ${result.samples.toString().padEnd(8)}`
       );
     }
     
-    console.log('-' * 80);
+    console.log('-'.repeat(80));
     
     // Performance analysis
     this.analyzePerformance();

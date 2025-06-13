@@ -5,7 +5,7 @@ import { Disposable, AsyncDisposable } from './using-polyfill';
  * Provides common disposal patterns and tracking
  */
 export abstract class DisposableResource implements Disposable, AsyncDisposable {
-  private disposed = false;
+  protected disposed = false;
   private readonly disposalStack: string[] = [];
 
   constructor() {
