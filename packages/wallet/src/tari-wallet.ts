@@ -36,6 +36,12 @@ import { TariAddress, BalanceModel } from './models/index.js';
 import { ContactManager } from './contacts/contact-manager.js';
 import { UtxoService } from './utxos/utxo-service.js';
 import { CoinService } from './coins/coin-service.js';
+import { 
+  PerformanceManager, 
+  PerformanceConfig, 
+  getPerformanceManager,
+  configurePerformance
+} from './performance/index.js';
 import type { 
   CreateContactParams,
   UpdateContactParams,
@@ -160,6 +166,7 @@ export class TariWallet implements AsyncDisposable {
   private readonly contactManager: ContactManager;
   private readonly utxoService: UtxoService;
   private readonly coinService: CoinService;
+  private readonly performanceManager: PerformanceManager;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
@@ -251,6 +258,9 @@ export class TariWallet implements AsyncDisposable {
     this.utxoService = new UtxoService(handle);
     this.coinService = new CoinService(handle, this.utxoService);
 
+    // Initialize performance management
+    this.performanceManager = getPerformanceManager();
+
     // Initialize lifecycle
     this.initializeLifecycle();
 
@@ -259,6 +269,22 @@ export class TariWallet implements AsyncDisposable {
 
     // Setup transaction event forwarding
     this.setupTransactionEventForwarding();
+  }
+
+  // Static performance configuration methods
+
+  /**
+   * Configure global performance settings for all wallet instances
+   */
+  static configureGlobalPerformance(config: Partial<PerformanceConfig>): void {
+    configurePerformance(config);
+  }
+
+  /**
+   * Get global performance manager instance
+   */
+  static getGlobalPerformanceManager(): PerformanceManager {
+    return getPerformanceManager();
   }
 
   // Core wallet operations
@@ -1459,6 +1485,71 @@ export class TariWallet implements AsyncDisposable {
    */
   isEventCallbackRegistered(): boolean {
     return this.eventSystem.isFFICallbackRegistered();
+  }
+
+  // Performance management methods
+
+  /**
+   * Configure wallet performance settings
+   */
+  configurePerformance(config: Partial<PerformanceConfig>): void {
+    this.ensureNotDestroyed();
+    configurePerformance(config);
+  }
+
+  /**
+   * Get current performance metrics
+   */
+  getPerformanceMetrics(): any {
+    this.ensureNotDestroyed();
+    return this.performanceManager.getMetrics();
+  }
+
+  /**
+   * Get performance history
+   */
+  getPerformanceHistory(): Array<{ timestamp: number; metrics: any }> {
+    this.ensureNotDestroyed();
+    return this.performanceManager.getPerformanceHistory();
+  }
+
+  /**
+   * Force cleanup of caches and memory
+   */
+  async forceCleanup(): Promise<{
+    memoryFreed: number;
+    cacheEntriesCleared: number;
+    workersRecycled: number;
+  }> {
+    this.ensureNotDestroyed();
+    return await this.performanceManager.forceCleanup();
+  }
+
+  /**
+   * Optimize wallet performance based on current conditions
+   */
+  async optimizePerformance(): Promise<{
+    optimizations: string[];
+    metrics: any;
+  }> {
+    this.ensureNotDestroyed();
+    return await this.performanceManager.optimizePerformance();
+  }
+
+  /**
+   * Run performance benchmark
+   */
+  async runBenchmark(): Promise<any> {
+    this.ensureNotDestroyed();
+    return await this.performanceManager.runBenchmark();
+  }
+
+  /**
+   * Get enabled performance features
+   */
+  getPerformanceFeatures(): any {
+    this.ensureNotDestroyed();
+    return this.performanceManager.getFeatures();
   }
 
   /**
