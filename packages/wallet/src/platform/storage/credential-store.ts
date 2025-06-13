@@ -163,7 +163,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Credential store not available');
+        return this.createResult<Buffer>(false, undefined, 'Credential store not available');
       }
 
       // Try to get metadata first
@@ -196,7 +196,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
         const data = await this.credentials!.getCredential(targetName);
         
         if (!data) {
-          return this.createResult(false, undefined, 'Key not found');
+          return this.createResult<Buffer>(false, undefined, 'Key not found');
         }
         
         const decrypted = await this.decryptWithDpapi(data);
@@ -204,7 +204,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
         return this.createResult(true, decompressed);
       }
     } catch (error) {
-      return this.handleError(error, 'retrieve');
+      return this.handleError<Buffer>(error, 'retrieve');
     }
   }
 
@@ -262,14 +262,14 @@ export class CredentialStoreStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Credential store not available');
+        return this.createResult<boolean>(false, undefined, 'Credential store not available');
       }
 
       const targetName = `${CredentialStoreStorage.TARGET_PREFIX}-${key}`;
       const exists = await this.credentials!.credentialExists(targetName);
       return this.createResult(true, exists);
     } catch (error) {
-      return this.handleError(error, 'exists');
+      return this.handleError<boolean>(error, 'exists');
     }
   }
 
@@ -279,7 +279,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
   async list(): Promise<StorageResult<string[]>> {
     try {
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Credential store not available');
+        return this.createResult<string[]>(false, undefined, 'Credential store not available');
       }
 
       const filter = `${CredentialStoreStorage.TARGET_PREFIX}-*`;
@@ -295,7 +295,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
 
       return this.createResult(true, keys);
     } catch (error) {
-      return this.handleError(error, 'list');
+      return this.handleError<string[]>(error, 'list');
     }
   }
 
@@ -307,7 +307,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Credential store not available');
+        return this.createResult<StorageMetadata>(false, undefined, 'Credential store not available');
       }
 
       const result = await this.getStoredMetadata(key);
@@ -330,9 +330,9 @@ export class CredentialStoreStorage extends BaseSecureStorage {
         return this.createResult(true, metadata);
       }
 
-      return this.createResult(false, undefined, 'Key not found');
+      return this.createResult<StorageMetadata>(false, undefined, 'Key not found');
     } catch (error) {
-      return this.handleError(error, 'getMetadata');
+      return this.handleError<StorageMetadata>(error, 'getMetadata');
     }
   }
 
@@ -359,7 +359,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
   async getInfo(): Promise<StorageResult<StorageInfo>> {
     try {
       if (!this.isAvailable) {
-        return this.createResult(false, undefined, 'Credential store not available');
+        return this.createResult<StorageInfo>(false, undefined, 'Credential store not available');
       }
 
       const info: StorageInfo = {
@@ -374,7 +374,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
 
       return this.createResult(true, info);
     } catch (error) {
-      return this.handleError(error, 'getInfo');
+      return this.handleError<StorageInfo>(error, 'getInfo');
     }
   }
 
@@ -526,7 +526,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
       async decryptData(encryptedData: Buffer): Promise<Buffer> {
         // Mock decryption - remove the prefix
         const prefix = Buffer.from('MOCK_DPAPI:', 'utf8');
-        if (encryptedData.startsWith(prefix)) {
+        if (encryptedData.subarray(0, prefix.length).equals(prefix)) {
           return encryptedData.subarray(prefix.length);
         }
         return encryptedData;
@@ -588,9 +588,9 @@ export class CredentialStoreStorage extends BaseSecureStorage {
   /**
    * Handle credential store-specific errors
    */
-  private handleError(error: any, operation: string): StorageResult {
+  private handleError<T = void>(error: any, operation: string): StorageResult<T> {
     if (error.code === 'ERROR_CANCELLED' || error.message?.includes('cancelled')) {
-      return this.createResult(false, undefined, 'User cancelled operation', true);
+      return this.createResult<T>(false, undefined, 'User cancelled operation', true);
     }
 
     if (error.code === 'ERROR_ACCESS_DENIED' || error.message?.includes('access denied')) {
@@ -598,7 +598,7 @@ export class CredentialStoreStorage extends BaseSecureStorage {
     }
 
     if (error.code === 'ERROR_ALREADY_EXISTS' || error.message?.includes('already exists')) {
-      return this.createResult(false, undefined, 'Credential already exists');
+      return this.createResult<T>(false, undefined, 'Credential already exists');
     }
 
     if (error.message?.includes('quota') || error.message?.includes('space')) {
@@ -606,6 +606,6 @@ export class CredentialStoreStorage extends BaseSecureStorage {
     }
 
     console.warn(`Credential store ${operation} error:`, error);
-    return this.createResult(false, undefined, `Credential operation failed: ${error.message}`);
+    return this.createResult<T>(false, undefined, `Credential operation failed: ${error.message}`);
   }
 }
