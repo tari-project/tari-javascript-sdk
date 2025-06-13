@@ -183,7 +183,8 @@ async function secureInvoke(channel: string, ...args: any[]): Promise<any> {
     
     return result?.data !== undefined ? result.data : result;
   } catch (error) {
-    throw new Error(sanitizeError(error));
+    const err = error instanceof Error ? error : new Error(String(error));
+    throw new Error(sanitizeError(err));
   }
 }
 

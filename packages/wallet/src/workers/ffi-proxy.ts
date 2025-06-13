@@ -278,7 +278,7 @@ export class WorkerFFIProxy {
       const response: FFIResponse = {
         id: request.id,
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: Date.now(),
       };
 
@@ -375,7 +375,7 @@ export class MainThreadFFIHandler {
       const response: FFIResponse = {
         id: request.id,
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: Date.now(),
       };
 

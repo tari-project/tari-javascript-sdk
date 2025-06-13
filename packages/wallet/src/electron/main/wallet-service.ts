@@ -124,7 +124,8 @@ export class ElectronWalletService {
       
       return id;
     } catch (error) {
-      this.emit('wallet-error', { id, error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.emit('wallet-error', { id, error: errorMessage });
       throw error;
     }
   }
@@ -153,7 +154,8 @@ export class ElectronWalletService {
       
       this.emit('wallet-opened', { id });
     } catch (error) {
-      this.emit('wallet-error', { id, error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.emit('wallet-error', { id, error: errorMessage });
       throw error;
     }
   }
@@ -179,7 +181,8 @@ export class ElectronWalletService {
       this.wallets.delete(id);
       this.emit('wallet-closed', { id });
     } catch (error) {
-      this.emit('wallet-error', { id, error: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.emit('wallet-error', { id, error: errorMessage });
       throw error;
     }
   }

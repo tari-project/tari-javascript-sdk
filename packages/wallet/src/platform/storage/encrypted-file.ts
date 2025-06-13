@@ -329,7 +329,7 @@ export class EncryptedFileStorage extends BaseSecureStorage {
                 await fs.mkdir(dir, { recursive: true });
             } catch (error) {
                 // Directory might already exist
-                if (error.code !== 'EEXIST') {
+                if ((error as any)?.code !== 'EEXIST') {
                     throw error;
                 }
             }
