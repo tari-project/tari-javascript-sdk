@@ -177,6 +177,8 @@ export class CapabilitiesManager {
         return Math.max(2, this.getCpuCoreCount());
       case 'electron-renderer':
         return Math.min(4, this.getCpuCoreCount()); // Limited in renderer
+      case 'tauri':
+        return Math.max(2, this.getCpuCoreCount()); // Tauri can handle multiple threads efficiently
       case 'browser':
         return Math.min(4, this.getCpuCoreCount()); // Browser limitations
       default:
@@ -198,6 +200,46 @@ export class CapabilitiesManager {
     }
 
     const { os, runtime } = this.platform;
+
+    // Tauri provides enhanced security across all platforms
+    if (runtime === 'tauri') {
+      switch (os) {
+        case 'darwin':
+          return {
+            available: true,
+            level: 'native',
+            securityLevel: 'os',
+            details: 'Tauri-enhanced macOS Keychain with Rust security boundary and permission system',
+            recommendation: 'Preferred for sensitive data with better security isolation than Electron'
+          };
+
+        case 'win32':
+          return {
+            available: true,
+            level: 'native',
+            securityLevel: 'os',
+            details: 'Tauri-enhanced Windows Credential Store with strict permission allowlist',
+            recommendation: 'Enhanced security with explicit permission model and DPAPI integration'
+          };
+
+        case 'linux':
+          return {
+            available: true,
+            level: 'native',
+            securityLevel: 'os',
+            details: 'Tauri-enhanced Linux Secret Service with secure D-Bus communication',
+            recommendation: 'Superior to Electron with memory-safe Rust implementation'
+          };
+
+        default:
+          return {
+            available: false,
+            level: 'unavailable',
+            details: 'Unknown platform in Tauri environment',
+            recommendation: 'Use Tauri store plugin with encryption'
+          };
+      }
+    }
 
     switch (os) {
       case 'darwin':
@@ -275,6 +317,14 @@ export class CapabilitiesManager {
           level: 'limited',
           details: 'Worker threads available but limited by renderer context',
           recommendation: 'Use sparingly, prefer main process for heavy work'
+        };
+
+      case 'tauri':
+        return {
+          available: true,
+          level: 'native',
+          details: 'Rust-based async runtime with Web Workers in frontend',
+          recommendation: 'Excellent for CPU-intensive tasks with memory safety guarantees'
         };
 
       case 'browser':
@@ -409,16 +459,37 @@ export class CapabilitiesManager {
       return {
         available: false,
         level: 'unavailable',
-        details: 'IPC not available (not in Electron environment)',
+        details: 'IPC not available (not in framework environment)',
         recommendation: 'Use direct API calls'
+      };
+    }
+
+    const { runtime } = this.platform;
+
+    if (runtime === 'tauri') {
+      return {
+        available: true,
+        level: 'native',
+        securityLevel: 'os',
+        details: 'Tauri invoke system with type-safe Rust commands and explicit permission allowlist',
+        recommendation: 'Preferred for security-critical operations with minimal attack surface'
+      };
+    }
+
+    if (runtime.startsWith('electron')) {
+      return {
+        available: true,
+        level: 'native',
+        details: 'Electron IPC available',
+        recommendation: 'Use for secure communication between main and renderer'
       };
     }
 
     return {
       available: true,
       level: 'native',
-      details: 'Electron IPC available',
-      recommendation: 'Use for secure communication between main and renderer'
+      details: 'IPC communication available',
+      recommendation: 'Use for inter-process communication'
     };
   }
 
@@ -436,6 +507,16 @@ export class CapabilitiesManager {
     }
 
     const { runtime } = this.platform;
+
+    if (runtime === 'tauri') {
+      return {
+        available: true,
+        level: 'native',
+        securityLevel: 'os',
+        details: 'Rust crypto libraries with hardware acceleration and memory safety',
+        recommendation: 'Preferred for crypto operations with superior security guarantees'
+      };
+    }
 
     if (runtime === 'browser') {
       return {
@@ -469,6 +550,11 @@ export class CapabilitiesManager {
    */
   private recommendMemoryStrategy(): 'conservative' | 'balanced' | 'aggressive' {
     const { runtime, arch } = this.platform;
+
+    if (runtime === 'tauri') {
+      // Tauri has lower memory overhead, can be more aggressive
+      return arch === 'x64' ? 'balanced' : 'conservative';
+    }
 
     if (runtime === 'electron-renderer' || runtime === 'browser') {
       return 'conservative'; // Limited memory in renderer processes
@@ -544,6 +630,14 @@ export class CapabilitiesManager {
     }
 
     // Runtime-specific optimizations
+    if (runtime === 'tauri') {
+      optimizations.push('use-rust-async-runtime');
+      optimizations.push('enable-zero-copy-serialization');
+      optimizations.push('use-tauri-invoke-batching');
+      optimizations.push('enable-hardware-crypto-acceleration');
+      optimizations.push('use-memory-safe-buffers');
+    }
+
     if (runtime === 'electron-main') {
       optimizations.push('use-v8-snapshots');
       optimizations.push('optimize-ipc-serialization');
