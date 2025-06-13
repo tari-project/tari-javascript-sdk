@@ -6,6 +6,10 @@
 use napi::{Result, Env};
 
 pub mod libsecret;
+pub mod bindings;
+
+// Re-export key functionality
+pub use bindings::*;
 
 /// Initialize Linux secret storage support
 pub fn init(_env: Env) -> Result<()> {

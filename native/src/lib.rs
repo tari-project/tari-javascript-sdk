@@ -25,6 +25,13 @@ pub use keychain_bridge::*;
 pub mod windows_credential_bridge;
 pub use windows_credential_bridge::*;
 
+// Linux libsecret fallback bridge
+#[cfg(target_os = "linux")]
+#[path = "../libsecret-fallback-bridge.rs"]
+pub mod libsecret_fallback_bridge;
+#[cfg(target_os = "linux")]
+pub use libsecret_fallback_bridge::*;
+
 use napi_derive::napi;
 use napi::{Result, Env};
 
