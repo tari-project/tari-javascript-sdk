@@ -5,6 +5,8 @@
  * used throughout the SDK for validation and operation limits.
  */
 
+import { ProcessDetection } from '../utils/process-detection';
+
 // Tari amount constants (all values in MicroTari)
 export const TARI_PRECISION = 1_000_000n; // 1 Tari = 1,000,000 MicroTari
 export const MAX_TARI_SUPPLY = 21_000_000_000_000_000n; // 21 billion Tari in MicroTari
@@ -183,9 +185,9 @@ export const API_VERSION = '1.0.0';
 export const MIN_SUPPORTED_API_VERSION = '1.0.0';
 
 // Development and testing constants
-export const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
-export const IS_TEST = process.env.NODE_ENV === 'test';
-export const ENABLE_DEBUG_LOGGING = IS_DEVELOPMENT || process.env.DEBUG === 'true';
+export const IS_DEVELOPMENT = ProcessDetection.getEnvVar('NODE_ENV') === 'development';
+export const IS_TEST = ProcessDetection.getEnvVar('NODE_ENV') === 'test';
+export const ENABLE_DEBUG_LOGGING = IS_DEVELOPMENT || ProcessDetection.getEnvVar('DEBUG') === 'true';
 
 // Regular expressions for validation
 export const REGEX_PATTERNS = {

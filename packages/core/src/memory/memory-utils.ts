@@ -1,4 +1,5 @@
 import { SecureBuffer } from './secure-buffer';
+import { ProcessDetection } from '../utils/process-detection';
 
 /**
  * Memory management utilities for the Tari SDK
@@ -7,8 +8,8 @@ export class MemoryUtils {
   /**
    * Get current memory usage information
    */
-  static getMemoryUsage(): NodeJS.MemoryUsage {
-    return process.memoryUsage();
+  static getMemoryUsage(): NodeJS.MemoryUsage | null {
+    return ProcessDetection.getMemoryUsage();
   }
 
   /**
@@ -35,7 +36,10 @@ export class MemoryUtils {
    * Calculate memory usage ratio
    */
   static getMemoryPressure(): number {
-    const usage = process.memoryUsage();
+    const usage = ProcessDetection.getMemoryUsage();
+    if (!usage) {
+      return 0; // Default to no pressure if memory info unavailable
+    }
     return usage.heapUsed / usage.heapTotal;
   }
 
@@ -61,7 +65,11 @@ export class MemoryUtils {
    * Get memory usage formatted for logging
    */
   static formatMemoryUsage(): string {
-    const usage = process.memoryUsage();
+    const usage = ProcessDetection.getMemoryUsage();
+    if (!usage) {
+      return 'Memory info unavailable (non-Node.js environment)';
+    }
+    
     const formatBytes = (bytes: number) => {
       const mb = bytes / 1024 / 1024;
       return `${mb.toFixed(2)}MB`;
@@ -81,10 +89,11 @@ export class MemoryUtils {
    */
   static createMemoryMonitor(
     intervalMs: number = 5000,
-    callback: (usage: NodeJS.MemoryUsage) => void
+    callback: (usage: NodeJS.MemoryUsage | null) => void
   ): () => void {
     const interval = setInterval(() => {
-      callback(process.memoryUsage());
+      const usage = ProcessDetection.getMemoryUsage();
+      callback(usage);
     }, intervalMs);
 
     return () => clearInterval(interval);
@@ -195,11 +204,11 @@ export class MemoryUtils {
  */
 export class MemorySnapshot {
   private readonly timestamp: number;
-  private readonly usage: NodeJS.MemoryUsage;
+  private readonly usage: NodeJS.MemoryUsage | null;
 
   constructor() {
     this.timestamp = Date.now();
-    this.usage = process.memoryUsage();
+    this.usage = ProcessDetection.getMemoryUsage();
   }
 
   /**
@@ -219,22 +228,28 @@ export class MemorySnapshot {
   /**
    * Get memory usage at time of snapshot
    */
-  get memoryUsage(): NodeJS.MemoryUsage {
-    return { ...this.usage };
+  get memoryUsage(): NodeJS.MemoryUsage | null {
+    return this.usage ? { ...this.usage } : null;
   }
 
   /**
    * Compare with current memory usage
    */
-  compare(): MemoryComparison {
-    const current = process.memoryUsage();
+  compare(): MemoryComparison | null {
+    const current = ProcessDetection.getMemoryUsage();
+    if (!this.usage || !current) {
+      return null; // Cannot compare without memory info
+    }
     return new MemoryComparison(this.usage, current);
   }
 
   /**
    * Compare with another snapshot
    */
-  compareWith(other: MemorySnapshot): MemoryComparison {
+  compareWith(other: MemorySnapshot): MemoryComparison | null {
+    if (!this.usage || !other.usage) {
+      return null; // Cannot compare without memory info
+    }
     return new MemoryComparison(this.usage, other.usage);
   }
 
@@ -242,6 +257,10 @@ export class MemorySnapshot {
    * Format snapshot for logging
    */
   toString(): string {
+    if (!this.usage) {
+      return `Memory Snapshot (${new Date(this.timestamp).toISOString()}): Memory info unavailable (non-Node.js environment)`;
+    }
+    
     const formatBytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(2)}MB`;
     
     return [
@@ -365,6 +384,18 @@ export class MemoryLeakDetector {
     const last = this.snapshots[this.snapshots.length - 1];
     const comparison = first.compareWith(last);
     
+    if (!comparison) {
+      // Cannot analyze without memory comparison
+      return {
+        timeSpan: last.createdAt - first.createdAt,
+        totalGrowth: 0,
+        growthRate: 0,
+        isLikeLeak: false,
+        snapshots: this.snapshots.length,
+        comparison: null
+      };
+    }
+    
     const timeSpan = last.createdAt - first.createdAt;
     const growthRate = comparison.heapUsedDifference / timeSpan; // bytes per ms
 
@@ -402,5 +433,5 @@ export interface MemoryTrend {
   growthRate: number;
   isLikeLeak: boolean;
   snapshots: number;
-  comparison: MemoryComparison;
+  comparison: MemoryComparison | null;
 }

@@ -1,5 +1,6 @@
 import { DisposableResource } from './disposable';
 import { MemoryUtils, MemorySnapshot } from './memory-utils';
+import { ProcessDetection } from '../utils/process-detection';
 import { EventEmitter } from 'events';
 
 /**
@@ -178,7 +179,20 @@ export class MemoryPressureMonitor extends DisposableResource {
    * Get current memory metrics
    */
   getCurrentMetrics(): MemoryMetrics {
-    const usage = process.memoryUsage();
+    const usage = ProcessDetection.getMemoryUsage();
+    if (!usage) {
+      // Return default metrics for non-Node.js environments
+      return {
+        heapUsed: 0,
+        heapTotal: 0,
+        rss: 0,
+        external: 0,
+        arrayBuffers: 0,
+        heapUsageRatio: 0,
+        pressureLevel: 'normal',
+        timestamp: Date.now()
+      };
+    }
     const heapUsageRatio = usage.heapUsed / usage.heapTotal;
     
     return {
@@ -487,8 +501,13 @@ export class MemoryPressureMonitor extends DisposableResource {
    * Setup process-level memory event handlers
    */
   private setupProcessHandlers(): void {
+    const proc = ProcessDetection.getProcess();
+    if (!proc) {
+      return; // Skip process handlers in non-Node.js environments
+    }
+
     // Handle process warnings
-    process.on('warning', (warning) => {
+    proc.on('warning', (warning) => {
       if (warning.name === 'MaxListenersExceededWarning' || 
           warning.message?.includes('memory')) {
         const metrics = this.getCurrentMetrics();
@@ -497,7 +516,7 @@ export class MemoryPressureMonitor extends DisposableResource {
     });
 
     // Handle uncaught exceptions that might indicate memory issues
-    process.on('uncaughtException', (error) => {
+    proc.on('uncaughtException', (error) => {
       if (error.message?.includes('out of memory') || 
           error.message?.includes('heap')) {
         const metrics = this.getCurrentMetrics();
@@ -526,13 +545,22 @@ export class DefaultCleanupHandlers {
    */
   static gcCleanup: CleanupHandler = async (level, metrics) => {
     if (level === 'critical' || level === 'high') {
-      const beforeGC = process.memoryUsage().heapUsed;
+      const beforeUsage = ProcessDetection.getMemoryUsage();
+      if (!beforeUsage) {
+        return 0; // Cannot measure GC effect without memory info
+      }
+      
+      const beforeGC = beforeUsage.heapUsed;
       const gcForced = MemoryUtils.forceGarbageCollection();
       
       if (gcForced) {
         // Wait a bit for GC to complete
         await new Promise(resolve => setTimeout(resolve, 100));
-        const afterGC = process.memoryUsage().heapUsed;
+        const afterUsage = ProcessDetection.getMemoryUsage();
+        if (!afterUsage) {
+          return 0; // Cannot measure GC effect
+        }
+        const afterGC = afterUsage.heapUsed;
         return Math.max(0, beforeGC - afterGC);
       }
     }

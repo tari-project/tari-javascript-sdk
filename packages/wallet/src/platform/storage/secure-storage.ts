@@ -10,7 +10,7 @@
  */
 export interface StorageResult<T = void> {
   success: boolean;
-  data?: T;
+  data?: T | undefined;
   error?: string;
   requiresUserInteraction?: boolean;
 }
