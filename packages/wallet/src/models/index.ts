@@ -117,3 +117,6 @@ class TransactionId {
 
 // Export all models
 export { TariAddress, Balance, TransactionId };
+
+// Backward compatibility alias
+export const BalanceModel = Balance;

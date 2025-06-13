@@ -21,6 +21,8 @@ export * from './types/branded';
 export * from './types/utils';
 export { createMicroTari, createTransactionId, asMicroTari } from './types/branded';
 export { microTariFromFFI, microTariToFFI } from './types/conversions';
+// Export specific branded types
+export type { MicroTari, TransactionId, TariAddressString, ValidatedSeedPhrase } from './types/branded';
 export * from './types/config';
 export * from './types/wallet-config';
 export * from './types/balance';
@@ -50,6 +52,8 @@ export {
 
 // Re-export error system (takes precedence over types for validation)
 export * from './errors/index';
+// Export specific error code for backward compatibility  
+export { WalletErrorCode } from './errors/codes';
 // Export utils but exclude conflicting exports
 export {
   validateRequired,
