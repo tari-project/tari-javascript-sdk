@@ -18,6 +18,7 @@ export type RuntimeEnvironment =
   | 'node'              // Pure Node.js
   | 'electron-main'     // Electron main process
   | 'electron-renderer' // Electron renderer process
+  | 'tauri'             // Tauri application
   | 'browser'           // Web browser
   | 'unknown';          // Unable to determine
 
@@ -66,6 +67,8 @@ export interface PlatformInfo {
   nodeVersion?: string;
   /** Electron version (if applicable) */
   electronVersion?: string;
+  /** Tauri version (if applicable) */
+  tauriVersion?: string;
 }
 
 /**
@@ -97,6 +100,10 @@ export class PlatformDetector {
 
     if (info.runtime.startsWith('electron')) {
       info.electronVersion = this.detectElectronVersion();
+    }
+
+    if (info.runtime === 'tauri') {
+      info.tauriVersion = this.detectTauriVersion();
     }
 
     this.cachedInfo = info;
@@ -132,6 +139,10 @@ export class PlatformDetector {
   static isElectron(): boolean {
     const runtime = this.detect().runtime;
     return runtime === 'electron-main' || runtime === 'electron-renderer';
+  }
+
+  static isTauri(): boolean {
+    return this.detect().runtime === 'tauri';
   }
 
   /**
@@ -206,6 +217,11 @@ export class PlatformDetector {
    * Detect runtime environment
    */
   private static detectRuntimeEnvironment(): RuntimeEnvironment {
+    // Check for Tauri first (has priority over other frameworks for security)
+    if (this.isTauriEnvironment()) {
+      return 'tauri';
+    }
+
     // Check for Node.js process
     if (!this.hasNodeProcess()) {
       return typeof window !== 'undefined' ? 'browser' : 'unknown';
@@ -275,6 +291,29 @@ export class PlatformDetector {
   }
 
   /**
+   * Detect Tauri version
+   */
+  private static detectTauriVersion(): string | undefined {
+    try {
+      // Access Tauri version from window.__TAURI__
+      if (typeof window !== 'undefined' && window.__TAURI__) {
+        return window.__TAURI__.version || window.__TAURI__.__version;
+      }
+      
+      // Alternative: try to get version from app API
+      if (typeof window !== 'undefined' && window.__TAURI__?.app?.getTauriVersion) {
+        // This is async, but we'll try to return synchronously for now
+        // In practice, version info should be available in the main object
+        return undefined;
+      }
+    } catch {
+      // Not in Tauri or error accessing version
+    }
+
+    return undefined;
+  }
+
+  /**
    * Detect platform capabilities
    */
   private static detectCapabilities(): PlatformCapabilities {
@@ -300,8 +339,8 @@ export class PlatformDetector {
     os: OperatingSystem, 
     runtime: RuntimeEnvironment
   ): boolean {
-    // Only available in Node.js or Electron main process
-    if (runtime !== 'node' && runtime !== 'electron-main') {
+    // Available in Node.js, Electron main process, or Tauri
+    if (runtime !== 'node' && runtime !== 'electron-main' && runtime !== 'tauri') {
       return false;
     }
 
@@ -404,6 +443,13 @@ export class PlatformDetector {
       }
     }
 
+    // Tauri has IPC via invoke system
+    if (runtime === 'tauri') {
+      return typeof window !== 'undefined' && 
+             window.__TAURI__ !== undefined &&
+             typeof window.__TAURI__.invoke === 'function';
+    }
+
     return false;
   }
 
@@ -442,6 +488,24 @@ export class PlatformDetector {
            (process.versions.electron !== undefined || 
             process.env.ELECTRON_RUN_AS_NODE !== undefined);
   }
+
+  /**
+   * Check if running in Tauri environment
+   */
+  private static isTauriEnvironment(): boolean {
+    // Check for Tauri global object
+    if (typeof window !== 'undefined' && window.__TAURI__) {
+      return true;
+    }
+
+    // Check for Tauri-specific environment variables (for debugging)
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env.TAURI_ENV !== undefined || 
+             process.env.TAURI_PLATFORM !== undefined;
+    }
+
+    return false;
+  }
 }
 
 /**
@@ -467,5 +531,6 @@ export const isElectronMain = () => PlatformDetector.isElectronMain();
 export const isElectronRenderer = () => PlatformDetector.isElectronRenderer();
 export const isBrowser = () => PlatformDetector.isBrowser();
 export const isElectron = () => PlatformDetector.isElectron();
+export const isTauri = () => PlatformDetector.isTauri();
 export const hasCapability = (cap: keyof PlatformCapabilities) => PlatformDetector.hasCapability(cap);
 export const getCapabilities = () => PlatformDetector.getCapabilities();
