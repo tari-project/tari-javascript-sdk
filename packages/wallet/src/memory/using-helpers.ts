@@ -96,7 +96,7 @@ export function createResourceScope(): ResourceScope {
  * Resource scope manager for automatic cleanup
  */
 export class ResourceScope implements Disposable, AsyncDisposable {
-  private readonly stack = new AsyncDisposableStack();
+  private readonly resources: (Disposable | AsyncDisposable)[] = [];
   private disposed = false;
 
   /**
@@ -106,7 +106,8 @@ export class ResourceScope implements Disposable, AsyncDisposable {
     if (this.disposed) {
       throw new Error('ResourceScope has been disposed');
     }
-    return this.stack.use(resource);
+    this.resources.push(resource);
+    return resource;
   }
 
   /**
@@ -129,7 +130,7 @@ export class ResourceScope implements Disposable, AsyncDisposable {
       }
     };
     
-    this.stack.use(disposable);
+    this.resources.push(disposable);
   }
 
   /**
@@ -149,8 +150,20 @@ export class ResourceScope implements Disposable, AsyncDisposable {
   [Symbol.dispose](): void {
     if (!this.disposed) {
       this.disposed = true;
-      // Note: This will log warnings for async resources
-      this.stack[Symbol.dispose]();
+      // Dispose resources in reverse order
+      for (let i = this.resources.length - 1; i >= 0; i--) {
+        const resource = this.resources[i];
+        try {
+          if (typeof (resource as any)[Symbol.dispose] === 'function') {
+            (resource as any)[Symbol.dispose]();
+          } else if (typeof (resource as any)[Symbol.asyncDispose] === 'function') {
+            console.warn('Async resource in sync dispose context');
+          }
+        } catch (error) {
+          console.error('Error disposing resource:', error);
+        }
+      }
+      this.resources.length = 0;
     }
   }
 
@@ -160,7 +173,20 @@ export class ResourceScope implements Disposable, AsyncDisposable {
   async [Symbol.asyncDispose](): Promise<void> {
     if (!this.disposed) {
       this.disposed = true;
-      await this.stack[Symbol.asyncDispose]();
+      // Dispose resources in reverse order
+      for (let i = this.resources.length - 1; i >= 0; i--) {
+        const resource = this.resources[i];
+        try {
+          if (typeof (resource as any)[Symbol.asyncDispose] === 'function') {
+            await (resource as any)[Symbol.asyncDispose]();
+          } else if (typeof (resource as any)[Symbol.dispose] === 'function') {
+            (resource as any)[Symbol.dispose]();
+          }
+        } catch (error) {
+          console.error('Error disposing resource:', error);
+        }
+      }
+      this.resources.length = 0;
     }
   }
 
@@ -175,7 +201,7 @@ export class ResourceScope implements Disposable, AsyncDisposable {
    * Get number of resources in scope
    */
   get size(): number {
-    return this.stack.size;
+    return this.resources.length;
   }
 }
 
@@ -224,13 +250,13 @@ export class TemporaryResourceManager {
     if (resource) {
       this.activeResources.delete(id);
       
-      if ('asyncDispose' in resource && typeof resource[Symbol.asyncDispose] === 'function') {
-        resource[Symbol.asyncDispose]().catch(error => {
+      if ('asyncDispose' in resource && typeof (resource as any)[Symbol.asyncDispose] === 'function') {
+        (resource as any)[Symbol.asyncDispose]().catch((error: any) => {
           console.warn(`Error disposing async resource ${id}:`, error);
         });
-      } else if ('dispose' in resource && typeof resource[Symbol.dispose] === 'function') {
+      } else if ('dispose' in resource && typeof (resource as any)[Symbol.dispose] === 'function') {
         try {
-          resource[Symbol.dispose]();
+          (resource as any)[Symbol.dispose]();
         } catch (error) {
           console.warn(`Error disposing resource ${id}:`, error);
         }
@@ -288,10 +314,10 @@ export class TemporaryResourceManager {
     // Dispose all resources
     for (const [id, resource] of this.activeResources) {
       try {
-        if ('asyncDispose' in resource && typeof resource[Symbol.asyncDispose] === 'function') {
-          await resource[Symbol.asyncDispose]();
-        } else if ('dispose' in resource && typeof resource[Symbol.dispose] === 'function') {
-          resource[Symbol.dispose]();
+        if ('asyncDispose' in resource && typeof (resource as any)[Symbol.asyncDispose] === 'function') {
+          await (resource as any)[Symbol.asyncDispose]();
+        } else if ('dispose' in resource && typeof (resource as any)[Symbol.dispose] === 'function') {
+          (resource as any)[Symbol.dispose]();
         }
       } catch (error) {
         errors.push(error instanceof Error ? error : new Error(`Error disposing ${id}: ${error}`));

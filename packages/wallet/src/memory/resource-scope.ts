@@ -99,6 +99,13 @@ export class HierarchicalResourceScope implements AsyncDisposable {
   }
 
   /**
+   * Get all resource IDs in this scope
+   */
+  protected getAllIds(): string[] {
+    return Array.from(this.resources.keys());
+  }
+
+  /**
    * Dispose this scope and all children
    */
   async [Symbol.asyncDispose](): Promise<void> {
@@ -145,10 +152,10 @@ export class HierarchicalResourceScope implements AsyncDisposable {
    * Dispose a single resource
    */
   private async disposeResource(resource: Disposable | AsyncDisposable): Promise<void> {
-    if (typeof resource[Symbol.asyncDispose] === 'function') {
-      await (resource as AsyncDisposable)[Symbol.asyncDispose]();
-    } else if (typeof resource[Symbol.dispose] === 'function') {
-      (resource as Disposable)[Symbol.dispose]();
+    if (typeof (resource as any)[Symbol.asyncDispose] === 'function') {
+      await (resource as any)[Symbol.asyncDispose]();
+    } else if (typeof (resource as any)[Symbol.dispose] === 'function') {
+      (resource as any)[Symbol.dispose]();
     }
   }
 
@@ -374,7 +381,7 @@ export class TransactionalResourceScope extends HierarchicalResourceScope {
    * Commit all resources
    */
   commitAll(): void {
-    for (const id of this.resources.keys()) {
+    for (const id of this.getAllIds()) {
       this.commit(id);
     }
   }
@@ -397,7 +404,7 @@ export class TransactionalResourceScope extends HierarchicalResourceScope {
     }
 
     // Remove uncommitted resources
-    const uncommitted = Array.from(this.resources.keys()).filter(id => !this.committed.has(id));
+    const uncommitted = this.getAllIds().filter(id => !this.committed.has(id));
     for (const id of uncommitted) {
       try {
         await this.remove(id);

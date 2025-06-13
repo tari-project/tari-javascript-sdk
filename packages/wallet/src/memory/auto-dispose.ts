@@ -67,10 +67,10 @@ export class AutoDisposeWrapper<T extends Disposable | AsyncDisposable> implemen
       this.onDispose(this.resource);
     }
     
-    if (typeof this.resource[Symbol.asyncDispose] === 'function') {
-      await (this.resource as AsyncDisposable)[Symbol.asyncDispose]();
-    } else if (typeof this.resource[Symbol.dispose] === 'function') {
-      (this.resource as Disposable)[Symbol.dispose]();
+    if (typeof (this.resource as any)[Symbol.asyncDispose] === 'function') {
+      await (this.resource as any)[Symbol.asyncDispose]();
+    } else if (typeof (this.resource as any)[Symbol.dispose] === 'function') {
+      (this.resource as any)[Symbol.dispose]();
     }
     
     (this.resource as any) = null;
@@ -172,10 +172,10 @@ export class RefCountedResource<T extends Disposable | AsyncDisposable> implemen
       await this.onLastRelease(this.resource);
     }
     
-    if (typeof this.resource[Symbol.asyncDispose] === 'function') {
-      await (this.resource as AsyncDisposable)[Symbol.asyncDispose]();
-    } else if (typeof this.resource[Symbol.dispose] === 'function') {
-      (this.resource as Disposable)[Symbol.dispose]();
+    if (typeof (this.resource as any)[Symbol.asyncDispose] === 'function') {
+      await (this.resource as any)[Symbol.asyncDispose]();
+    } else if (typeof (this.resource as any)[Symbol.dispose] === 'function') {
+      (this.resource as any)[Symbol.dispose]();
     }
   }
 
@@ -197,7 +197,7 @@ export class RefCountedResource<T extends Disposable | AsyncDisposable> implemen
 /**
  * Handle for a reference-counted resource
  */
-export class RefCountedHandle<T> implements AsyncDisposable {
+export class RefCountedHandle<T extends Disposable | AsyncDisposable> implements AsyncDisposable {
   private released = false;
 
   constructor(
@@ -314,10 +314,10 @@ export class LazyResource<T extends Disposable | AsyncDisposable> implements Asy
     }
     
     if (this.resource) {
-      if (typeof this.resource[Symbol.asyncDispose] === 'function') {
-        await (this.resource as AsyncDisposable)[Symbol.asyncDispose]();
-      } else if (typeof this.resource[Symbol.dispose] === 'function') {
-        (this.resource as Disposable)[Symbol.dispose]();
+      if (typeof (this.resource as any)[Symbol.asyncDispose] === 'function') {
+        await (this.resource as any)[Symbol.asyncDispose]();
+      } else if (typeof (this.resource as any)[Symbol.dispose] === 'function') {
+        (this.resource as any)[Symbol.dispose]();
       }
       this.resource = undefined;
     }
@@ -456,10 +456,10 @@ export class ResourcePool<T extends Disposable | AsyncDisposable> implements Asy
    * Dispose a single resource
    */
   private async disposeResource(resource: T): Promise<void> {
-    if (typeof resource[Symbol.asyncDispose] === 'function') {
-      await (resource as AsyncDisposable)[Symbol.asyncDispose]();
-    } else if (typeof resource[Symbol.dispose] === 'function') {
-      (resource as Disposable)[Symbol.dispose]();
+    if (typeof (resource as any)[Symbol.asyncDispose] === 'function') {
+      await (resource as any)[Symbol.asyncDispose]();
+    } else if (typeof (resource as any)[Symbol.dispose] === 'function') {
+      (resource as any)[Symbol.dispose]();
     }
   }
 }
@@ -467,7 +467,7 @@ export class ResourcePool<T extends Disposable | AsyncDisposable> implements Asy
 /**
  * Wrapper for a pooled resource
  */
-export class PooledResource<T> implements AsyncDisposable {
+export class PooledResource<T extends Disposable | AsyncDisposable> implements AsyncDisposable {
   private returned = false;
 
   constructor(
