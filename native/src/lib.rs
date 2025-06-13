@@ -15,6 +15,10 @@ pub mod windows;
 #[cfg(target_os = "linux")]
 pub mod linux;
 
+// Tauri backend (optional)
+#[cfg(feature = "tauri-backend")]
+pub mod tauri;
+
 // Re-export everything from keychain-bridge for backward compatibility
 #[path = "../keychain-bridge-simple.rs"]
 pub mod keychain_bridge;

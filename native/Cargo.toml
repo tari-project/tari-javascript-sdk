@@ -21,6 +21,11 @@ serde_json = "1.0"
 env_logger = "0.10"
 tokio = { version = "1.35", features = ["time"] }
 
+# Tauri dependencies (optional)
+tauri = { version = "1.5", features = ["api-all"], optional = true }
+tauri-plugin-store = { version = "1.2", optional = true }
+keyring = { version = "2.3", optional = true }
+
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.9"
 core-foundation = "0.9"
@@ -43,6 +48,7 @@ pkg-config = "0.3"
 [features]
 default = ["linux-libsecret"]
 linux-libsecret = ["libsecret", "glib", "gio"]
+tauri-backend = ["tauri", "tauri-plugin-store", "keyring"]
 
 [build-dependencies]
 napi-build = "2.0"
