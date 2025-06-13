@@ -44,9 +44,9 @@ export {
   UtxoStatus,
   OutputFeatures,
   ConnectivityStatus,
-  MnemonicWordCount
+  MnemonicWordCount,
+  LogLevel
 } from './types/enums';
-export type { LogLevel } from './types/enums';
 
 // Re-export error system (takes precedence over types for validation)
 export * from './errors/index';

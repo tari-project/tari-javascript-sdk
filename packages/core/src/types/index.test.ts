@@ -23,11 +23,11 @@ describe('Core Types', () => {
 
   describe('LogLevel', () => {
     it('should have correct log level values', () => {
-      expect(LogLevel.Error).toBe('error');
-      expect(LogLevel.Warn).toBe('warn');
-      expect(LogLevel.Info).toBe('info');
-      expect(LogLevel.Debug).toBe('debug');
-      expect(LogLevel.Trace).toBe('trace');
+      expect(LogLevel.Error).toBe(0);
+      expect(LogLevel.Warn).toBe(1);
+      expect(LogLevel.Info).toBe(2);
+      expect(LogLevel.Debug).toBe(3);
+      expect(LogLevel.Trace).toBe(4);
     });
   });
 });
@@ -40,7 +40,7 @@ describe('Error Handling', () => {
       expect(error.code).toBe(ErrorCode.InvalidConfig);
       expect(error.details).toBe('Test error');
       expect(error.context).toEqual({ field: 'test' });
-      expect(error.message).toContain('Invalid configuration');
+      expect(error.message).toContain('Invalid wallet configuration');
     });
 
     it('should create error without context', () => {
