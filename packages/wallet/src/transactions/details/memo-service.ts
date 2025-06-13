@@ -461,7 +461,7 @@ export class MemoService extends TypedEventEmitter {
       
       await this.ffiBindings.wallet_set_transaction_memo(
         this.walletHandle,
-        transactionId,
+        transactionId.toString(),
         memo
       );
     } catch (error: unknown) {
@@ -487,7 +487,7 @@ export class MemoService extends TypedEventEmitter {
       
       const memoJson = await this.ffiBindings.wallet_get_transaction_memo(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       return memoJson ? JSON.parse(memoJson) : null;
@@ -507,7 +507,7 @@ export class MemoService extends TypedEventEmitter {
       
       await this.ffiBindings.wallet_delete_transaction_memo(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
     } catch (error: unknown) {
       // FFI memo deletion failed, continue with cache-only deletion

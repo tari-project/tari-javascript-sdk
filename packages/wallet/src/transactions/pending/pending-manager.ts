@@ -302,7 +302,7 @@ export class PendingManager extends TypedEventEmitter {
       // Query FFI for specific transaction status
       const transactionStatus = await this.ffi.walletGetTransactionStatus(
         this.config.walletHandle,
-        transactionId
+        transactionId.toString()
       );
 
       if (transactionStatus.status !== TransactionStatus.Pending) {
@@ -523,7 +523,7 @@ export class PendingManager extends TypedEventEmitter {
         try {
           const currentStatus = await this.ffi.walletGetTransactionStatus(
             this.config.walletHandle,
-            localTx.id
+            localTx.id.toString()
           );
 
           if (currentStatus.status !== TransactionStatus.Pending) {

@@ -494,7 +494,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
     try {
       const transactionJson = await this.ffiBindings.wallet_get_transaction(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       if (!transactionJson) {
@@ -592,7 +592,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
     try {
       const inputsJson = await this.ffiBindings.wallet_get_transaction_inputs?.(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       return inputsJson ? JSON.parse(inputsJson) : [];
@@ -609,7 +609,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
     try {
       const outputsJson = await this.ffiBindings.wallet_get_transaction_outputs?.(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       return outputsJson ? JSON.parse(outputsJson) : [];
@@ -626,7 +626,7 @@ export class DetailService extends EventEmitter<DetailServiceEvents> {
     try {
       const kernelsJson = await this.ffiBindings.wallet_get_transaction_kernels?.(
         this.walletHandle,
-        transactionId
+        transactionId.toString()
       );
       
       return kernelsJson ? JSON.parse(kernelsJson) : [];

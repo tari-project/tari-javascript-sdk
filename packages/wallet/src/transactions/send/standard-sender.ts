@@ -296,8 +296,8 @@ export class StandardSender {
 
     return {
       amount,
-      estimatedFee,
-      totalCost,
+      estimatedFee: estimatedFee as MicroTari,
+      totalCost: totalCost as MicroTari,
       feeBreakdown: {
         baseAmount: amount,
         feePerGram: estimatedFeePerGram,

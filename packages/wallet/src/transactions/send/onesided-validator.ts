@@ -293,7 +293,7 @@ export class OneSidedValidator {
       // Validate that we can construct a TariScript for this recipient
       const scriptValidation = await this.ffi.walletValidateScript(
         this.walletHandle,
-        recipient.toBase58()
+        recipient.base58
       );
 
       if (!scriptValidation.isValid) {

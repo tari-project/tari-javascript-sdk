@@ -16,6 +16,7 @@ import {
   withErrorContext,
   withRetry,
   validateRequired,
+  type Base58Address,
 } from '@tari-project/tarijs-core';
 import { TariAddress } from '../../models';
 import { TransactionBuilder } from '../builder';
@@ -186,7 +187,7 @@ export class OneSidedSender {
     try {
       const txId = await this.ffi.walletSendTransaction(
         this.walletHandle,
-        targetAddress.toBase58(),
+        targetAddress.base58,
         amount,
         feePerGram,
         transactionParams.message || '',
@@ -345,10 +346,10 @@ export class OneSidedSender {
       // Use FFI to generate stealth address with ECDH
       const stealthAddress = await this.ffi.walletGenerateStealthAddress(
         this.walletHandle,
-        recipientAddress.toBase58()
+        recipientAddress.base58
       );
       
-      return TariAddress.fromBase58(stealthAddress);
+      return TariAddress.fromBase58(stealthAddress as Base58Address);
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,

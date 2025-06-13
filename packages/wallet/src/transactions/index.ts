@@ -91,7 +91,7 @@ export {
   type CancellationResult,
   type CancellationStatistics,
   type CancellationValidationRules,
-  type ValidationResult,
+  type ValidationResult as CancellationValidationResult,
   type RefundResult,
   type RefundHandlerEvents,
   type RefundStatistics,
@@ -156,7 +156,6 @@ export type {
 } from '../types/transaction-extensions.js';
 
 export {
-  TransactionStatus,
   TransactionDirection,
   TransactionUtils
 } from '@tari-project/tarijs-core';
