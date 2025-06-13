@@ -45,7 +45,8 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@tari-project/tarijs-core": "*"
+    "@tari-project/tarijs-core": "*",
+    "dbus-next": "^0.10.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
