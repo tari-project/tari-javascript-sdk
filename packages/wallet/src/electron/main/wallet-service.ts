@@ -352,8 +352,8 @@ export class ElectronWalletService {
       network: 'testnet' as any,
       storagePath: PlatformDetector.getDefaultStorageDir() + '/wallet',
       logPath: PlatformDetector.getDefaultStorageDir() + '/logs',
-      passphrase: undefined,
-      seedWords: undefined,
+      passphrase: '',
+      seedWords: [],
       
       // Electron-specific config
       allowMultipleInstances: false,
