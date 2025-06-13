@@ -27,12 +27,9 @@ export { CallBatcher } from '@tari-project/tarijs-core';
 export { SecureBuffer as CoreSecureBuffer } from '@tari-project/tarijs-core';
 
 // Caching system  
-export {
-  QueryCache,
-  CacheEntry,
-  CacheOptions,
-  CacheStats as PerformanceCacheStats
-} from './cache/query-cache';
+export { QueryCache } from './cache/query-cache';
+export type { CacheEntry, CacheOptions } from './cache/query-cache';
+export type { CacheStats as PerformanceCacheStats } from './cache/query-cache';
 
 // Stub implementations for missing components
 export const PerformanceManager = {

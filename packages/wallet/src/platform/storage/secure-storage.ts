@@ -14,7 +14,8 @@ import {
 } from './types/storage-result';
 
 // Re-export for backward compatibility
-export { StorageResult, StorageResults, StorageOperationResult } from './types/storage-result';
+export { StorageResults } from './types/storage-result';
+export type { StorageResult, StorageOperationResult } from './types/storage-result';
 
 /**
  * Storage metadata
