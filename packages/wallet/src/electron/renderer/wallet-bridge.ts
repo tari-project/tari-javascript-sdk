@@ -391,6 +391,8 @@ export class ElectronWalletBridge {
    * Set up event forwarding from main process
    */
   private setupEventForwarding(): void {
+    const ipcRenderer = ElectronSafe.getIpcRenderer();
+    
     // Listen for wallet events from main process
     ipcRenderer.on('wallet-event', (event: IpcRendererEvent, eventType: string, data: any) => {
       this.emit(eventType as keyof RendererWalletEvents, data);

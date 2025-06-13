@@ -30,8 +30,17 @@ export type {
 
 // Core wallet functionality
 export * from './wallet/index.js';
+
+// Types (avoiding conflicts with models)
 export * from './types/index.js';
-export * from './models/index.js';
+
+// Models (using explicit re-exports to avoid conflicts)
+export { 
+  TariAddress, 
+  TransactionId,
+  BalanceModel 
+} from './models/index.js';
+export type { Balance as WalletBalance } from './models/index.js';
 
 // Wallet creation and management
 export * from './wallet-factory.js';

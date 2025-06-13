@@ -4,19 +4,17 @@
  */
 
 // Core memory management
-export { 
+export type { 
   using, 
   usingAsync, 
   DisposableResource as CoreDisposableResource
 } from '@tari-project/tarijs-core';
 
 // Re-export available performance types from core
-export {
+export type {
   TariFFIResource,
   ResourceMetrics,
-  SecureBuffer,
   SecureView,
-  CallBatcher,
   CallBatchResult,
   BatchConfig,
   BatchQueue,
@@ -24,12 +22,16 @@ export {
   BatchExecutor
 } from '@tari-project/tarijs-core';
 
-// Caching system
+// Export only non-conflicting concrete exports
+export { CallBatcher } from '@tari-project/tarijs-core';
+export { SecureBuffer as CoreSecureBuffer } from '@tari-project/tarijs-core';
+
+// Caching system  
 export {
   QueryCache,
   CacheEntry,
   CacheOptions,
-  CacheStats
+  CacheStats as PerformanceCacheStats
 } from './cache/query-cache';
 
 // Stub implementations for missing components

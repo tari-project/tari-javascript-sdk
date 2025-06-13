@@ -200,9 +200,9 @@ export class BenchmarkSuite extends DisposableResource {
       await setup();
     }
 
-    let memoryBefore: NodeJS.MemoryUsage;
-    let memoryAfter: NodeJS.MemoryUsage;
-    let memoryPeak: NodeJS.MemoryUsage;
+    let memoryBefore: NodeJS.MemoryUsage = process.memoryUsage();
+    let memoryAfter: NodeJS.MemoryUsage = process.memoryUsage();
+    let memoryPeak: NodeJS.MemoryUsage = process.memoryUsage();
     let success = true;
     let error: string | undefined;
     const times: number[] = [];

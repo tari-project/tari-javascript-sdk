@@ -88,6 +88,7 @@ function addEventListener(event: string, handler: Function): void {
     eventListeners.set(event, new Set());
     
     // Set up IPC listener for this event type
+    const ipcRenderer = ElectronSafe.getIpcRenderer();
     ipcRenderer.on(`wallet-${event}`, (_, data) => {
       const handlers = eventListeners.get(event);
       if (handlers) {
@@ -116,6 +117,7 @@ function removeEventListener(event: string, handler: Function): void {
     // Clean up IPC listener if no more handlers
     if (handlers.size === 0) {
       eventListeners.delete(event);
+      const ipcRenderer = ElectronSafe.getIpcRenderer();
       ipcRenderer.removeAllListeners(`wallet-${event}`);
     }
   }

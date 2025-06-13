@@ -26,6 +26,8 @@ export interface Balance {
   pendingIncoming: bigint;
   /** Outgoing transactions pending confirmation */
   pendingOutgoing: bigint;
+  /** Timelocked balance */
+  timelocked: bigint;
   /** Total balance (available + pending incoming) */
   total: bigint;
   /** Timestamp of last balance update */
