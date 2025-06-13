@@ -131,6 +131,13 @@ export class ResourceTracker {
   }
 
   /**
+   * Reset the global tracker instance (for testing)
+   */
+  static resetInstance(): void {
+    this.instance = null;
+  }
+
+  /**
    * Register a new FFI resource for tracking
    */
   register(
@@ -314,8 +321,28 @@ export class ResourceTracker {
    * Clear all tracking data (for testing)
    */
   clearAll(): void {
+    // Clear leak tracking
     this.leakTracking.clear();
+    
+    // Clear finalizer (create new instance)
+    // Note: Cannot directly clear FinalizationRegistry, so we create a new one
+    (this as any).finalizer = new FinalizationRegistry<{
+      id: string;
+      type: ResourceType;
+      handle?: WalletHandle;
+    }>((heldValue) => {
+      this.handleFinalization(heldValue);
+    });
+    
+    // Note: WeakMap cannot be cleared, but it will be garbage collected
+    // when resources are no longer referenced. For testing, we need to
+    // ensure tests don't keep references to old resources.
+    
+    // Reset statistics
     this.resetStats();
+    
+    // Reset resource counter
+    this.resourceCounter = 0;
   }
 
   /**
@@ -423,7 +450,14 @@ export class ResourceTracker {
         entries
           .sort((a, b) => a[1].metadata.createdAt.getTime() - b[1].metadata.createdAt.getTime())
           .slice(0, toRemove)
-          .forEach(([id]) => this.leakTracking.delete(id));
+          .forEach(([id]) => {
+            this.leakTracking.delete(id);
+            // Update current active count
+            this.stats.currentActive = Math.max(0, this.stats.currentActive - 1);
+          });
+          
+        // Update memory estimate after cleanup
+        this.updateMemoryEstimate();
       }
     }
   }

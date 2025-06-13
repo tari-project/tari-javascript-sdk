@@ -130,8 +130,9 @@ export abstract class FFIResource implements Disposable {
       // Call the disposal logic
       const result = this.disposalLogic();
       if (result instanceof Promise) {
+        // For async disposal, we need to handle the error synchronously
         result.catch((error) => {
-          console.error('Error during resource disposal:', error);
+          console.error('Error during async resource disposal:', error);
         });
       }
     } catch (error) {

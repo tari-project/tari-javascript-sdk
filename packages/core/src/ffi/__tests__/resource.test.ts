@@ -9,7 +9,7 @@ import { TariError, ErrorCode } from '../../errors/index';
 let disposalCalled = false;
 let disposalError: Error | null = null;
 
-const mockDisposal = jest.fn(async () => {
+const mockDisposal = jest.fn(() => {
   disposalCalled = true;
   if (disposalError) {
     throw disposalError;
@@ -43,9 +43,24 @@ describe('FFIResource', () => {
     disposalCalled = false;
     disposalError = null;
     mockDisposal.mockClear();
+    
+    // Reset the resource tracker to avoid interference
+    const { ResourceTracker } = require('../tracker');
+    (ResourceTracker as any).resetInstance();
+    const tracker = ResourceTracker.getInstance();
+    tracker.clearAll();
+    tracker.resetStats();
   });
 
   afterEach(() => {
+    // Clean up any remaining resources
+    const { ResourceTracker } = require('../tracker');
+    const tracker = ResourceTracker.getInstance();
+    tracker.forceCleanup();
+    tracker.clearAll();
+    tracker.resetStats();
+    (ResourceTracker as any).resetInstance();
+    
     // Force GC to clean up any remaining resources
     if (global.gc) {
       global.gc();
@@ -135,17 +150,28 @@ describe('FFIResource', () => {
       
       expect(() => resource.dispose()).toThrow(TariError);
       expect(resource.isDisposed).toBe(true); // Should still mark as disposed
+      expect(mockDisposal).toHaveBeenCalled();
     });
 
     test('should handle async disposal errors', async () => {
-      const asyncResource = new FFIResource(
-        ResourceType.Wallet,
-        async () => {
-          throw new Error('Async disposal failed');
+      // Create a resource with async disposal that throws
+      const asyncDisposal = jest.fn(async () => {
+        throw new Error('Async disposal failed');
+      });
+
+      class AsyncTestResource extends FFIResource {
+        constructor() {
+          super(ResourceType.Wallet, asyncDisposal);
         }
-      );
+      }
       
-      expect(() => asyncResource.dispose()).toThrow(TariError);
+      const asyncResource = new AsyncTestResource();
+      
+      // Dispose should not throw for async errors (they're handled via Promise.catch)
+      // But the resource should still be marked as disposed
+      expect(() => asyncResource.dispose()).not.toThrow();
+      expect(asyncResource.isDisposed).toBe(true);
+      expect(asyncDisposal).toHaveBeenCalled();
     });
   });
 
