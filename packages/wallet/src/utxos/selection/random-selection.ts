@@ -77,6 +77,7 @@ export class RandomSelectionStrategy extends SelectionStrategy {
       context,
       {
         feeOptimization: this.calculateFeeOptimization(selected.length),
+        privacyScore: 0.5,
         perfectMatch: changeAmount === 0n,
         waste: changeAmount,
         changeAmount,

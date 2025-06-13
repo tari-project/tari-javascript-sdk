@@ -135,12 +135,14 @@ export class CoinSelector {
     
     // All strategies failed
     throw new WalletError(
-      'All coin selection strategies failed',
-      WalletErrorCode.InsufficientFunds,
+        WalletErrorCode.InsufficientFunds,
+        'All coin selection strategies failed',
       {
-        targetAmount: context.targetAmount,
-        availableAmount: this.calculateTotalAmount(candidates),
-        strategiesAttempted: [strategyName, ...this.config.fallbackStrategies]
+        context: {
+          targetAmount: context.targetAmount,
+          availableAmount: this.calculateTotalAmount(candidates),
+          strategiesAttempted: [strategyName, ...this.config.fallbackStrategies]
+        }
       }
     );
   }
@@ -157,8 +159,8 @@ export class CoinSelector {
     
     if (!SelectionStrategyFactory.isAvailable(strategyName)) {
       throw new WalletError(
-        `Unknown selection strategy: ${strategyName}`,
-        WalletErrorCode.InvalidArgument
+        WalletErrorCode.InvalidArgument,
+        `Unknown selection strategy: ${strategyName}`
       );
     }
     
@@ -202,6 +204,7 @@ export class CoinSelector {
             privacyScore: 0,
             perfectMatch: false,
             waste: 0n as MicroTari,
+            changeAmount: 0n as MicroTari,
             algorithmData: { error: error instanceof Error ? error.message : String(error) }
           }
         });
@@ -228,8 +231,8 @@ export class CoinSelector {
     
     if (successfulResults.length === 0) {
       throw new WalletError(
-        'No strategy produced a successful selection',
-        WalletErrorCode.InsufficientFunds
+        WalletErrorCode.InsufficientFunds,
+        'No strategy produced a successful selection'
       );
     }
     
@@ -313,26 +316,28 @@ export class CoinSelector {
   private validateInputs(candidates: UtxoInfo[], context: SelectionContext): void {
     if (!candidates || candidates.length === 0) {
       throw new WalletError(
-        'No UTXO candidates provided',
-        WalletErrorCode.InvalidArgument
+        WalletErrorCode.InvalidArgument,
+        'No UTXO candidates provided'
       );
     }
 
     if (BigInt(context.targetAmount) <= 0n) {
       throw new WalletError(
-        'Target amount must be positive',
-        WalletErrorCode.InvalidAmount
+        WalletErrorCode.InvalidAmount,
+        'Target amount must be positive'
       );
     }
 
     const totalAvailable = this.calculateTotalAmount(candidates);
     if (BigInt(totalAvailable) < BigInt(context.targetAmount)) {
       throw new WalletError(
-        'Insufficient funds: total available is less than target amount',
         WalletErrorCode.InsufficientFunds,
+        'Insufficient funds: total available is less than target amount',
         {
-          available: totalAvailable,
-          required: context.targetAmount
+          context: {
+            available: totalAvailable,
+            required: context.targetAmount
+          }
         }
       );
     }
@@ -352,8 +357,8 @@ export class CoinSelector {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new WalletError(
-          'Selection operation timed out',
-          WalletErrorCode.OperationTimeout
+          WalletErrorCode.OperationTimeout,
+          'Selection operation timed out'
         ));
       }, timeoutMs);
 

@@ -192,6 +192,17 @@ export interface UtxoFilter {
   tags?: string[];
   /** Include spent UTXOs */
   includeSpent?: boolean;
+  // Legacy compatibility fields
+  /** @deprecated Use amountRange.min instead */
+  minAmount?: MicroTari;
+  /** @deprecated Use amountRange.max instead */
+  maxAmount?: MicroTari;
+  /** @deprecated Use blockHeightRange.start instead */
+  minBlockHeight?: BlockHeight;
+  /** @deprecated Use blockHeightRange.end instead */
+  maxBlockHeight?: BlockHeight;
+  /** @deprecated Use maturityFilter instead */
+  maxMaturityHeight?: BlockHeight;
 }
 
 // UTXO sorting options
@@ -275,6 +286,25 @@ export interface UtxoSelectionResult {
   readonly error?: string;
   /** Selection statistics */
   readonly stats: UtxoSelectionStats;
+}
+
+// Alias for compatibility
+export type UtxoSelection = UtxoSelectionResult;
+
+// Selection context for advanced algorithms
+export interface SelectionContext {
+  /** Current blockchain height */
+  currentHeight: BlockHeight;
+  /** Fee per gram for transaction */
+  feePerGram: MicroTari;
+  /** Target amount to select */
+  targetAmount: MicroTari;
+  /** Maximum number of inputs */
+  maxInputs?: number;
+  /** Dust threshold */
+  dustThreshold?: MicroTari;
+  /** Privacy preferences */
+  privacyLevel?: 'low' | 'medium' | 'high';
 }
 
 export interface UtxoSelectionStats {

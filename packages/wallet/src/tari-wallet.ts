@@ -28,9 +28,29 @@ import type {
 import { 
   TariAddress as CoreTariAddress,
   type TransactionId,
-  type TransactionInfo as CoreTransactionInfo
+  type TransactionInfo as CoreTransactionInfo,
+  type UtxoInfo,
+  type MicroTari
 } from '@tari-project/tarijs-core';
 import { TariAddress, BalanceModel } from './models/index.js';
+import { ContactManager } from './contacts/contact-manager.js';
+import { UtxoService } from './utxos/utxo-service.js';
+import { CoinService } from './coins/coin-service.js';
+import type { 
+  CreateContactParams,
+  UpdateContactParams,
+  ContactFilter,
+  ContactQueryOptions,
+  UtxoFilter,
+  UtxoQueryOptions,
+  UtxoQueryResult,
+  SelectionContext,
+  UtxoSelection,
+  CoinSplitOptions,
+  CoinJoinOptions,
+  CoinOperationResult,
+  CoinOperationProgressCallback
+} from './types/index.js';
 import { 
   WalletState, 
   WalletStateManager
@@ -137,6 +157,9 @@ export class TariWallet implements AsyncDisposable {
   private readonly messageSigner: MessageSigner;
   private readonly signatureVerifier: SignatureVerifier;
   private readonly transactionAPI: TransactionAPI;
+  private readonly contactManager: ContactManager;
+  private readonly utxoService: UtxoService;
+  private readonly coinService: CoinService;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
@@ -222,6 +245,11 @@ export class TariWallet implements AsyncDisposable {
 
     // Initialize transaction API
     this.transactionAPI = new TransactionAPI(handle, transactionConfig);
+
+    // Initialize advanced services
+    this.contactManager = new ContactManager(handle, config.storagePath);
+    this.utxoService = new UtxoService(handle);
+    this.coinService = new CoinService(handle, this.utxoService);
 
     // Initialize lifecycle
     this.initializeLifecycle();
@@ -948,50 +976,132 @@ export class TariWallet implements AsyncDisposable {
 
   // Contact management
 
+  // Contact Management
+
   /**
    * Add a contact to the wallet
    */
-  async addContact(_contact: Contact): Promise<void> {
-    try {
-      // TODO: Implement when contact management FFI is available
-      throw new WalletError(
-        WalletErrorCode.NotImplemented,
-        'Contact management not yet implemented'
-      );
-    } catch (error: unknown) {
-      throw new WalletError(
-        WalletErrorCode.InvalidConfig,
-        'Failed to add contact',
-        {
-          severity: ErrorSeverity.Error,
-          cause: error as Error,
-          
-        }
-      );
-    }
+  async addContact(params: CreateContactParams): Promise<Contact> {
+    this.ensureNotDestroyed();
+    return await this.contactManager.add(params);
   }
 
   /**
-   * Get all contacts
+   * Update an existing contact
    */
-  async getContacts(): Promise<Contact[]> {
-    try {
-      // TODO: Implement when contact management FFI is available
-      throw new WalletError(
-        WalletErrorCode.NotImplemented,
-        'Contact retrieval not yet implemented'
-      );
-    } catch (error: unknown) {
-      throw new WalletError(
-        WalletErrorCode.InvalidConfig,
-        'Failed to retrieve contacts',
-        {
-          severity: ErrorSeverity.Error,
-          cause: error as Error,
-          
-        }
-      );
-    }
+  async updateContact(params: UpdateContactParams): Promise<Contact> {
+    this.ensureNotDestroyed();
+    return await this.contactManager.update(params);
+  }
+
+  /**
+   * Remove a contact
+   */
+  async removeContact(contactId: string): Promise<void> {
+    this.ensureNotDestroyed();
+    await this.contactManager.remove(contactId);
+  }
+
+  /**
+   * Get a specific contact by ID
+   */
+  async getContact(contactId: string): Promise<Contact | null> {
+    this.ensureNotDestroyed();
+    return await this.contactManager.get(contactId);
+  }
+
+  /**
+   * Get a contact by alias
+   */
+  async getContactByAlias(alias: string): Promise<Contact | null> {
+    this.ensureNotDestroyed();
+    return await this.contactManager.getByAlias(alias);
+  }
+
+  /**
+   * Get all contacts with optional filtering
+   */
+  async getContacts(filter?: ContactFilter, options?: ContactQueryOptions): Promise<Contact[]> {
+    this.ensureNotDestroyed();
+    return await this.contactManager.list(filter, options);
+  }
+
+  /**
+   * Search contacts by text
+   */
+  async searchContacts(query: string, options?: ContactQueryOptions): Promise<Contact[]> {
+    this.ensureNotDestroyed();
+    return await this.contactManager.search(query, options);
+  }
+
+  // UTXO Management
+
+  /**
+   * List UTXOs with filtering and pagination
+   */
+  async listUtxos(filter?: UtxoFilter, options?: UtxoQueryOptions): Promise<UtxoQueryResult> {
+    this.ensureNotDestroyed();
+    return await this.utxoService.list(filter, options);
+  }
+
+  /**
+   * Get spendable UTXOs
+   */
+  async getSpendableUtxos(minAmount?: MicroTari, maxAmount?: MicroTari): Promise<UtxoInfo[]> {
+    this.ensureNotDestroyed();
+    const currentHeight = undefined; // TODO: Get current height from network
+    return await this.utxoService.getSpendable(currentHeight, minAmount, maxAmount);
+  }
+
+  /**
+   * Get UTXO balance summary
+   */
+  async getUtxoBalanceSummary(): Promise<any> {
+    this.ensureNotDestroyed();
+    return await this.utxoService.getBalanceSummary();
+  }
+
+  // Coin Management
+
+  /**
+   * Split coins for privacy enhancement
+   */
+  async splitCoins(
+    amount: MicroTari,
+    splitCount: number,
+    options?: CoinSplitOptions,
+    onProgress?: CoinOperationProgressCallback
+  ): Promise<CoinOperationResult> {
+    this.ensureNotDestroyed();
+    return await this.coinService.splitCoins(amount, splitCount, options, onProgress);
+  }
+
+  /**
+   * Join coins for UTXO consolidation
+   */
+  async joinCoins(
+    utxoIds?: string[],
+    options?: CoinJoinOptions,
+    onProgress?: CoinOperationProgressCallback
+  ): Promise<CoinOperationResult> {
+    this.ensureNotDestroyed();
+    return await this.coinService.joinCoins(utxoIds, options, onProgress);
+  }
+
+  /**
+   * Get recommended coin split configuration
+   */
+  async getRecommendedSplit(amount: MicroTari, privacyLevel: 'normal' | 'high' | 'maximum' = 'normal'): Promise<any> {
+    this.ensureNotDestroyed();
+    return await this.coinService.getRecommendedSplit(amount, privacyLevel);
+  }
+
+  /**
+   * Get recommended coin join configuration
+   */
+  async getRecommendedJoin(): Promise<any> {
+    this.ensureNotDestroyed();
+    return await this.coinService.getRecommendedJoin();
   }
 
   // Network operations
@@ -1200,9 +1310,19 @@ export class TariWallet implements AsyncDisposable {
       this.eventSystem.dispose();
     });
 
+    // Add advanced services cleanup
+    this.lifecycleManager.addCleanup(async () => {
+      await this.contactManager.destroy();
+      await this.utxoService.destroy();
+    });
+
     // Initialize the lifecycle and event system
     await this.lifecycleManager.initialize(this.handle);
     await this.initializeEventSystem();
+    
+    // Initialize advanced services
+    await this.contactManager.initialize();
+    await this.utxoService.initialize();
   }
 
   /**

@@ -195,3 +195,15 @@ export const REGEX_PATTERNS = {
   WALLET_NAME: /^[a-zA-Z0-9_\-\s]{1,32}$/,
   CONTACT_ALIAS: /^[a-zA-Z0-9_\-\s\.]{1,64}$/
 } as const;
+
+// Validation patterns for contact validator compatibility
+export const VALIDATION_PATTERNS = {
+  ALIAS: /^[a-zA-Z0-9_\-\s\.]+$/,
+  CONTACT_ALIAS: /^[a-zA-Z0-9_\-\s\.]{1,64}$/,
+  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  URL: /^https?:\/\/.+/,
+  EMOJI: /^[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]*$/u,
+  TAG: /^[a-zA-Z0-9_\-]+$/,
+  HEX: /^[0-9a-fA-F]+$/,
+  BASE58: /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/
+} as const;

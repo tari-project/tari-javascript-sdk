@@ -186,8 +186,8 @@ export class ContactSyncService {
   private async performSync(force = false): Promise<ContactSyncResult> {
     if (this.isSyncing) {
       throw new WalletError(
-        'Synchronization already in progress',
-        WalletErrorCode.OperationInProgress
+        WalletErrorCode.OperationInProgress,
+        'Synchronization already in progress'
       );
     }
 
@@ -208,8 +208,8 @@ export class ContactSyncService {
       };
     } catch (error) {
       throw new WalletError(
-        'Contact synchronization failed',
         WalletErrorCode.SyncFailed,
+        'Contact synchronization failed',
         { cause: error instanceof Error ? error : undefined }
       );
     } finally {
@@ -377,7 +377,7 @@ export class ContactSyncService {
     // Check FFI contacts against local
     for (const ffiContact of ffiContacts) {
       const localByAliasMatch = localByAlias.get(ffiContact.alias);
-      const localByAddressMatch = localByAddress.get(ffiContact.address);
+      const localByAddressMatch = localByAddress.get(ffiContact.address as any);
 
       if (!localByAliasMatch && !localByAddressMatch) {
         // New contact from FFI
@@ -504,6 +504,7 @@ export class ContactSyncService {
       id: `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       alias: ffiContact.alias,
       address: ffiContact.address as any,
+      publicKey: ffiContact.public_key as any,
       isFavorite: ffiContact.isFavorite,
       tags: [],
       metadata: {
@@ -534,8 +535,8 @@ export class ContactSyncService {
       return [];
     } catch (error) {
       throw new WalletError(
-        'Failed to get contacts from FFI',
         WalletErrorCode.FFICallFailed,
+        'Failed to get contacts from FFI',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -555,8 +556,8 @@ export class ContactSyncService {
       console.log(`FFI contact addition not yet implemented for: ${contact.alias}`);
     } catch (error) {
       throw new WalletError(
-        'Failed to add contact to FFI',
         WalletErrorCode.FFICallFailed,
+        'Failed to add contact to FFI',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -576,8 +577,8 @@ export class ContactSyncService {
       console.log(`FFI contact update not yet implemented for: ${contact.alias}`);
     } catch (error) {
       throw new WalletError(
-        'Failed to update contact in FFI',
         WalletErrorCode.FFICallFailed,
+        'Failed to update contact in FFI',
         { cause: error instanceof Error ? error : undefined }
       );
     }

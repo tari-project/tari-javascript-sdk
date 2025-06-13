@@ -50,8 +50,8 @@ export class ContactManager {
       await this.store.initialize();
     } catch (error) {
       throw new WalletError(
-        'Failed to initialize contact manager',
         WalletErrorCode.ContactInitializationFailed,
+        'Failed to initialize contact manager',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -66,8 +66,8 @@ export class ContactManager {
       this.events.removeAllListeners();
     } catch (error) {
       throw new WalletError(
-        'Failed to destroy contact manager',
         WalletErrorCode.ContactCleanupFailed,
+        'Failed to destroy contact manager',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -82,9 +82,9 @@ export class ContactManager {
       const validation = this.validator.validateCreate(params);
       if (!validation.valid) {
         throw new WalletError(
-          `Invalid contact data: ${validation.errors[0]?.message}`,
           WalletErrorCode.ContactValidationFailed,
-          { validation }
+          `Invalid contact data: ${validation.errors[0]?.message}`,
+          { context: { validation } }
         );
       }
 
@@ -98,7 +98,7 @@ export class ContactManager {
       await this.store.add(contact);
 
       // Emit event
-      this.events.emit('contactAdded', contact);
+      this.events.emitContactAdded(contact);
 
       return contact;
     } catch (error) {
@@ -106,8 +106,8 @@ export class ContactManager {
         throw error;
       }
       throw new WalletError(
-        'Failed to add contact',
         WalletErrorCode.ContactAddFailed,
+        'Failed to add contact',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -122,9 +122,9 @@ export class ContactManager {
       const existing = await this.store.get(params.id);
       if (!existing) {
         throw new WalletError(
-          `Contact not found: ${params.id}`,
           WalletErrorCode.ContactNotFound,
-          { contactId: params.id }
+          `Contact not found: ${params.id}`,
+          { context: { contactId: params.id } }
         );
       }
 
@@ -132,9 +132,9 @@ export class ContactManager {
       const validation = this.validator.validateUpdate(params);
       if (!validation.valid) {
         throw new WalletError(
-          `Invalid contact update: ${validation.errors[0]?.message}`,
           WalletErrorCode.ContactValidationFailed,
-          { validation }
+          `Invalid contact update: ${validation.errors[0]?.message}`,
+          { context: { validation } }
         );
       }
 
@@ -153,7 +153,7 @@ export class ContactManager {
       await this.store.update(updated);
 
       // Emit event
-      this.events.emit('contactUpdated', updated, existing);
+      this.events.emitContactUpdated(updated, existing);
 
       return updated;
     } catch (error) {
@@ -161,8 +161,8 @@ export class ContactManager {
         throw error;
       }
       throw new WalletError(
-        'Failed to update contact',
         WalletErrorCode.ContactUpdateFailed,
+        'Failed to update contact',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -177,9 +177,9 @@ export class ContactManager {
       const existing = await this.store.get(contactId);
       if (!existing) {
         throw new WalletError(
-          `Contact not found: ${contactId}`,
           WalletErrorCode.ContactNotFound,
-          { contactId }
+          `Contact not found: ${contactId}`,
+          { context: { contactId } }
         );
       }
 
@@ -187,14 +187,14 @@ export class ContactManager {
       await this.store.remove(contactId);
 
       // Emit event
-      this.events.emit('contactRemoved', contactId);
+      this.events.emitContactRemoved(contactId);
     } catch (error) {
       if (error instanceof WalletError) {
         throw error;
       }
       throw new WalletError(
-        'Failed to remove contact',
         WalletErrorCode.ContactRemoveFailed,
+        'Failed to remove contact',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -208,8 +208,8 @@ export class ContactManager {
       return await this.store.get(contactId);
     } catch (error) {
       throw new WalletError(
-        'Failed to get contact',
         WalletErrorCode.ContactGetFailed,
+        'Failed to get contact',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -223,8 +223,8 @@ export class ContactManager {
       return await this.store.getByAlias(alias);
     } catch (error) {
       throw new WalletError(
-        'Failed to get contact by alias',
         WalletErrorCode.ContactGetFailed,
+        'Failed to get contact by alias',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -238,8 +238,8 @@ export class ContactManager {
       return await this.store.getByAddress(address);
     } catch (error) {
       throw new WalletError(
-        'Failed to get contact by address',
         WalletErrorCode.ContactGetFailed,
+        'Failed to get contact by address',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -279,8 +279,8 @@ export class ContactManager {
       return contacts;
     } catch (error) {
       throw new WalletError(
-        'Failed to list contacts',
         WalletErrorCode.ContactListFailed,
+        'Failed to list contacts',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -295,8 +295,8 @@ export class ContactManager {
       return ContactUtils.calculateStatistics(contacts);
     } catch (error) {
       throw new WalletError(
-        'Failed to get contact statistics',
         WalletErrorCode.ContactStatsFailed,
+        'Failed to get contact statistics',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -317,8 +317,8 @@ export class ContactManager {
       return await this.list(filter, options);
     } catch (error) {
       throw new WalletError(
-        'Failed to search contacts',
         WalletErrorCode.ContactSearchFailed,
+        'Failed to search contacts',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -343,8 +343,8 @@ export class ContactManager {
       };
     } catch (error) {
       throw new WalletError(
-        'Failed to export contacts',
         WalletErrorCode.ContactExportFailed,
+        'Failed to export contacts',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -393,6 +393,7 @@ export class ContactManager {
             const createParams: CreateContactParams = {
               alias: contact.alias,
               address: contact.address,
+              publicKey: contact.publicKey,
               isFavorite: contact.isFavorite,
               emoji: contact.emoji,
               notes: contact.notes,
@@ -424,8 +425,8 @@ export class ContactManager {
       };
     } catch (error) {
       throw new WalletError(
-        'Failed to import contacts',
         WalletErrorCode.ContactImportFailed,
+        'Failed to import contacts',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -437,11 +438,11 @@ export class ContactManager {
   public async clear(): Promise<void> {
     try {
       await this.store.clear();
-      this.events.emit('contactsCleared');
+      this.events.emitContactsCleared();
     } catch (error) {
       throw new WalletError(
-        'Failed to clear contacts',
         WalletErrorCode.ContactClearFailed,
+        'Failed to clear contacts',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -465,9 +466,9 @@ export class ContactManager {
     const existing = await this.store.getByAlias(alias);
     if (existing && existing.id !== excludeId) {
       throw new WalletError(
-        `Contact with alias "${alias}" already exists`,
         WalletErrorCode.ContactDuplicateAlias,
-        { alias, existingId: existing.id }
+        `Contact with alias "${alias}" already exists`,
+        { context: { alias, existingId: existing.id } }
       );
     }
   }
@@ -476,9 +477,9 @@ export class ContactManager {
     const existing = await this.store.getByAddress(address);
     if (existing && existing.id !== excludeId) {
       throw new WalletError(
-        `Contact with address "${address}" already exists`,
         WalletErrorCode.ContactDuplicateAddress,
-        { address, existingId: existing.id }
+        `Contact with address "${address}" already exists`,
+        { context: { address, existingId: existing.id } }
       );
     }
   }

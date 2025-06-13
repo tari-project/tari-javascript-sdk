@@ -37,8 +37,8 @@ export class UtxoMapper {
         commitment: ffiUtxo.commitment as Commitment,
         features: this.mapOutputFeatures(ffiUtxo.features),
         status: this.mapUtxoStatus(ffiUtxo.status),
-        blockHeight: this.parseBlockHeight(ffiUtxo.maturity), // Using maturity as block height
-        maturityHeight: this.parseBlockHeight(ffiUtxo.maturity),
+        blockHeight: this.parseBlockHeight(ffiUtxo.block_height),
+        maturityHeight: this.parseBlockHeight(ffiUtxo.maturity_height),
         transactionHash: this.generateTransactionHash(ffiUtxo),
         outputIndex: 0, // FFI doesn't provide this yet
         detectedAt: Date.now() as UnixTimestamp,
@@ -46,11 +46,11 @@ export class UtxoMapper {
       };
     } catch (error) {
       throw new WalletError(
-        'Failed to map FFI UTXO to TypeScript interface',
         WalletErrorCode.TypeConversionFailed,
+        'Failed to map FFI UTXO to TypeScript interface',
         { 
           cause: error instanceof Error ? error : undefined,
-          ffiUtxo 
+          context: { ffiUtxo }
         }
       );
     }
@@ -62,19 +62,25 @@ export class UtxoMapper {
   public mapToFFI(utxo: UtxoInfo): FFIUtxoInfo {
     try {
       return {
+        id: utxo.id,
         amount: utxo.amount.toString(),
         commitment: utxo.commitment,
-        features: utxo.features,
-        maturity: utxo.maturityHeight.toString(),
-        status: utxo.status
+        features: utxo.features as unknown as number,
+        status: utxo.status as unknown as number,
+        block_height: utxo.blockHeight.toString(),
+        maturity_height: utxo.maturityHeight.toString(),
+        transaction_hash: utxo.transactionHash,
+        output_index: utxo.outputIndex,
+        detected_at: Number(utxo.detectedAt),
+        updated_at: Number(utxo.updatedAt)
       };
     } catch (error) {
       throw new WalletError(
-        'Failed to map UtxoInfo to FFI structure',
         WalletErrorCode.TypeConversionFailed,
+        'Failed to map UtxoInfo to FFI structure',
         { 
           cause: error instanceof Error ? error : undefined,
-          utxo 
+          context: { utxo }
         }
       );
     }
@@ -301,7 +307,7 @@ export class UtxoMapper {
 
   private generateUtxoId(ffiUtxo: FFIUtxoInfo): string {
     // Generate a deterministic ID from commitment and other data
-    return `utxo_${ffiUtxo.commitment}_${ffiUtxo.maturity}`;
+    return `utxo_${ffiUtxo.commitment}_${ffiUtxo.maturity_height}`;
   }
 
   private parseAmount(amountStr: string): MicroTari {
@@ -313,8 +319,8 @@ export class UtxoMapper {
       return amount as MicroTari;
     } catch (error) {
       throw new WalletError(
-        `Invalid amount format: ${amountStr}`,
         WalletErrorCode.InvalidAmount,
+        `Invalid amount format: ${amountStr}`,
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -329,35 +335,44 @@ export class UtxoMapper {
       return height as BlockHeight;
     } catch (error) {
       throw new WalletError(
-        `Invalid block height format: ${heightStr}`,
         WalletErrorCode.InvalidFormat,
+        `Invalid block height format: ${heightStr}`,
         { cause: error instanceof Error ? error : undefined }
       );
     }
   }
 
-  private mapOutputFeatures(features: OutputFeatures): OutputFeatures {
-    // Validate that the features value is valid
-    const validFeatures = Object.values(OutputFeatures);
-    if (!validFeatures.includes(features)) {
-      throw new WalletError(
-        `Invalid output features: ${features}`,
-        WalletErrorCode.InvalidFormat
-      );
+  private mapOutputFeatures(features: number): OutputFeatures {
+    // Map numeric values to enum values based on FFI contract
+    switch (features) {
+      case 0: return OutputFeatures.Default;
+      case 1: return OutputFeatures.Coinbase;
+      case 2: return OutputFeatures.Sidechain;
+      case 3: return OutputFeatures.BurnCommitment;
+      default:
+        throw new WalletError(
+          WalletErrorCode.InvalidFormat,
+          `Invalid output features: ${features}`
+        );
     }
-    return features;
   }
 
-  private mapUtxoStatus(status: UtxoStatus): UtxoStatus {
-    // Validate that the status value is valid
-    const validStatuses = Object.values(UtxoStatus);
-    if (!validStatuses.includes(status)) {
-      throw new WalletError(
-        `Invalid UTXO status: ${status}`,
-        WalletErrorCode.InvalidFormat
-      );
+  private mapUtxoStatus(status: number): UtxoStatus {
+    // Map numeric values to enum values based on FFI contract
+    switch (status) {
+      case 0: return UtxoStatus.Unspent;
+      case 1: return UtxoStatus.Spent;
+      case 2: return UtxoStatus.EncumberedToBeReceived;
+      case 3: return UtxoStatus.EncumberedToBeSpent;
+      case 4: return UtxoStatus.Invalid;
+      case 5: return UtxoStatus.Abandoned;
+      case 6: return UtxoStatus.Unknown;
+      default:
+        throw new WalletError(
+          WalletErrorCode.InvalidFormat,
+          `Invalid UTXO status: ${status}`
+        );
     }
-    return status;
   }
 
   private generateTransactionHash(ffiUtxo: FFIUtxoInfo): Hash {

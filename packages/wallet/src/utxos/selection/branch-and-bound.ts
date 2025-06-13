@@ -54,8 +54,8 @@ export class BranchAndBoundStrategy extends SelectionStrategy {
     const filtered = this.filterCandidates(candidates, context);
     if (filtered.length === 0) {
       throw new WalletError(
-        'No suitable UTXOs available for selection',
-        WalletErrorCode.InsufficientUtxos
+        WalletErrorCode.InsufficientUtxos,
+        'No suitable UTXOs available for selection'
       );
     }
 
@@ -229,6 +229,7 @@ export class BranchAndBoundStrategy extends SelectionStrategy {
       context,
       {
         feeOptimization: this.calculateFeeOptimization(selected, context),
+        privacyScore: 0.5,
         perfectMatch,
         waste: actualChange,
         changeAmount: actualChange,
@@ -289,6 +290,7 @@ export class BranchAndBoundStrategy extends SelectionStrategy {
       context,
       {
         feeOptimization: this.calculateFeeOptimization(selected, context),
+        privacyScore: 0.5,
         perfectMatch: changeAmount === 0n,
         waste: changeAmount,
         changeAmount,

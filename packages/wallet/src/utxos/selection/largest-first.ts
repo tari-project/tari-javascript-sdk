@@ -52,8 +52,8 @@ export class LargestFirstStrategy extends SelectionStrategy {
     const filtered = this.filterCandidates(candidates, context);
     if (filtered.length === 0) {
       throw new WalletError(
-        'No suitable UTXOs available for selection',
-        WalletErrorCode.InsufficientUtxos
+        WalletErrorCode.InsufficientUtxos,
+        'No suitable UTXOs available for selection'
       );
     }
 
@@ -129,6 +129,7 @@ export class LargestFirstStrategy extends SelectionStrategy {
           context,
           {
             feeOptimization: this.calculateFeeOptimization(selected, context),
+            privacyScore: 0.5,
             perfectMatch,
             waste: finalChange,
             changeAmount: finalChange,
@@ -162,6 +163,7 @@ export class LargestFirstStrategy extends SelectionStrategy {
         privacyScore: 0,
         perfectMatch: false,
         waste: 0n as MicroTari,
+        changeAmount: 0n as MicroTari,
         algorithmData: {
           shortfall,
           maxInputsReached: selected.length >= maxInputs
@@ -215,6 +217,7 @@ export class LargestFirstStrategy extends SelectionStrategy {
             privacyScore: this.calculatePrivacyScore(selected, context),
             perfectMatch: true,
             waste: 0n as MicroTari,
+            changeAmount: 0n as MicroTari,
             algorithmData: {
               exactMatch: true,
               combinationsTried: mask

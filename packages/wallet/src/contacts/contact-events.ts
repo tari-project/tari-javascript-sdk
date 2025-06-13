@@ -326,9 +326,9 @@ export class ContactEventEmitter extends TypedEventEmitter<ContactEvents> {
       const timeoutId = setTimeout(() => {
         this.off(eventType, listener);
         reject(new WalletError(
-          `Timeout waiting for event: ${String(eventType)}`,
           WalletErrorCode.ContactEventTimeout,
-          { eventType: String(eventType), timeout }
+          `Timeout waiting for event: ${String(eventType)}`,
+          { context: { eventType: String(eventType), timeout } }
         ));
       }, timeout);
 

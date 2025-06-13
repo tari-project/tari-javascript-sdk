@@ -36,6 +36,7 @@ export type Commitment = Branded<string, 'Commitment'>;
 export type Hash = Branded<string, 'Hash'>;
 
 // Handle types for FFI resources
+export type NativeHandle = Branded<bigint, 'NativeHandle'>;
 export type WalletHandle = Branded<bigint, 'WalletHandle'>;
 export type BalanceHandle = Branded<bigint, 'BalanceHandle'>;
 export type ContactHandle = Branded<bigint, 'ContactHandle'>;

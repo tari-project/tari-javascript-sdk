@@ -36,7 +36,16 @@ export * from './types/callbacks';
 export * from './types/guards';
 
 // Re-export specific types and values from enums without conflicts
-export { NetworkType, AddressFormat, TransactionDirection, TransactionStatus } from './types/enums';
+export { 
+  NetworkType, 
+  AddressFormat, 
+  TransactionDirection, 
+  TransactionStatus,
+  UtxoStatus,
+  OutputFeatures,
+  ConnectivityStatus,
+  MnemonicWordCount
+} from './types/enums';
 export type { LogLevel } from './types/enums';
 
 // Re-export error system (takes precedence over types for validation)
@@ -69,6 +78,9 @@ export { FFICallError, ErrorClassification, CircuitState, type CallContext } fro
 export { getFFIBindings, initializeFFI, resetFFI, FFIBindings } from './ffi/bindings';
 export type { FFIWalletConfig, WalletHandle, FFIBalance } from './ffi/types';
 export { createWalletHandle, unwrapWalletHandle, validateTariAddress } from './ffi/types';
+
+// FFI interface types
+export type { FFIContact, FFIUtxoInfo } from './types/ffi';
 
 // FFI callbacks (Phase 8)
 export {

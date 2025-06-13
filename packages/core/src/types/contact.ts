@@ -7,7 +7,8 @@
 
 import type {
   TariAddressString,
-  UnixTimestamp
+  UnixTimestamp,
+  PublicKey
 } from './branded.js';
 
 // Core contact interface
@@ -18,6 +19,8 @@ export interface Contact {
   readonly alias: string;
   /** Tari address for the contact */
   readonly address: TariAddressString;
+  /** Public key for the contact */
+  readonly publicKey: PublicKey;
   /** Whether this contact is marked as favorite */
   readonly isFavorite: boolean;
   /** Optional emoji or icon identifier */
@@ -94,6 +97,8 @@ export interface CreateContactParams {
   alias: string;
   /** Contact address */
   address: TariAddressString;
+  /** Contact public key */
+  publicKey: PublicKey;
   /** Mark as favorite */
   isFavorite?: boolean;
   /** Optional emoji */
@@ -114,6 +119,8 @@ export interface UpdateContactParams {
   alias?: string;
   /** New address */
   address?: TariAddressString;
+  /** New public key */
+  publicKey?: PublicKey;
   /** Update favorite status */
   isFavorite?: boolean;
   /** Update emoji */
@@ -414,6 +421,7 @@ export class ContactUtils {
       id: this.generateId(),
       alias: params.alias.trim(),
       address: params.address,
+      publicKey: params.publicKey,
       isFavorite: params.isFavorite || false,
       emoji: params.emoji,
       notes: params.notes || '',
@@ -443,6 +451,7 @@ export class ContactUtils {
       ...existing,
       alias: params.alias !== undefined ? params.alias.trim() : existing.alias,
       address: params.address || existing.address,
+      publicKey: params.publicKey || existing.publicKey,
       isFavorite: params.isFavorite !== undefined ? params.isFavorite : existing.isFavorite,
       emoji: params.emoji !== undefined ? params.emoji : existing.emoji,
       notes: params.notes !== undefined ? params.notes : existing.notes,

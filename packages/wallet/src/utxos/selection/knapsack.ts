@@ -336,6 +336,7 @@ export class KnapsackStrategy extends SelectionStrategy {
       context,
       {
         feeOptimization: this.calculateFeeOptimization(selected),
+        privacyScore: 0.5,
         perfectMatch: changeAmount === 0n,
         waste: changeAmount,
         changeAmount,

@@ -37,6 +37,12 @@ export * from './metadata.js';
 export * from './utxo.js';
 export * from './output-features.js';
 
+// FFI types and interfaces
+export * from './ffi.js';
+
+// Additional FFI type exports for backward compatibility
+export type { FFIContact, FFIUtxoInfo } from './ffi.js';
+
 // Event and callback types
 export * from './events.js';
 export * from './callbacks.js';

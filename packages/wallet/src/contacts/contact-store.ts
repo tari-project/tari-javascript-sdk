@@ -128,8 +128,8 @@ export class ContactStore {
       this.isInitialized = true;
     } catch (error) {
       throw new WalletError(
-        'Failed to initialize contact store',
         WalletErrorCode.ContactStorageInitFailed,
+        'Failed to initialize contact store',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -155,22 +155,22 @@ export class ContactStore {
       // Check for duplicates
       if (this.contacts.has(contact.id)) {
         throw new WalletError(
-          `Contact with ID ${contact.id} already exists`,
-          WalletErrorCode.ContactDuplicateId
+          WalletErrorCode.ContactDuplicateId,
+          `Contact with ID ${contact.id} already exists`
         );
       }
       
       if (this.aliasIndex.has(contact.alias.toLowerCase())) {
         throw new WalletError(
-          `Contact with alias "${contact.alias}" already exists`,
-          WalletErrorCode.ContactDuplicateAlias
+          WalletErrorCode.ContactDuplicateAlias,
+          `Contact with alias "${contact.alias}" already exists`
         );
       }
       
       if (this.addressIndex.has(contact.address)) {
         throw new WalletError(
-          `Contact with address "${contact.address}" already exists`,
-          WalletErrorCode.ContactDuplicateAddress
+          WalletErrorCode.ContactDuplicateAddress,
+          `Contact with address "${contact.address}" already exists`
         );
       }
 
@@ -186,8 +186,8 @@ export class ContactStore {
         throw error;
       }
       throw new WalletError(
-        'Failed to add contact to store',
         WalletErrorCode.ContactStorageAddFailed,
+        'Failed to add contact to store',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -203,8 +203,8 @@ export class ContactStore {
       const existing = this.contacts.get(contact.id);
       if (!existing) {
         throw new WalletError(
-          `Contact with ID ${contact.id} not found`,
-          WalletErrorCode.ContactNotFound
+          WalletErrorCode.ContactNotFound,
+          `Contact with ID ${contact.id} not found`
         );
       }
 
@@ -214,8 +214,8 @@ export class ContactStore {
         
         if (this.aliasIndex.has(contact.alias.toLowerCase())) {
           throw new WalletError(
-            `Contact with alias "${contact.alias}" already exists`,
-            WalletErrorCode.ContactDuplicateAlias
+            WalletErrorCode.ContactDuplicateAlias,
+            `Contact with alias "${contact.alias}" already exists`
           );
         }
         
@@ -227,8 +227,8 @@ export class ContactStore {
         
         if (this.addressIndex.has(contact.address)) {
           throw new WalletError(
-            `Contact with address "${contact.address}" already exists`,
-            WalletErrorCode.ContactDuplicateAddress
+            WalletErrorCode.ContactDuplicateAddress,
+            `Contact with address "${contact.address}" already exists`
           );
         }
         
@@ -245,8 +245,8 @@ export class ContactStore {
         throw error;
       }
       throw new WalletError(
-        'Failed to update contact in store',
         WalletErrorCode.ContactStorageUpdateFailed,
+        'Failed to update contact in store',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -262,8 +262,8 @@ export class ContactStore {
       const contact = this.contacts.get(contactId);
       if (!contact) {
         throw new WalletError(
-          `Contact with ID ${contactId} not found`,
-          WalletErrorCode.ContactNotFound
+          WalletErrorCode.ContactNotFound,
+          `Contact with ID ${contactId} not found`
         );
       }
 
@@ -279,8 +279,8 @@ export class ContactStore {
         throw error;
       }
       throw new WalletError(
-        'Failed to remove contact from store',
         WalletErrorCode.ContactStorageRemoveFailed,
+        'Failed to remove contact from store',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -334,8 +334,8 @@ export class ContactStore {
       await this.persistContacts();
     } catch (error) {
       throw new WalletError(
-        'Failed to clear contact store',
         WalletErrorCode.ContactStorageClearFailed,
+        'Failed to clear contact store',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -361,8 +361,8 @@ export class ContactStore {
   private ensureInitialized(): void {
     if (!this.isInitialized) {
       throw new WalletError(
-        'Contact store not initialized',
-        WalletErrorCode.ContactStoreNotInitialized
+        WalletErrorCode.ContactStoreNotInitialized,
+        'Contact store not initialized'
       );
     }
   }
@@ -372,8 +372,8 @@ export class ContactStore {
       await fs.mkdir(this.storageDir, { recursive: true });
     } catch (error) {
       throw new WalletError(
-        'Failed to create storage directory',
         WalletErrorCode.ContactStorageDirectoryFailed,
+        'Failed to create storage directory',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -407,8 +407,8 @@ export class ContactStore {
       }
     } catch (error) {
       throw new WalletError(
-        'Failed to load contacts from storage',
         WalletErrorCode.ContactStorageLoadFailed,
+        'Failed to load contacts from storage',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -452,8 +452,8 @@ export class ContactStore {
       
     } catch (error) {
       throw new WalletError(
-        'Failed to persist contacts to storage',
         WalletErrorCode.ContactStoragePersistFailed,
+        'Failed to persist contacts to storage',
         { cause: error instanceof Error ? error : undefined }
       );
     }

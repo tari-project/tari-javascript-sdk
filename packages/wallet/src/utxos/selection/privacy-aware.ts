@@ -399,6 +399,7 @@ export class PrivacyAwareStrategy extends SelectionStrategy {
       context,
       {
         feeOptimization: this.calculatePrivacyFeeOptimization(selected.length),
+        privacyScore: privacyScore,
         perfectMatch: changeAmount === 0n,
         waste: changeAmount,
         changeAmount,

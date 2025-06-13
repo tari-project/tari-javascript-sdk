@@ -406,7 +406,8 @@ export class OptimizationStrategy {
         feeOptimization: 0.8, // Placeholder
         privacyScore: 0.7, // Placeholder
         perfectMatch: changeAmount === 0n,
-        waste: changeAmount
+        waste: changeAmount,
+        changeAmount: changeAmount
       }
     };
   }

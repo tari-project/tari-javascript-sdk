@@ -134,8 +134,8 @@ export class UtxoService {
       await this.repository.initialize();
     } catch (error) {
       throw new WalletError(
-        'Failed to initialize UTXO service',
         WalletErrorCode.InitializationFailed,
+        'Failed to initialize UTXO service',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -149,8 +149,8 @@ export class UtxoService {
       await this.repository.destroy();
     } catch (error) {
       throw new WalletError(
-        'Failed to destroy UTXO service',
         WalletErrorCode.ResourceCleanupFailed,
+        'Failed to destroy UTXO service',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -190,8 +190,8 @@ export class UtxoService {
       };
     } catch (error) {
       throw new WalletError(
-        'Failed to list UTXOs',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to list UTXOs',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -205,8 +205,8 @@ export class UtxoService {
       return await this.repository.getById(utxoId);
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXO',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get UTXO',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -220,8 +220,8 @@ export class UtxoService {
       return await this.repository.getExtendedById(utxoId);
     } catch (error) {
       throw new WalletError(
-        'Failed to get extended UTXO information',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get extended UTXO information',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -235,8 +235,8 @@ export class UtxoService {
       return await this.repository.getByCommitment(commitment);
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXOs by commitment',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get UTXOs by commitment',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -250,8 +250,8 @@ export class UtxoService {
       return await this.repository.getByTransactionHash(transactionHash);
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXOs by transaction',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get UTXOs by transaction',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -280,8 +280,8 @@ export class UtxoService {
       return result.utxos;
     } catch (error) {
       throw new WalletError(
-        'Failed to get spendable UTXOs',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get spendable UTXOs',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -300,8 +300,8 @@ export class UtxoService {
       return result.utxos;
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXOs by status',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get UTXOs by status',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -320,8 +320,8 @@ export class UtxoService {
       return result.utxos;
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXOs by features',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get UTXOs by features',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -342,8 +342,10 @@ export class UtxoService {
         byStatus: {
           [UtxoStatus.Unspent]: 0n as MicroTari,
           [UtxoStatus.Spent]: 0n as MicroTari,
-          [UtxoStatus.Encumbered]: 0n as MicroTari,
+          [UtxoStatus.EncumberedToBeReceived]: 0n as MicroTari,
+          [UtxoStatus.EncumberedToBeSpent]: 0n as MicroTari,
           [UtxoStatus.Invalid]: 0n as MicroTari,
+          [UtxoStatus.Abandoned]: 0n as MicroTari,
           [UtxoStatus.Unknown]: 0n as MicroTari
         },
         byFeatures: {
@@ -366,7 +368,7 @@ export class UtxoService {
           } else {
             summary.locked = (BigInt(summary.locked) + BigInt(utxo.amount)) as MicroTari;
           }
-        } else if (utxo.status === UtxoStatus.Encumbered) {
+        } else if (utxo.status === UtxoStatus.EncumberedToBeReceived || utxo.status === UtxoStatus.EncumberedToBeSpent) {
           summary.pending = (BigInt(summary.pending) + BigInt(utxo.amount)) as MicroTari;
         }
       }
@@ -374,8 +376,8 @@ export class UtxoService {
       return summary;
     } catch (error) {
       throw new WalletError(
-        'Failed to get balance summary',
         WalletErrorCode.BalanceQueryFailed,
+        'Failed to get balance summary',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -390,8 +392,8 @@ export class UtxoService {
       return this.calculateStatistics(allUtxos);
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXO statistics',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get UTXO statistics',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -406,8 +408,8 @@ export class UtxoService {
       this.lastSyncTime = Date.now();
     } catch (error) {
       throw new WalletError(
-        'Failed to refresh UTXO data',
         WalletErrorCode.SyncFailed,
+        'Failed to refresh UTXO data',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -421,8 +423,8 @@ export class UtxoService {
       return await this.repository.count(filter);
     } catch (error) {
       throw new WalletError(
-        'Failed to count UTXOs',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to count UTXOs',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -447,8 +449,8 @@ export class UtxoService {
       return result;
     } catch (error) {
       throw new WalletError(
-        'Failed to check UTXO maturity',
         WalletErrorCode.UtxoValidationFailed,
+        'Failed to check UTXO maturity',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -468,8 +470,8 @@ export class UtxoService {
       return result.utxos;
     } catch (error) {
       throw new WalletError(
-        'Failed to get largest UTXOs',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get largest UTXOs',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -489,8 +491,8 @@ export class UtxoService {
       return result.utxos;
     } catch (error) {
       throw new WalletError(
-        'Failed to get oldest UTXOs',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get oldest UTXOs',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -510,8 +512,8 @@ export class UtxoService {
       return result.utxos;
     } catch (error) {
       throw new WalletError(
-        'Failed to get recent UTXOs',
         WalletErrorCode.UtxoQueryFailed,
+        'Failed to get recent UTXOs',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -541,37 +543,36 @@ export class UtxoService {
   // Private helper methods
 
   private calculateStatistics(utxos: UtxoInfo[]): UtxoStatistics {
-    const stats: UtxoStatistics = {
-      total: utxos.length,
-      byStatus: {
-        [UtxoStatus.Unspent]: 0,
-        [UtxoStatus.Spent]: 0,
-        [UtxoStatus.Encumbered]: 0,
-        [UtxoStatus.Invalid]: 0,
-        [UtxoStatus.Unknown]: 0
-      },
-      byFeatures: {
-        [OutputFeatures.Default]: 0,
-        [OutputFeatures.Coinbase]: 0,
-        [OutputFeatures.Sidechain]: 0,
-        [OutputFeatures.BurnCommitment]: 0
-      },
-      totalValue: 0n as MicroTari,
-      averageValue: 0n as MicroTari,
-      largestUtxo: null,
-      smallestUtxo: null,
-      ageDistribution: {
-        recent: 0, // < 24 hours
-        daily: 0,  // 1-7 days
-        weekly: 0, // 1-4 weeks
-        monthly: 0, // 1-12 months
-        old: 0     // > 1 year
-      }
-    };
-
     if (utxos.length === 0) {
-      return stats;
+      return {
+        total: 0,
+        byStatus: {} as Record<UtxoStatus, number>,
+        byFeatures: {} as Record<OutputFeatures, number>,
+        totalValue: 0n as MicroTari,
+        averageAmount: 0n as MicroTari,
+        medianAmount: 0n as MicroTari,
+        maxAmount: 0n as MicroTari,
+        minAmount: 0n as MicroTari,
+        dustUtxos: 0,
+        maturityStats: {
+          mature: 0,
+          immature: 0,
+          locked: 0
+        },
+        ageDistribution: {
+          newUtxos: 0,
+          recentUtxos: 0,
+          oldUtxos: 0
+        }
+      };
     }
+
+    // Calculate distributions
+    const byStatus = {} as Record<UtxoStatus, number>;
+    const byFeatures = {} as Record<OutputFeatures, number>;
+    let newUtxos = 0, recentUtxos = 0, oldUtxos = 0;
+    let dustUtxos = 0;
+    const dustThreshold = 1000n;
 
     let totalValue = 0n;
     let largest = utxos[0];
@@ -579,13 +580,11 @@ export class UtxoService {
     const now = Date.now();
     const oneDayAgo = now - 24 * 60 * 60 * 1000;
     const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const oneMonthAgo = now - 30 * 24 * 60 * 60 * 1000;
-    const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
 
     for (const utxo of utxos) {
       // Status and features counts
-      stats.byStatus[utxo.status]++;
-      stats.byFeatures[utxo.features]++;
+      byStatus[utxo.status] = (byStatus[utxo.status] || 0) + 1;
+      byFeatures[utxo.features] = (byFeatures[utxo.features] || 0) + 1;
 
       // Value calculations
       const amount = BigInt(utxo.amount);
@@ -601,23 +600,45 @@ export class UtxoService {
       // Age distribution
       const age = now - Number(utxo.detectedAt);
       if (age < oneDayAgo) {
-        stats.ageDistribution.recent++;
+        newUtxos++;
       } else if (age < oneWeekAgo) {
-        stats.ageDistribution.daily++;
-      } else if (age < oneMonthAgo) {
-        stats.ageDistribution.weekly++;
-      } else if (age < oneYearAgo) {
-        stats.ageDistribution.monthly++;
+        recentUtxos++;
       } else {
-        stats.ageDistribution.old++;
+        oldUtxos++;
+      }
+
+      // Dust count
+      if (amount < dustThreshold) {
+        dustUtxos++;
       }
     }
 
-    stats.totalValue = totalValue as MicroTari;
-    stats.averageValue = (totalValue / BigInt(utxos.length)) as MicroTari;
-    stats.largestUtxo = largest;
-    stats.smallestUtxo = smallest;
+    // Calculate median
+    const amounts = utxos.map(u => BigInt(u.amount)).sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+    const medianAmount = utxos.length % 2 === 0
+      ? (amounts[utxos.length / 2 - 1] + amounts[utxos.length / 2]) / 2n
+      : amounts[Math.floor(utxos.length / 2)];
 
-    return stats;
+    return {
+      total: utxos.length,
+      byStatus,
+      byFeatures,
+      totalValue: totalValue as MicroTari,
+      averageAmount: (totalValue / BigInt(utxos.length)) as MicroTari,
+      medianAmount: medianAmount as MicroTari,
+      maxAmount: BigInt(largest.amount) as MicroTari,
+      minAmount: BigInt(smallest.amount) as MicroTari,
+      dustUtxos,
+      maturityStats: {
+        mature: utxos.length,
+        immature: 0,
+        locked: 0
+      },
+      ageDistribution: {
+        newUtxos,
+        recentUtxos,
+        oldUtxos
+      }
+    };
   }
 }

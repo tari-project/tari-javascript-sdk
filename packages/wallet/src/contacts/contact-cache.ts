@@ -277,8 +277,8 @@ export class ContactCache {
   public getStats(): ContactCacheStats {
     if (!this.config.enableStats) {
       throw new WalletError(
-        'Cache statistics not enabled',
-        WalletErrorCode.FeatureNotEnabled
+        WalletErrorCode.FeatureNotEnabled,
+        'Cache statistics not enabled'
       );
     }
 

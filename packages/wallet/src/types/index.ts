@@ -124,3 +124,36 @@ export interface PeerInfo {
 
 // Transaction extensions for wallet-specific interfaces
 export * from './transaction-extensions.js';
+
+// Re-export advanced feature types from core
+export type {
+  // Contact types
+  Contact as CoreContact,
+  CreateContactParams,
+  UpdateContactParams,
+  ContactFilter,
+  ContactQueryOptions,
+  ContactStatistics,
+  
+  // UTXO types
+  UtxoInfo,
+  UtxoFilter,
+  UtxoQueryOptions,
+  UtxoSelection,
+  SelectionContext,
+  
+  // Coin operation types
+  MicroTari
+} from '@tari-project/tarijs-core';
+
+// Re-export advanced feature types from local modules
+export type {
+  CoinSplitOptions,
+  CoinJoinOptions,
+  CoinOperationResult,
+  CoinOperationProgressCallback
+} from '../coins/index.js';
+
+export type {
+  UtxoQueryResult
+} from '../utxos/utxo-service.js';

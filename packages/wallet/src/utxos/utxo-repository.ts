@@ -137,8 +137,8 @@ export class UtxoRepository {
       return { ...result, fromCache: false };
     } catch (error) {
       throw new WalletError(
-        'Failed to query UTXOs from FFI',
         WalletErrorCode.FFICallFailed,
+        'Failed to query UTXOs from FFI',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -162,8 +162,8 @@ export class UtxoRepository {
       return null;
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXO by ID',
         WalletErrorCode.FFICallFailed,
+        'Failed to get UTXO by ID',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -182,8 +182,8 @@ export class UtxoRepository {
       return null;
     } catch (error) {
       throw new WalletError(
-        'Failed to get extended UTXO information',
         WalletErrorCode.FFICallFailed,
+        'Failed to get extended UTXO information',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -202,8 +202,8 @@ export class UtxoRepository {
       return [];
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXOs by commitment',
         WalletErrorCode.FFICallFailed,
+        'Failed to get UTXOs by commitment',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -222,8 +222,8 @@ export class UtxoRepository {
       return [];
     } catch (error) {
       throw new WalletError(
-        'Failed to get UTXOs by transaction hash',
         WalletErrorCode.FFICallFailed,
+        'Failed to get UTXOs by transaction hash',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -262,8 +262,8 @@ export class UtxoRepository {
       this.lastRefreshTime = Date.now();
     } catch (error) {
       throw new WalletError(
-        'Failed to refresh UTXO data',
         WalletErrorCode.SyncFailed,
+        'Failed to refresh UTXO data',
         { cause: error instanceof Error ? error : undefined }
       );
     }
@@ -358,8 +358,8 @@ export class UtxoRepository {
       };
     } catch (error) {
       throw new WalletError(
-        'FFI UTXO query failed',
         WalletErrorCode.FFICallFailed,
+        'FFI UTXO query failed',
         { cause: error instanceof Error ? error : undefined }
       );
     }

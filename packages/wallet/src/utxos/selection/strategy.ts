@@ -89,6 +89,9 @@ export interface SelectionMetadata {
   /** Waste amount (excess over target) */
   waste: MicroTari;
   
+  /** Change amount returned to sender */
+  changeAmount: MicroTari;
+  
   /** Additional algorithm-specific data */
   algorithmData?: Record<string, any>;
 }
@@ -124,22 +127,22 @@ export abstract class SelectionStrategy {
   protected validateContext(context: SelectionContext): void {
     if (BigInt(context.targetAmount) <= 0n) {
       throw new WalletError(
-        'Target amount must be positive',
-        WalletErrorCode.InvalidAmount
+        WalletErrorCode.InvalidAmount,
+        'Target amount must be positive'
       );
     }
 
     if (BigInt(context.feePerGram) < 0n) {
       throw new WalletError(
-        'Fee per gram cannot be negative',
-        WalletErrorCode.InvalidFee
+        WalletErrorCode.InvalidFee,
+        'Fee per gram cannot be negative'
       );
     }
 
     if (context.maxInputs !== undefined && context.maxInputs <= 0) {
       throw new WalletError(
-        'Maximum inputs must be positive',
-        WalletErrorCode.InvalidArgument
+        WalletErrorCode.InvalidArgument,
+        'Maximum inputs must be positive'
       );
     }
   }
@@ -311,8 +314,8 @@ export class SelectionStrategyFactory {
     const factory = this.strategies.get(name);
     if (!factory) {
       throw new WalletError(
-        `Unknown selection strategy: ${name}`,
-        WalletErrorCode.InvalidArgument
+        WalletErrorCode.InvalidArgument,
+        `Unknown selection strategy: ${name}`
       );
     }
     return factory();
