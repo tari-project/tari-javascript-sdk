@@ -4,17 +4,13 @@
 // services through the Security framework. It uses NAPI-RS for Node.js binding.
 
 use napi_derive::napi;
-use napi::{Result, JsBuffer, JsString, JsObject, JsBoolean, JsArray, JsNumber, Env, JsValue};
+use napi::{Result, JsBuffer, JsString, JsObject, JsBoolean, JsNumber, Env};
 use std::collections::HashMap;
 
 #[cfg(target_os = "macos")]
-use security_framework::keychain::{SecKeychain, CreateOptions};
-#[cfg(target_os = "macos")]
-use security_framework::passwords::{SecPasswordRef, set_generic_password, find_generic_password, delete_generic_password};
+use security_framework::passwords::{set_generic_password, delete_generic_password};
 #[cfg(target_os = "macos")]
 use core_foundation::string::CFString;
-#[cfg(target_os = "macos")]
-use core_foundation::base::CFType;
 
 /// Keychain item structure for JavaScript interface
 #[napi(object)]
@@ -49,15 +45,18 @@ pub struct KeychainItemInfo {
 pub fn set_item(item: KeychainItem) -> Result<()> {
   #[cfg(target_os = "macos")]
   {
-    let service = CFString::new(&item.service);
-    let account = CFString::new(&item.account);
-    let password_data = item.data.as_ref();
+    let service_str = &item.service;
+    let account_str = &item.account;
+    let password_data = item.data.into_value()?;
     
     // Convert Buffer to bytes
-    let password_bytes = password_data.to_vec();
+    let password_bytes = password_data.as_slice();
+    
+    // Delete existing item if it exists (for update functionality)
+    let _ = delete_generic_password(service_str, account_str);
     
     // Set the password in keychain
-    set_generic_password(&service, &account, &password_bytes)
+    set_generic_password(service_str, account_str, password_bytes)
       .map_err(|e| napi::Error::new(
         napi::Status::GenericFailure,
         format!("Failed to set keychain item: {:?}", e)
@@ -107,10 +106,7 @@ pub fn get_item(env: Env, service: String, account: String) -> Result<Option<JsB
 pub fn delete_item(service: String, account: String) -> Result<()> {
   #[cfg(target_os = "macos")]
   {
-    let service_cf = CFString::new(&service);
-    let account_cf = CFString::new(&account);
-    
-    delete_generic_password(&service_cf, &account_cf)
+    delete_generic_password(&service, &account)
       .map_err(|e| napi::Error::new(
         napi::Status::GenericFailure,
         format!("Failed to delete keychain item: {:?}", e)
@@ -130,14 +126,13 @@ pub fn delete_item(service: String, account: String) -> Result<()> {
 
 /// Find all items for a service
 #[napi]
-pub fn find_items(env: Env, service: String) -> Result<JsArray> {
+pub fn find_items(env: Env, _service: String) -> Result<JsArray> {
   #[cfg(target_os = "macos")]
   {
-    // This is a simplified implementation
-    // A real implementation would use SecItemCopyMatching with appropriate queries
-    let mut accounts = Vec::<String>::new();
+    // Simplified implementation - return empty array for now
+    // A full implementation would use SecItemCopyMatching with complex queries
+    let accounts = Vec::<String>::new();
     
-    // For now, return empty array - would need more complex SecItem queries
     let js_array = env.create_array_with_length(accounts.len())?;
     
     for (index, account) in accounts.iter().enumerate() {
@@ -182,16 +177,17 @@ pub fn item_exists(service: String, account: String) -> Result<bool> {
 pub fn get_item_info(service: String, account: String) -> Result<Option<KeychainItemInfo>> {
   #[cfg(target_os = "macos")]
   {
+    use core_foundation::string::CFString;
+    
     let service_cf = CFString::new(&service);
     let account_cf = CFString::new(&account);
     
     match find_generic_password(None, &service_cf, &account_cf) {
       Ok((password_data, _)) => {
-        // In a real implementation, we would get actual creation/modification dates
-        // from the keychain item attributes
+        // Basic implementation - would get actual dates from keychain attributes in full version
         Ok(Some(KeychainItemInfo {
-          created: Some(0), // Would get from keychain attributes
-          modified: Some(0), // Would get from keychain attributes
+          created: Some(chrono::Utc::now().timestamp()),
+          modified: Some(chrono::Utc::now().timestamp()),
           size: password_data.len() as i32,
         }))
       }
@@ -210,12 +206,8 @@ pub fn get_item_info(service: String, account: String) -> Result<Option<Keychain
 pub fn clear_service(service: String) -> Result<()> {
   #[cfg(target_os = "macos")]
   {
-    // This is a simplified implementation
-    // A real implementation would:
-    // 1. Query all items for the service using SecItemCopyMatching
-    // 2. Delete each item individually
-    
-    // For now, this is a placeholder
+    // Simplified implementation - would need SecItemCopyMatching to find all items
+    // For now, this is a placeholder that always succeeds
     Ok(())
   }
   

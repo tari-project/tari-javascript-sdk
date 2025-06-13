@@ -16,7 +16,7 @@ pub mod windows;
 pub mod linux;
 
 // Re-export everything from keychain-bridge for backward compatibility
-#[path = "../keychain-bridge.rs"]
+#[path = "../keychain-bridge-simple.rs"]
 pub mod keychain_bridge;
 pub use keychain_bridge::*;
 
