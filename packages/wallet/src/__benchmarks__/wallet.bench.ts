@@ -4,9 +4,9 @@
  */
 
 import Benchmark from 'benchmark';
-import { TariWallet } from '../wallet';
-import { WalletConfigFactory } from '../testing/factories';
-import { WalletConfigBuilder } from '../testing/builders';
+import { TariWallet } from '../wallet/index.js';
+import { WalletConfigFactory } from '../testing/factories.js';
+import { WalletConfigBuilder } from '../testing/builders.js';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { randomUUID } from 'crypto';

@@ -2,7 +2,7 @@
  * Benchmark runner for CI/CD integration and reporting
  */
 
-import { runWalletBenchmarks } from './wallet.bench';
+import { runWalletBenchmarks } from './wallet.bench.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
