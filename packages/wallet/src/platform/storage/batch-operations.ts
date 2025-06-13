@@ -6,6 +6,7 @@
  */
 
 import type { SecureStorage, StorageResult } from './secure-storage.js';
+import { StorageResults } from './types/storage-result.js';
 
 export interface BatchOperation {
   type: 'store' | 'retrieve' | 'remove' | 'exists';
@@ -86,7 +87,7 @@ export class BatchStorageOperations implements SecureStorage {
     };
   }
 
-  async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options?: any): Promise<StorageResult<void>> {
     if (!this.config.enableAutoBatch) {
       return this.storage.store(key, value, options);
     }
@@ -113,7 +114,7 @@ export class BatchStorageOperations implements SecureStorage {
     });
   }
 
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     if (!this.config.enableAutoBatch) {
       return this.storage.remove(key);
     }
@@ -147,7 +148,7 @@ export class BatchStorageOperations implements SecureStorage {
     return this.storage.getMetadata(key);
   }
 
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     // Clear operations are not batched and flush pending operations
     await this.flushPendingOperations();
     return this.storage.clear();
@@ -156,24 +157,21 @@ export class BatchStorageOperations implements SecureStorage {
   async getInfo(): Promise<StorageResult<any>> {
     const storageInfo = await this.storage.getInfo();
     
-    if (!storageInfo.success) {
+    if (StorageResults.isError(storageInfo)) {
       return storageInfo;
     }
 
-    return {
-      success: true,
-      data: {
-        ...storageInfo.data,
-        batch: {
-          enabled: this.config.enableAutoBatch,
-          config: this.config,
-          metrics: this.getMetrics(),
-        },
+    return StorageResults.ok({
+      ...storageInfo.value,
+      batch: {
+        enabled: this.config.enableAutoBatch,
+        config: this.config,
+        metrics: this.getMetrics(),
       },
-    };
+    });
   }
 
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     // Test operations are not batched
     return this.storage.test();
   }
@@ -402,9 +400,9 @@ export class BatchStorageOperations implements SecureStorage {
         
         results.push({
           id: op.id,
-          success: result.success,
-          data: result.data,
-          error: result.error,
+          success: StorageResults.isOk(result),
+          data: StorageResults.isOk(result) ? result.value : undefined,
+          error: StorageResults.isError(result) ? result.error.message : undefined,
         });
         
       } catch (error) {

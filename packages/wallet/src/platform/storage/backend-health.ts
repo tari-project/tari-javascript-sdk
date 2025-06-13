@@ -6,6 +6,7 @@
  */
 
 import type { SecureStorage, StorageResult } from './secure-storage.js';
+import { StorageResults } from './types/storage-result.js';
 
 export interface BackendHealth {
   available: boolean;
@@ -246,12 +247,12 @@ export class BackendHealthMonitor {
       const result = await backend.test();
       const responseTime = Date.now() - start;
       
-      if (result.success) {
+      if (StorageResults.isOk(result)) {
         health.available = true;
         this.recordSuccess(id, responseTime);
       } else {
         health.available = false;
-        this.recordError(id, 'health-check', result.error || 'Health check failed', responseTime);
+        this.recordError(id, 'health-check', StorageResults.isError(result) ? result.error.message || 'Health check failed' : 'Health check failed', responseTime);
       }
     } catch (error) {
       health.available = false;

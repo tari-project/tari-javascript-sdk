@@ -6,6 +6,7 @@
  */
 
 import type { SecureStorage, StorageResult, StorageConfig } from './storage/secure-storage.js';
+import { StorageResults } from './storage/types/storage-result.js';
 import { PlatformDetector, type PlatformInfo, type RuntimeEnvironment } from './detector.js';
 import { getCapabilitiesManager, type CapabilityAssessment } from './capabilities.js';
 
@@ -119,12 +120,12 @@ class TauriAdapter implements FrameworkAdapter {
 
     try {
       // Test basic functionality
-      const storage = await this.createStorage({ enableLogging: false });
+      const storage = await this.createStorage({});
       const testResult = await storage.test();
       
       return {
-        valid: testResult.success,
-        error: testResult.error,
+        valid: StorageResults.isOk(testResult),
+        error: StorageResults.isError(testResult) ? testResult.error.message : undefined,
       };
     } catch (error) {
       return {
@@ -215,12 +216,12 @@ class ElectronAdapter implements FrameworkAdapter {
         };
       }
 
-      const storage = await this.createStorage({ enableLogging: false });
+      const storage = await this.createStorage({});
       const testResult = await storage.test();
       
       return {
-        valid: testResult.success,
-        error: testResult.error,
+        valid: StorageResults.isOk(testResult),
+        error: StorageResults.isError(testResult) ? testResult.error.message : undefined,
       };
     } catch (error) {
       return {
@@ -298,12 +299,12 @@ class NodeAdapter implements FrameworkAdapter {
         };
       }
 
-      const storage = await this.createStorage({ enableLogging: false });
+      const storage = await this.createStorage({});
       const testResult = await storage.test();
       
       return {
-        valid: testResult.success,
-        error: testResult.error,
+        valid: StorageResults.isOk(testResult),
+        error: StorageResults.isError(testResult) ? testResult.error.message : undefined,
       };
     } catch (error) {
       return {
