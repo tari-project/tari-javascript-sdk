@@ -8,6 +8,8 @@
 import { PlatformDetector, type PlatformInfo } from '../detector.js';
 import { getCapabilitiesManager, type CapabilityAssessment } from '../capabilities.js';
 import type { SecureStorage, StorageConfig, StorageResult } from './secure-storage.js';
+import { BackendHealthMonitor, type BackendHealth, type HealthCheckConfig } from './backend-health.js';
+import { StorageMigrator, type MigrationPlan, type MigrationProgress, MigrationStrategy } from './migration.js';
 
 /**
  * Storage backend types
@@ -30,6 +32,14 @@ export interface FactoryConfig extends StorageConfig {
   testBackends?: boolean;
   /** Fallback to less secure storage if needed */
   allowFallbacks?: boolean;
+  /** Enable health monitoring */
+  enableHealthMonitoring?: boolean;
+  /** Health monitoring configuration */
+  healthConfig?: Partial<HealthCheckConfig>;
+  /** Enable automatic failover */
+  enableAutoFailover?: boolean;
+  /** Minimum number of healthy backends to maintain */
+  minHealthyBackends?: number;
 }
 
 /**
@@ -49,38 +59,78 @@ export interface BackendInfo {
 }
 
 /**
- * Multi-backend storage implementation that combines multiple backends
+ * Enhanced multi-backend storage implementation with health monitoring and failover
  */
-class MultiBackendStorage implements SecureStorage {
+class EnhancedMultiBackendStorage implements SecureStorage {
   private readonly backends: Map<string, SecureStorage> = new Map();
-  private primaryBackend?: SecureStorage;
+  private readonly backendIds: Map<SecureStorage, string> = new Map();
+  private primaryBackendId?: string;
   private readonly config: FactoryConfig;
+  private readonly healthMonitor?: BackendHealthMonitor;
+  private readonly migrator?: StorageMigrator;
+  private failoverInProgress = false;
 
-  constructor(backends: SecureStorage[], config: FactoryConfig) {
+  constructor(backends: SecureStorage[], config: FactoryConfig, backendTypes: string[]) {
     this.config = config;
     
-    // Store backends by type
+    // Store backends with meaningful IDs
     backends.forEach((backend, index) => {
-      this.backends.set(`backend-${index}`, backend);
+      const id = backendTypes[index] || `backend-${index}`;
+      this.backends.set(id, backend);
+      this.backendIds.set(backend, id);
     });
 
     // Set primary backend (first working one)
-    this.primaryBackend = backends[0];
+    this.primaryBackendId = Array.from(this.backends.keys())[0];
+
+    // Initialize health monitoring if enabled
+    if (config.enableHealthMonitoring) {
+      this.healthMonitor = new BackendHealthMonitor(config.healthConfig);
+      
+      // Register all backends for monitoring
+      for (const [id, backend] of this.backends) {
+        this.healthMonitor.registerBackend(id, backend);
+      }
+
+      // Set up health change listener for automatic failover
+      if (config.enableAutoFailover) {
+        this.healthMonitor.addListener((backendId, health) => {
+          this.handleHealthChange(backendId, health);
+        });
+      }
+    }
+
+    // Initialize migrator if needed
+    if (config.enableAutoFailover) {
+      this.migrator = new StorageMigrator({
+        validateData: true,
+        enableRollback: true,
+      });
+    }
   }
 
   async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
-    if (!this.primaryBackend) {
+    const primaryBackend = this.getPrimaryBackend();
+    if (!primaryBackend) {
       return { success: false, error: 'No storage backend available' };
     }
 
-    const result = await this.primaryBackend.store(key, value, options);
+    const startTime = Date.now();
+    const result = await this.executeWithHealthTracking(
+      this.primaryBackendId!,
+      () => primaryBackend.store(key, value, options)
+    );
     
     // If primary fails and fallbacks are allowed, try other backends
-    if (!result.success && this.config.allowFallbacks) {
-      for (const [, backend] of this.backends) {
-        if (backend === this.primaryBackend) continue;
+    if (!result.success && this.config.allowFallbacks && !this.failoverInProgress) {
+      for (const [id, backend] of this.backends) {
+        if (id === this.primaryBackendId) continue;
         
-        const fallbackResult = await backend.store(key, value, options);
+        const fallbackResult = await this.executeWithHealthTracking(
+          id,
+          () => backend.store(key, value, options)
+        );
+        
         if (fallbackResult.success) {
           return fallbackResult;
         }
@@ -205,11 +255,167 @@ class MultiBackendStorage implements SecureStorage {
   }
 
   async test(): Promise<StorageResult> {
-    if (!this.primaryBackend) {
+    const primaryBackend = this.getPrimaryBackend();
+    if (!primaryBackend) {
       return { success: false, error: 'No storage backend available' };
     }
 
-    return this.primaryBackend.test();
+    return this.executeWithHealthTracking(
+      this.primaryBackendId!,
+      () => primaryBackend.test()
+    );
+  }
+
+  /**
+   * Get current primary backend instance
+   */
+  private getPrimaryBackend(): SecureStorage | undefined {
+    if (!this.primaryBackendId) return undefined;
+    return this.backends.get(this.primaryBackendId);
+  }
+
+  /**
+   * Execute operation with health tracking
+   */
+  private async executeWithHealthTracking<T>(
+    backendId: string,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const startTime = Date.now();
+    
+    try {
+      const result = await operation();
+      const responseTime = Date.now() - startTime;
+      
+      // Record success if health monitoring is enabled
+      if (this.healthMonitor && 'success' in (result as any)) {
+        if ((result as any).success) {
+          this.healthMonitor.recordSuccess(backendId, responseTime);
+        } else {
+          this.healthMonitor.recordError(
+            backendId,
+            'operation',
+            (result as any).error || 'Operation failed',
+            responseTime
+          );
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      
+      // Record error if health monitoring is enabled
+      if (this.healthMonitor) {
+        this.healthMonitor.recordError(
+          backendId,
+          'operation',
+          error instanceof Error ? error.message : 'Unknown error',
+          responseTime
+        );
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Handle health changes for automatic failover
+   */
+  private async handleHealthChange(backendId: string, health: BackendHealth): Promise<void> {
+    // If the primary backend becomes unhealthy, initiate failover
+    if (backendId === this.primaryBackendId && 
+        health.status === 'unhealthy' && 
+        this.config.enableAutoFailover &&
+        !this.failoverInProgress) {
+      
+      await this.initiateFailover();
+    }
+  }
+
+  /**
+   * Initiate automatic failover to a healthy backend
+   */
+  private async initiateFailover(): Promise<void> {
+    if (this.failoverInProgress || !this.healthMonitor || !this.migrator) {
+      return;
+    }
+
+    this.failoverInProgress = true;
+
+    try {
+      // Find the best healthy backend
+      const bestBackend = this.healthMonitor.getBestBackend();
+      
+      if (!bestBackend || bestBackend === this.primaryBackendId) {
+        console.warn('No suitable backend found for failover');
+        return;
+      }
+
+      console.log(`Initiating failover from ${this.primaryBackendId} to ${bestBackend}`);
+
+      // Create migration plan
+      const sourceStorage = this.backends.get(this.primaryBackendId!);
+      const targetStorage = this.backends.get(bestBackend);
+
+      if (!sourceStorage || !targetStorage) {
+        console.error('Failed to get storage instances for failover');
+        return;
+      }
+
+      const migrationPlan = this.migrator.createMigrationPlan(
+        sourceStorage,
+        targetStorage,
+        {
+          strategy: MigrationStrategy.ValidateWhileCopy,
+          rollbackEnabled: true,
+          preserveSource: true,
+        }
+      );
+
+      // Execute migration
+      const progress = await this.migrator.executeMigration(migrationPlan);
+      
+      if (progress.status === 'completed') {
+        // Update primary backend
+        this.primaryBackendId = bestBackend;
+        console.log(`Failover completed successfully to ${bestBackend}`);
+      } else {
+        console.error(`Failover migration failed: ${progress.status}`);
+      }
+
+    } catch (error) {
+      console.error('Failover failed:', error);
+    } finally {
+      this.failoverInProgress = false;
+    }
+  }
+
+  /**
+   * Get health information for all backends
+   */
+  getBackendHealth(): Map<string, BackendHealth> | undefined {
+    return this.healthMonitor?.getAllHealth();
+  }
+
+  /**
+   * Get migration status if migration is in progress
+   */
+  getMigrationStatus(): MigrationProgress[] {
+    return this.migrator?.getActiveMigrations() || [];
+  }
+
+  /**
+   * Cleanup resources
+   */
+  destroy(): void {
+    if (this.healthMonitor) {
+      this.healthMonitor.shutdown();
+    }
+    
+    if (this.migrator) {
+      this.migrator.cleanup();
+    }
   }
 }
 
@@ -232,18 +438,18 @@ export class StorageFactory {
     }
 
     // Auto-select best backend
-    const backends = await this.selectBackends(platform, capabilities, config);
+    const { backends, backendTypes } = await this.selectBackends(platform, capabilities, config);
     
     if (backends.length === 0) {
       throw new Error('No storage backends available');
     }
 
-    if (backends.length === 1) {
+    if (backends.length === 1 && !config.enableHealthMonitoring) {
       return backends[0];
     }
 
-    // Use multi-backend storage for redundancy
-    return new MultiBackendStorage(backends, config);
+    // Use enhanced multi-backend storage for redundancy and health monitoring
+    return new EnhancedMultiBackendStorage(backends, config, backendTypes);
   }
 
   /**
@@ -319,8 +525,9 @@ export class StorageFactory {
     platform: PlatformInfo,
     capabilities: CapabilityAssessment,
     config: FactoryConfig
-  ): Promise<SecureStorage[]> {
+  ): Promise<{ backends: SecureStorage[]; backendTypes: string[] }> {
     const backends: SecureStorage[] = [];
+    const backendTypes: string[] = [];
     const availableBackends = this.getAvailableBackends().filter(b => b.available);
     
     // Sort by security level and performance
@@ -348,14 +555,16 @@ export class StorageFactory {
         }
         
         backends.push(backend);
+        backendTypes.push(info.type);
         
-        // For most secure setups, just use the best backend
-        if (!config.allowFallbacks && info.securityLevel === 'os') {
+        // For most secure setups, just use the best backend (unless health monitoring is enabled)
+        if (!config.allowFallbacks && !config.enableHealthMonitoring && info.securityLevel === 'os') {
           break;
         }
         
-        // Limit number of backends
-        if (backends.length >= 2) {
+        // Limit number of backends (more allowed if health monitoring is enabled)
+        const maxBackends = config.enableHealthMonitoring ? 3 : 2;
+        if (backends.length >= maxBackends) {
           break;
         }
       } catch (error) {
@@ -363,7 +572,7 @@ export class StorageFactory {
       }
     }
 
-    return backends;
+    return { backends, backendTypes };
   }
 
   /**
