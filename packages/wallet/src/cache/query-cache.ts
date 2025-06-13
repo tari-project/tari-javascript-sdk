@@ -1,5 +1,5 @@
 import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
-// Note: MemoryUtils might need to be implemented or imported differently
+import { MemoryUtils } from '@tari-project/tarijs-core';
 
 /**
  * Intelligent caching layer for expensive queries
@@ -27,7 +27,7 @@ export interface CacheConfig {
 /**
  * Cache entry metadata
  */
-export interface CacheEntry<T> {
+export interface CacheEntry<T extends object> {
   key: string;
   value: WeakRef<T>;
   expires: number;
@@ -172,7 +172,7 @@ export class QueryCache extends DisposableResource {
   /**
    * Set a value in the cache
    */
-  set<T>(key: string, value: T, ttl?: number): void {
+  set<T extends object>(key: string, value: T, ttl?: number): void {
     this.checkDisposed();
 
     const actualTTL = ttl || this.config.defaultTTL;

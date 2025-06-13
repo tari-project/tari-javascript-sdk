@@ -126,6 +126,7 @@ export { safeDispose, isDisposable, isAsyncDisposable } from './memory/using-pol
 export { DisposableResource as MemoryDisposableResource } from './memory/disposable';
 export { TariFFIResource } from './memory/resource-base';
 export { SecureBuffer } from './memory/secure-buffer';
+export { MemoryUtils, MemorySnapshot, MemoryComparison, type MemoryTrend } from './memory/memory-utils';
 export { 
   MemoryPressureMonitor, 
   type MemoryPressureLevel as MemoryPressureType, 
