@@ -23,6 +23,7 @@ interface WebContents {
 // Type assertion for ipcMain to include handle method
 const ipcMainTyped = ipcMain as any;
 import { getElectronWalletService } from './wallet-service.js';
+import { IPCErrorBoundary, IPCTypeConverter } from '../utils/type-converters.js';
 import type { WalletConfig } from '../../types/index.js';
 import { PlatformDetector } from '../../platform/detector.js';
 
@@ -288,7 +289,8 @@ export class IpcHandlersManager {
       }
 
       const address = await wallet.getAddress();
-      return this.createResponse(address, request.requestId);
+      const addressString = IPCTypeConverter.addressToString(address);
+      return this.createResponse(addressString, request.requestId);
     });
   };
 
@@ -433,8 +435,10 @@ export class IpcHandlersManager {
         throw new Error('Wallet not available');
       }
 
-      const fee = await wallet.estimateFee(request.amount, request.priority);
-      return this.createResponse(fee, request.requestId);
+      const amountBigint = IPCTypeConverter.numberToBigint(request.amount);
+      const fee = await wallet.estimateFee(amountBigint, request.priority);
+      const feeNumber = IPCTypeConverter.bigintToNumber(fee);
+      return this.createResponse(feeNumber, request.requestId);
     });
   };
 
@@ -491,12 +495,8 @@ export class IpcHandlersManager {
       
       return response;
     } catch (error) {
-      return {
-        success: false,
-        error: error.message,
-        requestId: request.requestId,
-        timestamp: Date.now(),
-      };
+      const ipcError = IPCTypeConverter.handleUnknownError(error, 'withSecurityValidation');
+      return IPCTypeConverter.createErrorResponse(ipcError, request.requestId);
     }
   }
 
@@ -635,7 +635,15 @@ export class IpcHandlersManager {
       'platform:get-capabilities'
     ];
 
-    handlers.forEach(handler => ipcMain.removeHandler(handler));
+    handlers.forEach(handler => {
+      try {
+        if (ipcMainTyped.removeHandler) {
+          ipcMainTyped.removeHandler(handler);
+        }
+      } catch (error) {
+        console.warn(`Failed to remove IPC handler ${handler}:`, error);
+      }
+    });
     
     this.requestCache.clear();
     this.rateLimiter.clear();
