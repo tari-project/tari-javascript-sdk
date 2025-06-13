@@ -36,7 +36,7 @@ windows = { version = "0.52", features = [
 [target.'cfg(target_os = "linux")'.dependencies]
 libsecret = { version = "0.6", optional = true }
 glib = { version = "0.18", optional = true }
-gio = { version = "0.18", optional = true }
+gio = { version = "0.20", optional = true }
 libc = "0.2"
 pkg-config = "0.3"
 
