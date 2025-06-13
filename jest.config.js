@@ -78,9 +78,11 @@ module.exports = {
     // Mock native modules for unit tests
     '\\.node$': '<rootDir>/tests/mocks/native-module.js',
     // Package mappings
-    '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src',
-    '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src',
-    '^@tari-project/tarijs-build$': '<rootDir>/packages/build/src',
+    '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src/index.ts',
+    '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src/index.ts',
+    '^@tari-project/tarijs-build$': '<rootDir>/packages/build/src/index.ts',
+    // Handle polyfill modules
+    '^@tari/core/memory/using-polyfill$': '<rootDir>/packages/core/src/memory/using-polyfill.ts',
   },
   
   // Setup files
