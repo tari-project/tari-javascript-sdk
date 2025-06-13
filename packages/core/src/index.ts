@@ -19,6 +19,13 @@
 export * from './types/constants';
 export * from './types/branded';
 export * from './types/utils';
+
+// Explicit exports for contact validation constants
+export { 
+  MAX_CONTACT_ALIAS_LENGTH, 
+  MIN_CONTACT_ALIAS_LENGTH, 
+  VALIDATION_PATTERNS 
+} from './types/constants';
 export { createMicroTari, createTransactionId, asMicroTari } from './types/branded';
 export { microTariFromFFI, microTariToFFI } from './types/conversions';
 // Export specific branded types
