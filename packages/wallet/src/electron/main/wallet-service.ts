@@ -373,11 +373,11 @@ export class ElectronWalletService {
    */
   private setupWalletEventForwarding(id: string, wallet: TariWallet): void {
     // Forward wallet events to service events
-    wallet.on('transaction-received', (transaction) => {
+    wallet.on('tx:received', (transaction) => {
       this.emit('transaction-received', { id, transaction });
     });
 
-    wallet.on('balance-updated', (balance) => {
+    wallet.on('balance:updated', (balance) => {
       this.emit('balance-updated', { id, balance });
     });
 

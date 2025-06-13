@@ -312,11 +312,11 @@ export class IpcHandlersManager {
       // Additional validation for transaction requests
       this.validateTransactionRequest(request);
 
-      const transaction = await wallet.sendTransaction({
-        recipient: request.recipient,
-        amount: request.amount,
-        message: request.message,
-      });
+      const transaction = await wallet.sendTransaction(
+        request.recipient,
+        String(request.amount),
+        { message: request.message }
+      );
 
       return this.createResponse(transaction, request.requestId);
     });
@@ -337,10 +337,7 @@ export class IpcHandlersManager {
         throw new Error('Wallet not available');
       }
 
-      const transactions = await wallet.getTransactions({
-        limit: request.limit || 50,
-        offset: request.offset || 0,
-      });
+      const transactions = await wallet.getTransactions();
 
       return this.createResponse(transactions, request.requestId);
     });
@@ -436,7 +433,10 @@ export class IpcHandlersManager {
       }
 
       const amountBigint = IPCTypeConverter.numberToBigint(request.amount);
-      const fee = await wallet.estimateFee(amountBigint, request.priority);
+      const priority = request.priority === 'high' || request.priority === 'low' || request.priority === 'normal' 
+        ? request.priority 
+        : 'normal';
+      const fee = await wallet.estimateFee(amountBigint, priority);
       const feeNumber = IPCTypeConverter.bigintToNumber(fee);
       return this.createResponse(feeNumber, request.requestId);
     });
