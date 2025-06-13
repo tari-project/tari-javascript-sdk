@@ -214,7 +214,7 @@ export class TransactionBuilder {
   @withErrorContext('set_options', 'transaction_builder')
   options(options: Partial<TransactionBuildOptions>): TransactionBuilder {
     this.ensureNotBuilt();
-    this.state.options = { ...this.state.options, ...options };
+    this.state.options = { ...this.state.options, ...options } as TransactionBuildOptions;
     return this;
   }
 

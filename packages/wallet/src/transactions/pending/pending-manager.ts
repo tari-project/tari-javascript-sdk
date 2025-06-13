@@ -249,7 +249,7 @@ export class PendingManager extends TypedEventEmitter {
         if ('cancellable' in tx && tx.cancellable) {
           outbound.push(tx as PendingOutboundTransaction);
         } else {
-          inbound.push(tx as PendingInboundTransaction);
+          inbound.push(tx as unknown as PendingInboundTransaction);
         }
       }
     }
@@ -304,23 +304,23 @@ export class PendingManager extends TypedEventEmitter {
         transactionId.toString()
       );
 
-      if (transactionStatus.status !== TransactionStatus.Pending) {
+      if (transactionStatus !== TransactionStatus.Pending) {
         // Transaction is no longer pending, update repository
         const existingTx = await this.repository.getTransaction(transactionId);
         if (existingTx) {
           const updatedTx = {
             ...existingTx,
-            status: transactionStatus.status,
+            status: transactionStatus,
             timestamp: Date.now() as any
           };
 
-          await this.repository.updateTransaction(updatedTx);
+          await this.repository.updateTransaction(updatedTx as unknown as TransactionInfo);
           this.tracker.stopTracking(transactionId);
           
           this.emit('pending:updated', {
             id: transactionId,
             previousStatus: TransactionStatus.Pending,
-            newStatus: transactionStatus.status,
+            newStatus: transactionStatus,
             timestamp: Date.now() as UnixTimestamp,
             details: { manualRefresh: true }
           });
@@ -335,7 +335,7 @@ export class PendingManager extends TypedEventEmitter {
         WalletErrorCode.FFIError,
         `Failed to refresh transaction ${transactionId}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );
@@ -525,20 +525,20 @@ export class PendingManager extends TypedEventEmitter {
             localTx.id.toString()
           );
 
-          if (currentStatus.status !== TransactionStatus.Pending) {
+          if (currentStatus !== TransactionStatus.Pending) {
             const updatedTx = {
               ...localTx,
-              status: currentStatus.status,
+              status: currentStatus,
               timestamp: Date.now() as any
             };
 
-            await this.repository.updateTransaction(updatedTx);
+            await this.repository.updateTransaction(updatedTx as unknown as TransactionInfo);
             await this.stopTrackingTransaction(localTx.id);
 
             this.emit('pending:updated', {
               id: localTx.id,
               previousStatus: TransactionStatus.Pending,
-              newStatus: currentStatus.status,
+              newStatus: currentStatus,
               timestamp: Date.now() as UnixTimestamp,
               details: { completedDetection: true }
             });

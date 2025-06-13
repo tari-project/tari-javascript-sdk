@@ -516,8 +516,8 @@ export class HistoryQueryBuilder {
     ];
 
     return statuses.sort((a, b) => {
-      const aIndex = selectivityOrder.indexOf(a);
-      const bIndex = selectivityOrder.indexOf(b);
+      const aIndex = selectivityOrder.indexOf(a as any);
+      const bIndex = selectivityOrder.indexOf(b as any);
       return aIndex - bIndex;
     });
   }

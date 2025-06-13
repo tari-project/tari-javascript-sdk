@@ -72,7 +72,7 @@ class MultiSubscriptionImpl implements MultiEventSubscription {
  * Type-safe wallet event emitter with memory leak prevention and native integration support
  */
 export class TypedWalletEventEmitter {
-  private listeners = new Map<keyof WalletEventMap, Set<InternalSubscription>>();
+  private listeners = new Map<keyof WalletEventMap, Set<InternalSubscription<any>>>();
   private isDisposed = false;
   private maxListeners = 100; // Memory leak prevention
 
@@ -332,7 +332,7 @@ export class TypedWalletEventEmitter {
     listener: EventListener<T>,
     data: T,
     subscription: InternalSubscription<T>,
-    eventListeners: Set<InternalSubscription>
+    eventListeners: Set<InternalSubscription<any>>
   ): Promise<void> {
     // Call the listener
     await listener(data);

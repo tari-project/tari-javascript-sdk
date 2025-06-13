@@ -81,7 +81,7 @@ export class EventRegistrationManager {
       (payloadJson: string) => {
         this.handleFFIEvent(walletHandle, payloadJson, eventSystem);
       },
-      (error: Error, payload?: FFIEventPayload) => {
+      (error: Error, payload?: string) => {
         this.handleFFIError(walletHandle, error, payload, eventSystem);
       }
     );

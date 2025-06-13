@@ -134,7 +134,11 @@ export class FeeEstimator {
     });
     this.networkService = new NetworkFeesService({
       walletHandle: config.walletHandle,
-      refreshInterval: config.networkRefreshInterval
+      refreshInterval: config.networkRefreshInterval,
+      blockSampleSize: 20,
+      cacheTimeout: 300000,
+      enablePredictions: true,
+      historicalRetentionDays: 7
     });
   }
 
