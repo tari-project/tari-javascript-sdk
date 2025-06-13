@@ -18,6 +18,7 @@ interface IpcMainInvokeEvent {
   senderFrame?: { origin: string };
 }
 import type { SecureStorage, StorageResult } from '../platform/storage/secure-storage.js';
+import { StorageResults } from '../platform/storage/types/storage-result.js';
 import { StorageFactory, type FactoryConfig } from '../platform/storage/storage-factory.js';
 
 export interface ElectronStorageConfig extends FactoryConfig {
@@ -337,12 +338,12 @@ export class ElectronStorageHandler {
           throw new Error(`Unknown operation: ${request.operation}`);
       }
 
-      success = result.success;
+      success = StorageResults.isOk(result);
 
       const response: StorageResponse = {
-        success: result.success,
-        data: result.data,
-        error: result.error,
+        success: StorageResults.isOk(result),
+        data: StorageResults.isOk(result) ? result.value : undefined,
+        error: StorageResults.isError(result) ? result.error.message : undefined,
         requestId: request.requestId,
         timestamp: Date.now(),
       };
@@ -473,20 +474,19 @@ export class ElectronStorageClient implements SecureStorage {
     try {
       const response: StorageResponse = await ipcRenderer.invoke('secure-storage:operation', request);
       
-      return {
-        success: response.success,
-        data: response.data,
-        error: response.error,
-      };
+      if (response.success) {
+        return StorageResults.ok(response.data);
+      } else {
+        return StorageResults.internalError(response.error || 'Unknown error');
+      }
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'IPC communication error',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'IPC communication error'
+      );
     }
   }
 
-  async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options?: any): Promise<StorageResult<void>> {
     return this.executeOperation('store', key, value, options);
   }
 
@@ -494,7 +494,7 @@ export class ElectronStorageClient implements SecureStorage {
     return this.executeOperation('retrieve', key, undefined, options);
   }
 
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     return this.executeOperation('remove', key);
   }
 
@@ -508,26 +508,25 @@ export class ElectronStorageClient implements SecureStorage {
 
   async getMetadata(key: string): Promise<StorageResult<any>> {
     // Not supported via IPC for security reasons
-    return { success: false, error: 'Metadata access not supported via IPC' };
+    return StorageResults.internalError('Metadata access not supported via IPC');
   }
 
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     return this.executeOperation('clear');
   }
 
   async getInfo(): Promise<StorageResult<any>> {
     try {
       const config = await ipcRenderer.invoke('secure-storage:config');
-      return { success: true, data: config };
+      return StorageResults.ok(config);
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get storage info',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'Failed to get storage info'
+      );
     }
   }
 
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     return this.executeOperation('test');
   }
 
