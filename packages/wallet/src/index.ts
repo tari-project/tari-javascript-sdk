@@ -64,6 +64,9 @@ export * from './transactions/index.js';
 // Configuration management
 export * from './config/index.js';
 
+// Performance management and optimization
+export * from './performance/index.js';
+
 // Version and SDK information
 export const WALLET_VERSION = '0.0.1';
 export const WALLET_SDK_NAME = '@tari-project/tarijs-wallet';
@@ -108,6 +111,16 @@ export const SDK_CAPABILITIES = {
   progressTracking: true,
   /** Multi-network support */
   multiNetwork: true,
+  /** Performance monitoring and optimization */
+  performanceOptimization: true,
+  /** Memory pressure monitoring */
+  memoryManagement: true,
+  /** FFI call batching for performance */
+  callBatching: true,
+  /** Intelligent query caching */
+  queryCaching: true,
+  /** Worker thread pool for CPU tasks */
+  workerThreads: true,
   /** Hardware wallet support (future) */
   hardwareWallets: false,
   /** Multi-signature support (future) */

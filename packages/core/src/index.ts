@@ -107,6 +107,22 @@ export * from './models/tari-address';
 export * from './ffi/debug';
 export * from './ffi/trace';
 
+// Memory management and performance (Phase 10)
+export * from './memory/using-polyfill';
+export * from './memory/disposable';
+export * from './memory/resource-base';
+export * from './memory/secure-buffer';
+export * from './memory/crypto-helpers';
+export * from './memory/memory-utils';
+export * from './memory/pressure-monitor';
+export * from './memory/gc-coordinator';
+export * from './memory/heap-stats';
+
+// Performance optimization
+export * from './performance/call-batcher';
+export * from './performance/batch-queue';
+export * from './performance/batch-executor';
+
 // Version information
 export const VERSION = '0.0.1';
 export const SDK_NAME = '@tari-project/tarijs-core';
