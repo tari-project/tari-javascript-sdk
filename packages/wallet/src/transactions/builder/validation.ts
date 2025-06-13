@@ -138,7 +138,9 @@ export class TransactionValidator {
 
     // Core parameter validation
     this.validateAmount(params.amount, errors, warnings);
-    this.validateFeePerGram(params.feePerGram, errors, warnings);
+    if (params.feePerGram !== undefined) {
+      this.validateFeePerGram(params.feePerGram, errors, warnings);
+    }
     await this.validateRecipient(params.recipient, errors, warnings);
     this.validateMessage(params.message, errors, warnings);
 

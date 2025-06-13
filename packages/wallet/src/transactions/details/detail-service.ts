@@ -643,7 +643,7 @@ export class DetailService extends TypedEventEmitter<DetailServiceEvents> {
     try {
       const blockJson = await this.ffiBindings.wallet_get_block_info?.(
         this.walletHandle,
-        blockHeight
+        Number(blockHeight)
       );
       
       return blockJson ? JSON.parse(blockJson) : undefined;

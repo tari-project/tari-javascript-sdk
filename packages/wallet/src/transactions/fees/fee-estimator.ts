@@ -185,7 +185,7 @@ export class FeeEstimator {
         `Failed to estimate transaction fee: ${error}`,
         { 
           severity: ErrorSeverity.Error,
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { amount: amount.toString(), options }
         }
       );

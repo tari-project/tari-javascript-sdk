@@ -79,7 +79,7 @@ export const FILTER_PRESETS = {
   } as TransactionFilter,
   
   FAILED_TRANSACTIONS: {
-    status: [TransactionStatus.Failed, TransactionStatus.Cancelled]
+    status: [TransactionStatus.Cancelled]
   } as TransactionFilter,
   
   PENDING_OUTBOUND: {

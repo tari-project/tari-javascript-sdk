@@ -352,7 +352,7 @@ export class NetworkFeesService extends TypedEventEmitter {
         `Failed to fetch network fee statistics: ${error}`,
         { 
           severity: ErrorSeverity.Warning,
-          cause: error
+          cause: error instanceof Error ? error : undefined
         }
       );
     }

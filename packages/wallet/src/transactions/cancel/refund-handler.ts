@@ -334,7 +334,7 @@ export class RefundHandler extends TypedEventEmitter<RefundHandlerEvents> {
   private async getCurrentBalance(): Promise<Balance> {
     try {
       const balance = await this.ffiBindings.walletGetBalance(this.walletHandle);
-      return balance as Balance;
+      return balance as unknown as Balance;
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.BalanceQueryFailed,

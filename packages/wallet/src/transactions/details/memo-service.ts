@@ -544,7 +544,7 @@ export class MemoService extends TypedEventEmitter {
       );
       
       if (memosJson) {
-        const memos = JSON.parse(memosJson);
+        const memos = JSON.parse(memosJson as unknown as string);
         for (const memoData of memos) {
           const entry: MemoEntry = {
             transactionId: memoData.transactionId,
