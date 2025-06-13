@@ -166,7 +166,7 @@ export class TariWallet implements AsyncDisposable {
   private readonly contactManager: ContactManager;
   private readonly utxoService: UtxoService;
   private readonly coinService: CoinService;
-  private readonly performanceManager: PerformanceManager;
+  private readonly performanceManager: InstanceType<typeof PerformanceManager>;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
@@ -283,7 +283,7 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get global performance manager instance
    */
-  static getGlobalPerformanceManager(): PerformanceManager {
+  static getGlobalPerformanceManager(): InstanceType<typeof PerformanceManager> {
     return getPerformanceManager();
   }
 

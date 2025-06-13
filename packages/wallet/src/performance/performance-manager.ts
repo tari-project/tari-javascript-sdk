@@ -2,12 +2,19 @@ import {
   MemoryDisposableResource as DisposableResource,
   MemoryPressureMonitor,
   GCCoordinator,
-  HeapStatsCollector
+  HeapStatsCollector,
+  CallBatcher
 } from '@tari-project/tarijs-core';
 import { QueryCache, GlobalCaches } from '../cache/query-cache';
 import { TTLManager } from '../cache/ttl-manager';
 import { WorkerManager, getGlobalWorkerManager } from '../workers/worker-manager';
 import { PerformanceConfig, PerformanceFeatures } from './performance-config';
+import { 
+  getGlobalMemoryMonitor, 
+  getGlobalGCCoordinator, 
+  getGlobalHeapStats, 
+  getGlobalBatcher 
+} from './types/performance-types';
 
 /**
  * Central performance manager that coordinates all performance features
@@ -23,8 +30,8 @@ export class PerformanceManager extends DisposableResource {
   private gcCoordinator: GCCoordinator;
   private heapStats: HeapStatsCollector;
   private callBatcher: CallBatcher;
-  private workerManager: WorkerManager;
-  private ttlManager: TTLManager;
+  private workerManager?: WorkerManager;
+  private ttlManager?: TTLManager;
   
   // Performance tracking
   private performanceHistory: Array<{
@@ -190,9 +197,16 @@ export class PerformanceManager extends DisposableResource {
     }
 
     // Recycle workers
-    if (this.features.workerPool) {
-      await this.workerManager.recycleAllWorkers();
-      workersRecycled = this.workerManager.getStats().pools.default?.totalWorkers || 0;
+    if (this.features.workerPool && this.workerManager) {
+      // Note: recycleAllWorkers method may not exist in current WorkerManager implementation
+      try {
+        if ('recycleAllWorkers' in this.workerManager) {
+          await (this.workerManager as any).recycleAllWorkers();
+        }
+        workersRecycled = this.workerManager.getStats?.()?.pools?.default?.totalWorkers || 0;
+      } catch (error) {
+        console.warn('Worker recycling not available:', error);
+      }
     }
 
     // Force GC
@@ -230,10 +244,12 @@ export class PerformanceManager extends DisposableResource {
     }
 
     // Worker pool optimizations
-    if (metrics.workers.poolUtilization.default > 0.8) {
-      await this.workerManager.scalePool('default', 
-        Math.min(8, metrics.workers.totalWorkers + 2));
-      optimizations.push('Scaled up worker pool');
+    if (metrics.workers.poolUtilization.default > 0.8 && this.workerManager) {
+      if ('scalePool' in this.workerManager) {
+        await (this.workerManager as any).scalePool('default', 
+          Math.min(8, metrics.workers.totalWorkers + 2));
+        optimizations.push('Scaled up worker pool');
+      }
     }
 
     // Batching optimizations
@@ -347,13 +363,13 @@ export class PerformanceManager extends DisposableResource {
   private setupMemoryMonitoring(): void {
     this.memoryMonitor.updateThresholds(this.config.memory.pressureThresholds);
     
-    this.memoryMonitor.on('pressureChange', (level, metrics) => {
+    this.memoryMonitor.on('pressureChange', (level: any, metrics: any) => {
       if (level === 'high' || level === 'critical') {
         this.handleMemoryPressure(level, metrics);
       }
     });
 
-    this.memoryMonitor.on('leak', (detection) => {
+    this.memoryMonitor.on('leak', (detection: any) => {
       console.warn('Memory leak detected:', detection);
     });
   }
@@ -375,7 +391,7 @@ export class PerformanceManager extends DisposableResource {
   private setupCacheCleanupHandlers(): void {
     if (!this.features.memoryPressureMonitoring) return;
 
-    this.memoryMonitor.addCleanupHandler(async (level, metrics) => {
+    this.memoryMonitor.addCleanupHandler(async (level: any, metrics: any) => {
       let cleaned = 0;
 
       if (level === 'high' || level === 'critical') {

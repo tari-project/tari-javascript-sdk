@@ -4,6 +4,7 @@
 
 import { GCCoordinator } from '@tari-project/tarijs-core';
 import { LoadBalancingStrategy } from '../workers/worker-manager';
+import { GCStrategy } from './types/performance-types';
 
 /**
  * Memory management configuration
@@ -465,16 +466,50 @@ export function createConfigForUseCase(useCase: 'server' | 'desktop' | 'mobile' 
     
     case 'mobile':
       return mergeWithPreset('memory-efficient', {
-        workers: { poolSize: 2 },
-        caching: { maxCacheSize: 100 }
+        workers: { 
+          poolSize: 2,
+          enableWorkerPool: true,
+          enableAutoScaling: true,
+          loadBalancingStrategy: 'least-busy' as LoadBalancingStrategy
+        },
+        caching: { 
+          maxCacheSize: 100,
+          enableQueryCache: true,
+          defaultTTL: 300000,
+          enableCacheMetrics: true,
+          memoryPressureThreshold: 0.7
+        }
       });
     
     case 'embedded':
       return mergeWithPreset('memory-efficient', {
-        workers: { poolSize: 1, enableWorkerPool: false },
-        caching: { maxCacheSize: 50 },
-        memory: { enableHeapStats: false },
-        monitoring: { enablePerformanceMonitoring: false }
+        workers: { 
+          poolSize: 1, 
+          enableWorkerPool: false,
+          enableAutoScaling: false,
+          loadBalancingStrategy: 'round-robin' as LoadBalancingStrategy
+        },
+        caching: { 
+          maxCacheSize: 50,
+          enableQueryCache: false,
+          defaultTTL: 60000,
+          enableCacheMetrics: false,
+          memoryPressureThreshold: 0.8
+        },
+        memory: { 
+          enableHeapStats: false,
+          enablePressureMonitoring: false,
+          pressureThresholds: { moderate: 0.7, high: 0.8, critical: 0.9 },
+          enableGCCoordination: false,
+          gcStrategy: 'balanced' as GCStrategy,
+          enableAutoCleanup: false
+        },
+        monitoring: { 
+          enablePerformanceMonitoring: false,
+          monitoringInterval: 30000,
+          enableMetricsCollection: false,
+          historySize: 100
+        }
       });
     
     default:
