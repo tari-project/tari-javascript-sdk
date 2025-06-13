@@ -1,7 +1,10 @@
-import { DisposableResource } from '@tari/core/memory/disposable';
+import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
 import { WorkerPool, TaskType, TaskPriority, TaskResult, PoolStats } from './worker-pool';
 import { GlobalWorkerPools } from './worker-pool';
 import path from 'path';
+
+// Define Transferable type for cross-platform compatibility
+type Transferable = ArrayBuffer | MessagePort;
 
 /**
  * High-level worker manager for coordinating multiple worker pools

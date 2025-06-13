@@ -232,12 +232,12 @@ registerTaskHandler('computation', async (data: {
       const n = input as number;
       if (n < 0 || n > 170) throw new Error('Invalid input for factorial');
       
-      let result = 1;
+      let factorialResult = 1;
       for (let i = 2; i <= n; i++) {
-        result *= i;
+        factorialResult *= i;
       }
       
-      return { operation, input: n, result };
+      return { operation, input: n, result: factorialResult };
     
     case 'fibonacci':
       const fib = input as number;
@@ -278,17 +278,17 @@ registerTaskHandler('computation', async (data: {
         throw new Error('Incompatible matrix dimensions');
       }
       
-      const result = Array(rowsA).fill(null).map(() => Array(colsB).fill(0));
+      const matrixResult = Array(rowsA).fill(null).map(() => Array(colsB).fill(0));
       
       for (let i = 0; i < rowsA; i++) {
         for (let j = 0; j < colsB; j++) {
           for (let k = 0; k < colsA; k++) {
-            result[i][j] += matrixA[i][k] * matrixB[k][j];
+            matrixResult[i][j] += matrixA[i][k] * matrixB[k][j];
           }
         }
       }
       
-      return { operation, result, dimensions: `${rowsA}x${colsB}` };
+      return { operation, result: matrixResult, dimensions: `${rowsA}x${colsB}` };
     
     case 'sort':
       const { array, algorithm = 'quicksort' } = input;
