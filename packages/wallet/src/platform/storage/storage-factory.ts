@@ -12,11 +12,14 @@ import { BackendHealthMonitor, type BackendHealth, type HealthCheckConfig } from
 import { StorageMigrator, type MigrationPlan, type MigrationProgress, MigrationStrategy } from './migration.js';
 import { SecureStorageCache, type CacheConfig } from './cache.js';
 import { BatchStorageOperations, type BatchConfig } from './batch-operations.js';
+import { TauriSecureStorageCache, type TauriCacheConfig } from '../../tauri/tauri-cache.js';
+import { TauriBatchStorageOperations, type TauriBatchConfig } from '../../tauri/tauri-batch.js';
 
 /**
  * Storage backend types
  */
 export type StorageBackend = 
+  | 'tauri'             // Tauri secure storage (highest priority)
   | 'keychain'          // macOS Keychain
   | 'credential-store'  // Windows Credential Store
   | 'secret-service'    // Linux Secret Service
@@ -50,6 +53,10 @@ export interface FactoryConfig extends StorageConfig {
   enableBatching?: boolean;
   /** Batch operations configuration */
   batchConfig?: BatchConfig;
+  /** Tauri-specific cache configuration */
+  tauriCacheConfig?: TauriCacheConfig;
+  /** Tauri-specific batch configuration */
+  tauriBatchConfig?: TauriBatchConfig;
 }
 
 /**
@@ -461,14 +468,24 @@ export class StorageFactory {
     // Use enhanced multi-backend storage for redundancy and health monitoring
     let storage: SecureStorage = new EnhancedMultiBackendStorage(backends, config, backendTypes);
 
-    // Add caching layer if enabled
+    // Add caching layer if enabled (use Tauri-optimized cache for Tauri runtime)
     if (config.enableCaching) {
-      storage = new SecureStorageCache(storage, config.cacheConfig);
+      const platform = PlatformDetector.detect();
+      if (platform.runtime === 'tauri' && config.tauriCacheConfig) {
+        storage = new TauriSecureStorageCache(storage, config.tauriCacheConfig);
+      } else {
+        storage = new SecureStorageCache(storage, config.cacheConfig);
+      }
     }
 
-    // Add batch operations layer if enabled
+    // Add batch operations layer if enabled (use Tauri-optimized batching for Tauri runtime)
     if (config.enableBatching) {
-      storage = new BatchStorageOperations(storage, config.batchConfig);
+      const platform = PlatformDetector.detect();
+      if (platform.runtime === 'tauri' && config.tauriBatchConfig) {
+        storage = new TauriBatchStorageOperations(storage, config.tauriBatchConfig);
+      } else {
+        storage = new BatchStorageOperations(storage, config.batchConfig);
+      }
     }
 
     return storage;
@@ -482,6 +499,13 @@ export class StorageFactory {
     const capabilities = getCapabilitiesManager().getCapabilityAssessment();
 
     return [
+      {
+        type: 'tauri',
+        available: platform.runtime === 'tauri' && capabilities.secureStorage.available,
+        securityLevel: 'hardware',
+        performance: 'high',
+        limitations: ['Requires Tauri runtime', 'Platform-specific limitations apply'],
+      },
       {
         type: 'keychain',
         available: platform.os === 'darwin' && capabilities.secureStorage.available,
@@ -610,6 +634,10 @@ export class StorageFactory {
     let backend: SecureStorage;
 
     switch (type) {
+      case 'tauri':
+        backend = await this.createTauriBackend(config);
+        break;
+      
       case 'keychain':
         backend = await this.createKeychainBackend(config);
         break;
@@ -636,6 +664,18 @@ export class StorageFactory {
 
     this.backendCache.set(cacheKey, backend);
     return backend;
+  }
+
+  /**
+   * Create Tauri backend (cross-platform with Tauri runtime)
+   */
+  private static async createTauriBackend(config: FactoryConfig): Promise<SecureStorage> {
+    const { TauriStorage } = await import('../../tauri/tauri-storage.js');
+    return new TauriStorage({
+      maxRetries: 3,
+      requestTimeout: 30000,
+      ...config.tauriCacheConfig
+    });
   }
 
   /**
