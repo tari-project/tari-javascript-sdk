@@ -9,7 +9,6 @@ import {
   StorageResult, 
   StorageResults, 
   StorageOperationResult,
-  type StorageError,
   type StorageErrorCode
 } from './types/storage-result';
 
@@ -153,6 +152,8 @@ export abstract class BaseSecureStorage implements SecureStorage {
       encryptionKey: this.generateDefaultKey(),
       enableCompression: true,
       compressionThreshold: 1024, // 1KB
+      enableValidation: false,
+      enableLogging: false,
       ...config,
     };
   }

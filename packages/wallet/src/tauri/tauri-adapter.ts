@@ -25,6 +25,8 @@ export interface TauriAdapterConfig {
   validatePermissions?: boolean;
   /** Enable hardware acceleration */
   enableHardwareAcceleration?: boolean;
+  /** Enable debug logging */
+  enableLogging?: boolean;
   /** Memory protection settings */
   memoryProtection?: {
     clearSensitiveData?: boolean;
@@ -74,6 +76,7 @@ export class TauriAdapter {
       enableOptimizations: true,
       validatePermissions: true,
       enableHardwareAcceleration: true,
+      enableLogging: false,
       memoryProtection: {
         clearSensitiveData: true,
         useSecureBuffers: true,
@@ -197,10 +200,10 @@ export class TauriAdapter {
     // Test basic invoke functionality
     try {
       const result = await this.secureInvoke.invoke('get_platform_info');
-      if (!StorageResults.isOk(result)) {
+      if (!result.success) {
         return {
           valid: false,
-          error: `Platform info test failed: ${result.error}`,
+          error: `Platform info test failed: ${result.error || 'Unknown error'}`,
         };
       }
     } catch (error) {
@@ -228,10 +231,10 @@ export class TauriAdapter {
     try {
       // Test storage permission
       const result = await this.secureInvoke.invoke('secure_storage_test');
-      if (!StorageResults.isOk(result)) {
+      if (!result.success) {
         return {
           valid: false,
-          error: `Storage permission test failed: ${result.error}`,
+          error: `Storage permission test failed: ${result.error || 'Unknown error'}`,
         };
       }
 
@@ -251,12 +254,12 @@ export class TauriAdapter {
     try {
       // Get platform information for optimization decisions
       const platformResult = await this.secureInvoke.invoke('get_platform_info');
-      if (!StorageResults.isOk(platformResult)) {
+      if (!platformResult.success) {
         console.warn('Could not get platform info for optimizations');
         return;
       }
 
-      const platform = platformResult.value;
+      const platform = platformResult.data;
 
       // Apply hardware acceleration if supported
       if (this.config.enableHardwareAcceleration && this.supportsHardwareAcceleration(platform)) {

@@ -14,10 +14,11 @@ export function map<T, U>(
   result: StorageResult<T>,
   fn: (value: T) => U
 ): StorageResult<U> {
-  return StorageResults.match(result, {
-    ok: (value, requiresUserInteraction) => StorageResults.ok(fn(value), requiresUserInteraction),
-    error: (error) => ({ kind: "error", error })
-  });
+  if (StorageResults.isOk(result)) {
+    return StorageResults.ok(fn(result.value), result.requiresUserInteraction);
+  } else {
+    return result; // Pass through the error unchanged
+  }
 }
 
 /**
@@ -40,10 +41,11 @@ export function mapError<T>(
   result: StorageResult<T>,
   fn: (error: StorageError) => StorageError
 ): StorageResult<T> {
-  return StorageResults.match(result, {
-    ok: (value, requiresUserInteraction) => StorageResults.ok(value, requiresUserInteraction),
-    error: (error) => ({ kind: "error", error: fn(error) })
-  });
+  if (StorageResults.isOk(result)) {
+    return result; // Pass through success unchanged
+  } else {
+    return { kind: "error", error: fn(result.error) };
+  }
 }
 
 /**
@@ -184,22 +186,20 @@ export function fromLegacy<T>(legacy: {
 /**
  * Convert a discriminated union result to legacy format for backward compatibility
  */
-export function toLegacy<T>(result: StorageResult<T>): {
-  success: boolean;
-  data?: T;
-  error?: string;
-  requiresUserInteraction?: boolean;
-} {
-  return StorageResults.match(result, {
-    ok: (value, requiresUserInteraction) => ({
+export function toLegacy<T>(result: StorageResult<T>): 
+  | { success: true; data: T; error?: undefined; requiresUserInteraction?: boolean; }
+  | { success: false; data?: undefined; error: string; requiresUserInteraction?: boolean; } {
+  if (StorageResults.isOk(result)) {
+    return {
       success: true,
-      data: value,
-      requiresUserInteraction
-    }),
-    error: (error) => ({
+      data: result.value,
+      requiresUserInteraction: result.requiresUserInteraction
+    };
+  } else {
+    return {
       success: false,
-      error: error.message || `${error.code} error`,
-      requiresUserInteraction: error.requiresUserInteraction
-    })
-  });
+      error: result.error.message || `${result.error.code} error`,
+      requiresUserInteraction: result.error.requiresUserInteraction
+    };
+  }
 }
