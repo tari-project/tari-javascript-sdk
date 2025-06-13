@@ -13,12 +13,7 @@ import {
   TransactionBuilder,
   PendingTransactionBuilder 
 } from '../../testing/builders';
-import { getMockNativeBindings } from '../../../../core/src/ffi/__mocks__/native';
-
-// Mock the FFI module
-jest.mock('../../../../core/src/ffi/native', () => {
-  return getMockNativeBindings();
-});
+// Note: FFI mocking is handled automatically by Jest moduleNameMapper
 
 describe('TransactionService Unit Tests', () => {
   let mockFFI: any;

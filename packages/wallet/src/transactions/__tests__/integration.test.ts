@@ -7,7 +7,7 @@ import {
   TransactionAPI,
   type TransactionAPIConfig,
   DEFAULT_TRANSACTION_API_CONFIG
-} from '../api/transaction-api.js';
+} from '../api/transaction-api';
 import { 
   WalletError, 
   WalletErrorCode,

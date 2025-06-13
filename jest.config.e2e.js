@@ -48,6 +48,8 @@ module.exports = {
     '^@tari/core/memory/memory-utils$': '<rootDir>/packages/core/src/memory/memory-utils.ts',
     '^@tari/core/memory/crypto-helpers$': '<rootDir>/packages/core/src/memory/crypto-helpers.ts',
     '^@tari/core/memory/pressure-monitor$': '<rootDir>/packages/core/src/memory/pressure-monitor.ts',
+    '^@tari/core/memory/gc-coordinator$': '<rootDir>/packages/core/src/memory/gc-coordinator.ts',
+    '^@tari/core/memory/heap-stats$': '<rootDir>/packages/core/src/memory/heap-stats.ts',
   },
   
   // Setup files

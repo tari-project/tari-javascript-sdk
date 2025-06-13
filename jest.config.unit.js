@@ -75,6 +75,12 @@ module.exports = {
     '^@tari/core/memory/memory-utils$': '<rootDir>/packages/core/src/memory/memory-utils.ts',
     '^@tari/core/memory/crypto-helpers$': '<rootDir>/packages/core/src/memory/crypto-helpers.ts',
     '^@tari/core/memory/pressure-monitor$': '<rootDir>/packages/core/src/memory/pressure-monitor.ts',
+    '^@tari/core/memory/gc-coordinator$': '<rootDir>/packages/core/src/memory/gc-coordinator.ts',
+    '^@tari/core/memory/heap-stats$': '<rootDir>/packages/core/src/memory/heap-stats.ts',
+    '^@tari-project/tarijs-core/utils/typed-event-emitter$': '<rootDir>/packages/core/src/utils/typed-event-emitter.ts',
+    '^@tari/core/performance/call-batcher$': '<rootDir>/packages/core/src/performance/call-batcher.ts',
+    '^@tari/core/performance/batch-executor$': '<rootDir>/packages/core/src/performance/batch-executor.ts',
+    '^@tari/core/performance/batch-queue$': '<rootDir>/packages/core/src/performance/batch-queue.ts',
   },
   
   // Setup files
