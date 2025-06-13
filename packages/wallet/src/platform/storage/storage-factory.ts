@@ -8,6 +8,7 @@
 import { PlatformDetector, type PlatformInfo } from '../detector.js';
 import { getCapabilitiesManager, type CapabilityAssessment } from '../capabilities.js';
 import type { SecureStorage, StorageConfig, StorageResult } from './secure-storage.js';
+import { StorageResults } from './types/storage-result.js';
 import { BackendHealthMonitor, type BackendHealth, type HealthCheckConfig } from './backend-health.js';
 import { StorageMigrator, type MigrationPlan, type MigrationProgress, MigrationStrategy } from './migration.js';
 import { SecureStorageCache, type CacheConfig } from './cache.js';
@@ -126,10 +127,10 @@ class EnhancedMultiBackendStorage implements SecureStorage {
     }
   }
 
-  async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options?: any): Promise<StorageResult<void>> {
     const primaryBackend = this.getPrimaryBackend();
     if (!primaryBackend) {
-      return { success: false, error: 'No storage backend available' };
+      return StorageResults.error('internal_error', 'No storage backend available');
     }
 
     const startTime = Date.now();
@@ -139,17 +140,17 @@ class EnhancedMultiBackendStorage implements SecureStorage {
     );
     
     // If primary fails and fallbacks are allowed, try other backends
-    if (!result.success && this.config.allowFallbacks && !this.failoverInProgress) {
+    if (!StorageResults.isOk(result) && this.config.allowFallbacks && !this.failoverInProgress) {
       for (const [id, backend] of this.backends) {
         if (id === this.primaryBackendId) continue;
         
         const fallbackResult = await this.executeWithHealthTracking(
           id,
           () => backend.store(key, value, options)
-        );
+        ) as StorageResult<void>;
         
-        if (fallbackResult.success) {
-          return fallbackResult;
+        if (StorageResults.isOk(fallbackResult)) {
+          return fallbackResult as StorageResult<void>;
         }
       }
     }
@@ -158,31 +159,32 @@ class EnhancedMultiBackendStorage implements SecureStorage {
   }
 
   async retrieve(key: string, options?: any): Promise<StorageResult<Buffer>> {
-    if (!this.primaryBackend) {
-      return { success: false, error: 'No storage backend available' };
+    const primaryBackend = this.getPrimaryBackend();
+    if (!primaryBackend) {
+      return StorageResults.error('internal_error', 'No storage backend available');
     }
 
     // Try primary backend first
-    const result = await this.primaryBackend.retrieve(key, options);
-    if (result.success) {
+    const result = await primaryBackend.retrieve(key, options);
+    if (StorageResults.isOk(result)) {
       return result;
     }
 
     // Try other backends if primary fails
     for (const [, backend] of this.backends) {
-      if (backend === this.primaryBackend) continue;
+      if (backend === primaryBackend) continue;
       
       const fallbackResult = await backend.retrieve(key, options);
-      if (fallbackResult.success) {
-        return fallbackResult;
+      if (StorageResults.isOk(fallbackResult)) {
+        return fallbackResult as StorageResult<Buffer>;
       }
     }
 
     return result;
   }
 
-  async remove(key: string): Promise<StorageResult> {
-    const results: StorageResult[] = [];
+  async remove(key: string): Promise<StorageResult<void>> {
+    const results: StorageResult<void>[] = [];
     
     // Remove from all backends
     for (const [, backend] of this.backends) {
@@ -191,23 +193,22 @@ class EnhancedMultiBackendStorage implements SecureStorage {
     }
 
     // Success if any backend succeeded
-    const anySuccess = results.some(r => r.success);
-    return { 
-      success: anySuccess,
-      error: anySuccess ? undefined : 'Failed to remove from all backends'
-    };
+    const anySuccess = results.some(r => StorageResults.isOk(r));
+    return anySuccess 
+      ? StorageResults.ok(undefined)
+      : StorageResults.error('internal_error', 'Failed to remove from all backends');
   }
 
   async exists(key: string): Promise<StorageResult<boolean>> {
     // Check all backends
     for (const [, backend] of this.backends) {
       const result = await backend.exists(key);
-      if (result.success && result.data) {
-        return result;
+      if (StorageResults.isOk(result) && result.value) {
+        return result as StorageResult<boolean>;
       }
     }
 
-    return { success: true, data: false };
+    return StorageResults.ok(false);
   }
 
   async list(): Promise<StorageResult<string[]>> {
@@ -216,38 +217,39 @@ class EnhancedMultiBackendStorage implements SecureStorage {
     // Collect keys from all backends
     for (const [, backend] of this.backends) {
       const result = await backend.list();
-      if (result.success && result.data) {
-        result.data.forEach(key => allKeys.add(key));
+      if (StorageResults.isOk(result) && result.value) {
+        (result.value as string[]).forEach(key => allKeys.add(key));
       }
     }
 
-    return { success: true, data: Array.from(allKeys) };
+    return StorageResults.ok(Array.from(allKeys));
   }
 
   async getMetadata(key: string): Promise<StorageResult<any>> {
     // Try primary backend first
-    if (this.primaryBackend) {
-      const result = await this.primaryBackend.getMetadata(key);
-      if (result.success) {
+    const primaryBackend = this.getPrimaryBackend();
+    if (primaryBackend) {
+      const result = await primaryBackend.getMetadata(key);
+      if (StorageResults.isOk(result)) {
         return result;
       }
     }
 
     // Try other backends
     for (const [, backend] of this.backends) {
-      if (backend === this.primaryBackend) continue;
+      if (backend === primaryBackend) continue;
       
       const result = await backend.getMetadata(key);
-      if (result.success) {
+      if (StorageResults.isOk(result)) {
         return result;
       }
     }
 
-    return { success: false, error: 'Key not found in any backend' };
+    return StorageResults.error('not_found', 'Key not found in any backend');
   }
 
-  async clear(): Promise<StorageResult> {
-    const results: StorageResult[] = [];
+  async clear(): Promise<StorageResult<void>> {
+    const results: StorageResult<void>[] = [];
     
     // Clear all backends
     for (const [, backend] of this.backends) {
@@ -256,25 +258,25 @@ class EnhancedMultiBackendStorage implements SecureStorage {
     }
 
     // Success if any backend succeeded
-    const anySuccess = results.some(r => r.success);
-    return { 
-      success: anySuccess,
-      error: anySuccess ? undefined : 'Failed to clear all backends'
-    };
+    const anySuccess = results.some(r => StorageResults.isOk(r));
+    return anySuccess 
+      ? StorageResults.ok(undefined)
+      : StorageResults.error('internal_error', 'Failed to clear all backends');
   }
 
   async getInfo(): Promise<StorageResult<any>> {
-    if (!this.primaryBackend) {
-      return { success: false, error: 'No storage backend available' };
-    }
-
-    return this.primaryBackend.getInfo();
-  }
-
-  async test(): Promise<StorageResult> {
     const primaryBackend = this.getPrimaryBackend();
     if (!primaryBackend) {
-      return { success: false, error: 'No storage backend available' };
+      return StorageResults.error('internal_error', 'No storage backend available');
+    }
+
+    return primaryBackend.getInfo();
+  }
+
+  async test(): Promise<StorageResult<void>> {
+    const primaryBackend = this.getPrimaryBackend();
+    if (!primaryBackend) {
+      return StorageResults.error('internal_error', 'No storage backend available');
     }
 
     return this.executeWithHealthTracking(
@@ -305,14 +307,14 @@ class EnhancedMultiBackendStorage implements SecureStorage {
       const responseTime = Date.now() - startTime;
       
       // Record success if health monitoring is enabled
-      if (this.healthMonitor && 'success' in (result as any)) {
-        if ((result as any).success) {
+      if (this.healthMonitor && typeof result === 'object' && result !== null && 'kind' in result) {
+        if (StorageResults.isOk(result as StorageResult<any>)) {
           this.healthMonitor.recordSuccess(backendId, responseTime);
         } else {
           this.healthMonitor.recordError(
             backendId,
             'operation',
-            (result as any).error || 'Operation failed',
+            (result as any).error?.message || 'Operation failed',
             responseTime
           );
         }
@@ -551,7 +553,7 @@ export class StorageFactory {
     try {
       const backend = await this.createBackend(type, config || {});
       const result = await backend.test();
-      return result.success;
+      return StorageResults.isOk(result);
     } catch {
       return false;
     }
@@ -595,7 +597,7 @@ export class StorageFactory {
         // Test backend if requested
         if (config.testBackends) {
           const testResult = await backend.test();
-          if (!testResult.success) {
+          if (!StorageResults.isOk(testResult)) {
             continue;
           }
         }
@@ -673,7 +675,6 @@ export class StorageFactory {
     const { TauriStorage } = await import('../../tauri/tauri-storage.js');
     return new TauriStorage({
       maxRetries: 3,
-      requestTimeout: 30000,
       ...config.tauriCacheConfig
     });
   }

@@ -5,7 +5,7 @@
  * file storage fallback for systems without secret services.
  */
 
-import { BaseSecureStorage, type StorageResult, type StorageMetadata, type StorageOptions, type StorageInfo, StorageError, UnavailableError } from './secure-storage.js';
+import { BaseSecureStorage, type StorageResult, StorageResults, type StorageMetadata, type StorageOptions, type StorageInfo, StorageError, UnavailableError } from './secure-storage.js';
 import { PlatformDetector } from '../detector.js';
 import { SecretServiceApi, type SecretAttributes, type SecretCollection } from './secret-service-api.js';
 
@@ -29,7 +29,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
   /**
    * Store data in secret service
    */
-  async store(key: string, value: Buffer, options: StorageOptions = {}): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options: StorageOptions = {}): Promise<StorageResult<void>> {
     try {
       this.validateKey(key);
       this.validateDataSize(value);
@@ -38,7 +38,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
         // Fall back to encrypted file storage
         const encryptedData = await this.encryptData(value);
         console.log(`Storing ${key} in encrypted file fallback`);
-        return this.createResult(true);
+        return StorageResults.ok(undefined);
       }
 
       // Prepare attributes for the secret item
@@ -65,17 +65,17 @@ export class SecretServiceStorage extends BaseSecureStorage {
       if (!result.success) {
         // Fall back to encrypted file storage on error
         if (result.error?.includes('authentication required')) {
-          return this.createResult(false, undefined, result.error, true);
+          return StorageResults.permissionDenied(result.error, true);
         }
         
         console.warn('Secret Service store failed, using encrypted fallback:', result.error);
         const encryptedData = await this.encryptData(value);
-        return this.createResult(true);
+        return StorageResults.ok(undefined);
       }
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
-      return this.createResult(false, undefined, `Secret service store failed: ${error}`);
+      return StorageResults.internalError(`Secret service store failed: ${error}`);
     }
   }
 
@@ -87,7 +87,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
       this.validateKey(key);
 
       if (!this.isAvailable || !this.collection) {
-        return this.createResult(false, undefined, 'Secret service not available');
+        return StorageResults.internalError('Secret service not available');
       }
 
       // Search for the item
@@ -133,12 +133,12 @@ export class SecretServiceStorage extends BaseSecureStorage {
   /**
    * Remove data from secret service
    */
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     try {
       this.validateKey(key);
 
       if (!this.isAvailable || !this.collection) {
-        return this.createResult(false, undefined, 'Secret service not available');
+        return StorageResults.internalError('Secret service not available');
       }
 
       // Search for the item
@@ -149,7 +149,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
 
       const searchResult = await this.secretService.searchItems(this.collection.path, attributes);
       if (!searchResult.success || !searchResult.data || searchResult.data.length === 0) {
-        return this.createResult(true); // Already removed or never existed
+        return StorageResults.ok(undefined); // Already removed or never existed
       }
 
       // Delete all matching items
@@ -157,15 +157,15 @@ export class SecretServiceStorage extends BaseSecureStorage {
         const deleteResult = await this.secretService.deleteItem(itemPath);
         if (!deleteResult.success) {
           if (deleteResult.error?.includes('authentication required')) {
-            return this.createResult(false, undefined, deleteResult.error, true);
+            return StorageResults.permissionDenied(deleteResult.error, true);
           }
           console.warn(`Failed to delete item ${itemPath}:`, deleteResult.error);
         }
       }
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
-      return this.createResult(false, undefined, `Secret service remove failed: ${error}`);
+      return StorageResults.internalError(`Secret service remove failed: ${error}`);
     }
   }
 
@@ -274,9 +274,9 @@ export class SecretServiceStorage extends BaseSecureStorage {
   /**
    * Clear all data
    */
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     if (!this.isAvailable || !this.collection) {
-      return this.createResult(false, undefined, 'Secret service not available');
+      return StorageResults.internalError('Secret service not available');
     }
 
     try {
@@ -286,7 +286,7 @@ export class SecretServiceStorage extends BaseSecureStorage {
 
       const searchResult = await this.secretService.searchItems(this.collection.path, attributes);
       if (!searchResult.success) {
-        return this.createResult(false, undefined, searchResult.error);
+        return StorageResults.internalError(searchResult.error || 'Search failed');
       }
 
       if (searchResult.data) {
@@ -298,9 +298,9 @@ export class SecretServiceStorage extends BaseSecureStorage {
         }
       }
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
-      return this.createResult(false, undefined, `Failed to clear data: ${error}`);
+      return StorageResults.internalError(`Failed to clear data: ${error}`);
     }
   }
 
@@ -323,9 +323,9 @@ export class SecretServiceStorage extends BaseSecureStorage {
   /**
    * Test secret service
    */
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     if (!this.isAvailable) {
-      return this.createResult(false, undefined, 'Secret service not available');
+      return StorageResults.internalError('Secret service not available');
     }
 
     try {
@@ -334,25 +334,25 @@ export class SecretServiceStorage extends BaseSecureStorage {
       const testValue = Buffer.from('test-value');
 
       const storeResult = await this.store(testKey, testValue);
-      if (!storeResult.success) {
+      if (StorageResults.isError(storeResult)) {
         return storeResult;
       }
 
       const retrieveResult = await this.retrieve(testKey);
-      if (!retrieveResult.success) {
+      if (StorageResults.isError(retrieveResult)) {
         return retrieveResult;
       }
 
       // Clean up test data
       await this.remove(testKey);
 
-      if (!retrieveResult.data || !retrieveResult.data.equals(testValue)) {
-        return this.createResult(false, undefined, 'Test data mismatch');
+      if (!retrieveResult.value || !retrieveResult.value.equals(testValue)) {
+        return StorageResults.internalError('Test data mismatch');
       }
 
-      return this.createResult(true);
+      return StorageResults.ok(undefined);
     } catch (error) {
-      return this.createResult(false, undefined, `Test failed: ${error}`);
+      return StorageResults.internalError(`Test failed: ${error}`);
     }
   }
 

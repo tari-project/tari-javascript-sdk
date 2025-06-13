@@ -5,7 +5,8 @@
  * type-safe commands and comprehensive error handling for wallet security.
  */
 
-import type { SecureStorage, StorageResult } from '../platform/storage/secure-storage.js';
+import type { SecureStorage, StorageResult, StorageMetadata, StorageInfo } from '../platform/storage/secure-storage.js';
+import { StorageResults } from '../platform/storage/secure-storage.js';
 import type { TauriStorageCommand, TauriStorageResponse, TauriPlatformInfo } from '../types/tauri.js';
 
 /**
@@ -70,7 +71,7 @@ export class TauriStorage implements SecureStorage {
   /**
    * Store data securely
    */
-  async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options?: any): Promise<StorageResult<void>> {
     this.validateKey(key);
     this.validateValue(value);
 
@@ -120,15 +121,9 @@ export class TauriStorage implements SecureStorage {
       if (response.success && response.data) {
         // Convert number array back to Buffer
         const buffer = Buffer.from(response.data);
-        return {
-          success: true,
-          data: buffer,
-        };
+        return StorageResults.ok(buffer);
       } else {
-        return {
-          success: false,
-          error: response.error || 'Failed to retrieve data',
-        };
+        return StorageResults.internalError(response.error || 'Failed to retrieve data');
       }
 
     } catch (error) {
@@ -139,7 +134,7 @@ export class TauriStorage implements SecureStorage {
   /**
    * Remove data securely
    */
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     this.validateKey(key);
 
     const operationId = this.generateOperationId();
@@ -179,11 +174,11 @@ export class TauriStorage implements SecureStorage {
         { key }
       );
 
-      return {
-        success: response.success,
-        data: response.data,
-        error: response.error,
-      };
+      if (response.success) {
+        return StorageResults.ok(response.data ?? false);
+      } else {
+        return StorageResults.internalError(response.error || 'Operation failed');
+      }
 
     } catch (error) {
       return this.handleError(error, operationId, 'exists');
@@ -205,11 +200,11 @@ export class TauriStorage implements SecureStorage {
         'secure_storage_list'
       );
 
-      return {
-        success: response.success,
-        data: response.data,
-        error: response.error,
-      };
+      if (response.success) {
+        return StorageResults.ok(response.data ?? []);
+      } else {
+        return StorageResults.internalError(response.error || 'Operation failed');
+      }
 
     } catch (error) {
       return this.handleError(error, operationId, 'list');
@@ -219,7 +214,7 @@ export class TauriStorage implements SecureStorage {
   /**
    * Get metadata for a key
    */
-  async getMetadata(key: string): Promise<StorageResult<any>> {
+  async getMetadata(key: string): Promise<StorageResult<StorageMetadata>> {
     this.validateKey(key);
 
     const operationId = this.generateOperationId();
@@ -235,22 +230,17 @@ export class TauriStorage implements SecureStorage {
       );
 
       if (response.success && response.data) {
-        // Convert timestamp strings to Date objects if needed
-        const metadata = {
-          ...response.data,
-          createdAt: new Date(response.data.createdAt),
-          modifiedAt: new Date(response.data.modifiedAt),
+        // Convert TauriStorageMetadata to StorageMetadata
+        const metadata: StorageMetadata = {
+          created: new Date(response.data.createdAt).getTime(),
+          modified: new Date(response.data.modifiedAt).getTime(),
+          size: response.data.size,
+          encryption: response.data.encrypted ? 'aes' : undefined,
         };
 
-        return {
-          success: true,
-          data: metadata,
-        };
+        return StorageResults.ok(metadata);
       } else {
-        return {
-          success: false,
-          error: response.error,
-        };
+        return StorageResults.internalError(response.error || 'Failed to get metadata');
       }
 
     } catch (error) {
@@ -261,7 +251,7 @@ export class TauriStorage implements SecureStorage {
   /**
    * Clear all data
    */
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     const operationId = this.generateOperationId();
     
     try {
@@ -283,7 +273,7 @@ export class TauriStorage implements SecureStorage {
   /**
    * Get storage information
    */
-  async getInfo(): Promise<StorageResult<any>> {
+  async getInfo(): Promise<StorageResult<StorageInfo>> {
     const operationId = this.generateOperationId();
     
     try {
@@ -295,11 +285,22 @@ export class TauriStorage implements SecureStorage {
         'secure_storage_get_info'
       );
 
-      return {
-        success: response.success,
-        data: response.data,
-        error: response.error,
-      };
+      if (response.success && response.data) {
+        // Convert TauriStorageInfo to StorageInfo
+        const storageInfo: StorageInfo = {
+          type: response.data.backendType,
+          availableSpace: -1, // Not available from Tauri
+          usedSpace: -1, // Not available from Tauri
+          maxItemSize: 10 * 1024 * 1024, // 10MB as per validation
+          securityLevel: response.data.secure ? 'os' : 'plaintext',
+          supportsAuth: false,
+          supportsTtl: false,
+        };
+
+        return StorageResults.ok(storageInfo);
+      } else {
+        return StorageResults.internalError(response.error || 'Failed to get storage info');
+      }
 
     } catch (error) {
       return this.handleError(error, operationId, 'getInfo');
@@ -309,7 +310,7 @@ export class TauriStorage implements SecureStorage {
   /**
    * Test storage functionality
    */
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     const operationId = this.generateOperationId();
     
     try {
@@ -344,11 +345,11 @@ export class TauriStorage implements SecureStorage {
         command
       );
 
-      return {
-        success: response.success,
-        data: response.data,
-        error: response.error,
-      };
+      if (response.success) {
+        return StorageResults.ok(response.data);
+      } else {
+        return StorageResults.internalError(response.error || 'Command execution failed');
+      }
 
     } catch (error) {
       return this.handleError(error, operationId, 'executeCommand');
@@ -370,11 +371,11 @@ export class TauriStorage implements SecureStorage {
         'get_platform_info'
       );
 
-      return {
-        success: response.success,
-        data: response.data,
-        error: response.error,
-      };
+      if (response.success && response.data) {
+        return StorageResults.ok(response.data);
+      } else {
+        return StorageResults.internalError(response.error || 'Failed to get platform info');
+      }
 
     } catch (error) {
       return this.handleError(error, operationId, 'getPlatformInfo');
@@ -430,27 +431,24 @@ export class TauriStorage implements SecureStorage {
       console.log(`TauriStorage[${operationId}]: Response:`, response);
     }
 
-    return {
-      success: response.success,
-      data: response.data,
-      error: response.error,
-    };
+    if (response.success) {
+      return StorageResults.ok(response.data as T);
+    } else {
+      return StorageResults.internalError(response.error || 'Operation failed');
+    }
   }
 
   /**
    * Handle operation errors
    */
-  private handleError(error: unknown, operationId: string, operation: string): StorageResult {
+  private handleError(error: unknown, operationId: string, operation: string): StorageResult<any> {
     const errorMessage = error instanceof Error ? error.message : String(error);
     
     if (this.config.enableLogging) {
       console.error(`TauriStorage[${operationId}]: ${operation} failed:`, error);
     }
 
-    return {
-      success: false,
-      error: `Tauri storage ${operation} failed: ${errorMessage}`,
-    };
+    return StorageResults.internalError(`Tauri storage ${operation} failed: ${errorMessage}`);
   }
 
   /**
@@ -555,8 +553,8 @@ export async function validateTauriEnvironment(): Promise<{ valid: boolean; erro
     const result = await storage.test();
     
     return {
-      valid: result.success,
-      error: result.error,
+      valid: StorageResults.isOk(result),
+      error: StorageResults.isError(result) ? result.error.message : undefined,
     };
   } catch (error) {
     return {

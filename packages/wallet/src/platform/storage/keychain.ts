@@ -6,6 +6,7 @@
  */
 
 import { BaseSecureStorage, type StorageResult, type StorageMetadata, type StorageOptions, type StorageInfo, StorageError, AuthenticationError, QuotaExceededError } from './secure-storage.js';
+import { StorageResults } from './types/storage-result.js';
 import { PlatformDetector } from '../detector.js';
 
 /**
@@ -73,7 +74,7 @@ export class KeychainStorage extends BaseSecureStorage {
   /**
    * Store data in keychain with automatic chunking
    */
-  async store(key: string, value: Buffer, options: StorageOptions = {}): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options: StorageOptions = {}): Promise<StorageResult<void>> {
     try {
       this.validateKey(key);
       this.validateDataSize(value);
@@ -153,10 +154,10 @@ export class KeychainStorage extends BaseSecureStorage {
       // Try to get metadata first
       const metadataResult = await this.getStoredMetadata(key);
       
-      if (metadataResult.success && metadataResult.data?.chunks) {
+      if (StorageResults.isOk(metadataResult) && metadataResult.value?.chunks) {
         // Retrieve chunked data
         const chunks: Buffer[] = [];
-        const numChunks = metadataResult.data.chunks;
+        const numChunks = metadataResult.value.chunks;
         
         for (let i = 0; i < numChunks; i++) {
           const chunkKey = `${key}${KeychainStorage.CHUNK_SUFFIX}${i}`;
@@ -192,7 +193,7 @@ export class KeychainStorage extends BaseSecureStorage {
   /**
    * Remove data from keychain
    */
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     try {
       this.validateKey(key);
 
@@ -203,9 +204,9 @@ export class KeychainStorage extends BaseSecureStorage {
       // Check if data is chunked
       const metadataResult = await this.getStoredMetadata(key);
       
-      if (metadataResult.success && metadataResult.data?.chunks) {
+      if (StorageResults.isOk(metadataResult) && metadataResult.value?.chunks) {
         // Remove all chunks
-        const numChunks = metadataResult.data.chunks;
+        const numChunks = metadataResult.value.chunks;
         
         for (let i = 0; i < numChunks; i++) {
           const chunkKey = `${key}${KeychainStorage.CHUNK_SUFFIX}${i}`;
@@ -286,8 +287,8 @@ export class KeychainStorage extends BaseSecureStorage {
       }
 
       const result = await this.getStoredMetadata(key);
-      if (result.success && result.data) {
-        return this.createResult(true, result.data);
+      if (StorageResults.isOk(result) && result.value) {
+        return this.createResult(true, result.value);
       }
 
       // Generate metadata for non-chunked items
@@ -313,7 +314,7 @@ export class KeychainStorage extends BaseSecureStorage {
   /**
    * Clear all stored data
    */
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     try {
       if (!this.isAvailable) {
         return this.createResult(false, undefined, 'Keychain not available');
@@ -354,7 +355,7 @@ export class KeychainStorage extends BaseSecureStorage {
   /**
    * Test keychain availability
    */
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     try {
       if (!this.isAvailable) {
         return this.createResult(false, undefined, 'Keychain not available');
@@ -368,7 +369,7 @@ export class KeychainStorage extends BaseSecureStorage {
       const retrieved = await this.retrieve(testKey);
       await this.remove(testKey);
 
-      if (retrieved.success && retrieved.data?.equals(testData)) {
+      if (StorageResults.isOk(retrieved) && retrieved.value?.equals(testData)) {
         return this.createResult(true);
       }
 
@@ -501,9 +502,9 @@ export class KeychainStorage extends BaseSecureStorage {
   /**
    * Handle keychain-specific errors
    */
-  private handleError(error: any, operation: string): StorageResult {
+  private handleError<T>(error: any, operation: string): StorageResult<T> {
     if (error.code === 'errSecUserCancel' || error.message?.includes('user cancel')) {
-      return this.createResult(false, undefined, 'User cancelled authentication', true);
+      return this.createResult(false, undefined, 'User cancelled authentication', true) as StorageResult<T>;
     }
 
     if (error.code === 'errSecAuthFailed' || error.message?.includes('authentication')) {
@@ -511,7 +512,7 @@ export class KeychainStorage extends BaseSecureStorage {
     }
 
     if (error.code === 'errSecDuplicateItem' || error.message?.includes('duplicate')) {
-      return this.createResult(false, undefined, 'Item already exists');
+      return this.createResult(false, undefined, 'Item already exists') as StorageResult<T>;
     }
 
     if (error.message?.includes('quota') || error.message?.includes('space')) {
@@ -519,6 +520,6 @@ export class KeychainStorage extends BaseSecureStorage {
     }
 
     console.warn(`Keychain ${operation} error:`, error);
-    return this.createResult(false, undefined, `Keychain operation failed: ${error.message}`);
+    return this.createResult(false, undefined, `Keychain operation failed: ${error.message}`) as StorageResult<T>;
   }
 }

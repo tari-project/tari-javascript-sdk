@@ -6,6 +6,7 @@
  */
 
 import type { SecureStorage, StorageConfig } from '../platform/storage/secure-storage.js';
+import { StorageResults } from '../platform/storage/storage-results.js';
 import { TauriStorage, type TauriStorageConfig } from './tauri-storage.js';
 import { SecureInvoke, type SecureInvokeConfig } from './secure-invoke.js';
 import { PlatformDetector } from '../platform/detector.js';
@@ -13,7 +14,7 @@ import { PlatformDetector } from '../platform/detector.js';
 /**
  * Tauri-specific configuration
  */
-export interface TauriAdapterConfig extends StorageConfig {
+export interface TauriAdapterConfig {
   /** Secure invoke configuration */
   secureInvoke?: SecureInvokeConfig;
   /** Tauri storage configuration */
@@ -68,11 +69,6 @@ export class TauriAdapter {
 
   constructor(config: TauriAdapterConfig = {}) {
     this.config = {
-      enableLogging: false,
-      enableValidation: true,
-      enableHealthMonitoring: false,
-      enableCaching: false,
-      enableBatching: false,
       secureInvoke: {},
       tauriStorage: {},
       enableOptimizations: true,
@@ -87,8 +83,6 @@ export class TauriAdapter {
     };
 
     this.secureInvoke = new SecureInvoke({
-      enableLogging: this.config.enableLogging,
-      enableValidation: this.config.enableValidation,
       maxOperationsPerSecond: 20, // Higher limit for storage operations
       commandTimeout: 10000, // Longer timeout for storage
       ...this.config.secureInvoke,
@@ -138,8 +132,6 @@ export class TauriAdapter {
 
       // Initialize storage
       this.storage = new TauriStorage({
-        enableLogging: this.config.enableLogging,
-        enableValidation: this.config.enableValidation,
         maxRetries: 3,
         encryptionMode: 'base64',
         ...this.config.tauriStorage,
@@ -147,21 +139,14 @@ export class TauriAdapter {
 
       // Test storage functionality
       const testResult = await this.storage.test();
-      if (!testResult.success) {
+      if (!StorageResults.isOk(testResult)) {
         throw new Error(`Storage test failed: ${testResult.error}`);
       }
 
       this.initialized = true;
 
-      if (this.config.enableLogging) {
-        console.log('TauriAdapter initialized successfully');
-      }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown initialization error';
-      if (this.config.enableLogging) {
-        console.error('TauriAdapter initialization failed:', errorMessage);
-      }
       throw new Error(`Tauri adapter initialization failed: ${errorMessage}`);
     }
   }
@@ -212,7 +197,7 @@ export class TauriAdapter {
     // Test basic invoke functionality
     try {
       const result = await this.secureInvoke.invoke('get_platform_info');
-      if (!result.success) {
+      if (!StorageResults.isOk(result)) {
         return {
           valid: false,
           error: `Platform info test failed: ${result.error}`,
@@ -243,7 +228,7 @@ export class TauriAdapter {
     try {
       // Test storage permission
       const result = await this.secureInvoke.invoke('secure_storage_test');
-      if (!result.success) {
+      if (!StorageResults.isOk(result)) {
         return {
           valid: false,
           error: `Storage permission test failed: ${result.error}`,
@@ -266,16 +251,12 @@ export class TauriAdapter {
     try {
       // Get platform information for optimization decisions
       const platformResult = await this.secureInvoke.invoke('get_platform_info');
-      if (!platformResult.success) {
+      if (!StorageResults.isOk(platformResult)) {
         console.warn('Could not get platform info for optimizations');
         return;
       }
 
-      const platform = platformResult.data;
-      
-      if (this.config.enableLogging) {
-        console.log('Applying Tauri optimizations for platform:', platform);
-      }
+      const platform = platformResult.value;
 
       // Apply hardware acceleration if supported
       if (this.config.enableHardwareAcceleration && this.supportsHardwareAcceleration(platform)) {
@@ -307,9 +288,7 @@ export class TauriAdapter {
   private async enableHardwareAcceleration(): Promise<void> {
     // This would involve configuring Rust backend to use hardware crypto
     // For now, just log the intent
-    if (this.config.enableLogging) {
-      console.log('Hardware acceleration enabled');
-    }
+    console.log('Hardware acceleration enabled');
   }
 
   /**
@@ -318,25 +297,19 @@ export class TauriAdapter {
   private async configureMemoryProtection(): Promise<void> {
     const protection = this.config.memoryProtection;
     
-    if (protection.clearSensitiveData) {
+    if (protection?.clearSensitiveData) {
       // Configure automatic clearing of sensitive data
-      if (this.config.enableLogging) {
-        console.log('Sensitive data clearing enabled');
-      }
+      console.log('Sensitive data clearing enabled');
     }
 
-    if (protection.useSecureBuffers) {
+    if (protection?.useSecureBuffers) {
       // Configure secure buffer usage
-      if (this.config.enableLogging) {
-        console.log('Secure buffers enabled');
-      }
+      console.log('Secure buffers enabled');
     }
 
-    if (protection.preventSwapping) {
+    if (protection?.preventSwapping) {
       // This would require platform-specific memory locking
-      if (this.config.enableLogging) {
-        console.log('Memory swapping prevention requested (platform dependent)');
-      }
+      console.log('Memory swapping prevention requested (platform dependent)');
     }
   }
 
@@ -351,7 +324,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.store(key, value, options);
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);

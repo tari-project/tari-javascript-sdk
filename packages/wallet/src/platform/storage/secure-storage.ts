@@ -53,7 +53,7 @@ export interface SecureStorage {
   /**
    * Store data securely
    */
-  store(key: string, value: Buffer, options?: StorageOptions): Promise<StorageResult>;
+  store(key: string, value: Buffer, options?: StorageOptions): Promise<StorageResult<void>>;
 
   /**
    * Retrieve data
@@ -63,7 +63,7 @@ export interface SecureStorage {
   /**
    * Remove data
    */
-  remove(key: string): Promise<StorageResult>;
+  remove(key: string): Promise<StorageResult<void>>;
 
   /**
    * Check if key exists
@@ -83,7 +83,7 @@ export interface SecureStorage {
   /**
    * Clear all stored data
    */
-  clear(): Promise<StorageResult>;
+  clear(): Promise<StorageResult<void>>;
 
   /**
    * Get storage info
@@ -93,7 +93,7 @@ export interface SecureStorage {
   /**
    * Test storage availability
    */
-  test(): Promise<StorageResult>;
+  test(): Promise<StorageResult<void>>;
 }
 
 /**
@@ -153,15 +153,15 @@ export abstract class BaseSecureStorage implements SecureStorage {
   }
 
   // Abstract methods to be implemented by subclasses
-  abstract store(key: string, value: Buffer, options?: StorageOptions): Promise<StorageResult>;
+  abstract store(key: string, value: Buffer, options?: StorageOptions): Promise<StorageResult<void>>;
   abstract retrieve(key: string, options?: StorageOptions): Promise<StorageResult<Buffer>>;
-  abstract remove(key: string): Promise<StorageResult>;
+  abstract remove(key: string): Promise<StorageResult<void>>;
   abstract exists(key: string): Promise<StorageResult<boolean>>;
   abstract list(): Promise<StorageResult<string[]>>;
   abstract getMetadata(key: string): Promise<StorageResult<StorageMetadata>>;
-  abstract clear(): Promise<StorageResult>;
+  abstract clear(): Promise<StorageResult<void>>;
   abstract getInfo(): Promise<StorageResult<StorageInfo>>;
-  abstract test(): Promise<StorageResult>;
+  abstract test(): Promise<StorageResult<void>>;
 
   /**
    * Chunk data if it exceeds size limits

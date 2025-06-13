@@ -6,6 +6,7 @@
  */
 
 import { BaseSecureStorage, type StorageResult, type StorageMetadata, type StorageOptions, type StorageInfo } from './secure-storage.js';
+import { StorageResults } from './types/storage-result.js';
 
 /**
  * In-memory storage implementation
@@ -21,7 +22,7 @@ export class MemoryStorage extends BaseSecureStorage {
   /**
    * Store data in memory
    */
-  async store(key: string, value: Buffer, options: StorageOptions = {}): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options: StorageOptions = {}): Promise<StorageResult<void>> {
     try {
       this.validateKey(key);
       this.validateDataSize(value);
@@ -66,7 +67,7 @@ export class MemoryStorage extends BaseSecureStorage {
   /**
    * Remove data from memory
    */
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     try {
       this.validateKey(key);
 
@@ -129,7 +130,7 @@ export class MemoryStorage extends BaseSecureStorage {
   /**
    * Clear all data from memory
    */
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     try {
       this.storage.clear();
       this.metadata.clear();
@@ -168,7 +169,7 @@ export class MemoryStorage extends BaseSecureStorage {
   /**
    * Test memory storage
    */
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     try {
       const testKey = 'test-' + Date.now();
       const testData = Buffer.from('test', 'utf8');
@@ -177,7 +178,7 @@ export class MemoryStorage extends BaseSecureStorage {
       const retrieved = await this.retrieve(testKey);
       await this.remove(testKey);
 
-      if (retrieved.success && retrieved.data?.equals(testData)) {
+      if (StorageResults.isOk(retrieved) && retrieved.value?.equals(testData)) {
         return this.createResult(true);
       }
 
