@@ -19,6 +19,8 @@ import {
   type WalletHandle
 } from '@tari-project/tarijs-core';
 import { jest } from '@jest/globals';
+// BigInt serialization helper  
+const safeStringify = (obj: any): string => JSON.stringify(obj, (key, value) => typeof value === 'bigint' ? value.toString() : value);
 
 // Mock the FFI bindings
 const mockFFIBindings = {
@@ -144,11 +146,11 @@ describe('DetailService', () => {
     });
 
     // Setup FFI mocks
-    mockFFIBindings.wallet_get_transaction.mockResolvedValue(JSON.stringify(mockTransaction));
-    mockFFIBindings.wallet_get_transaction_inputs.mockResolvedValue(JSON.stringify(mockInputs));
-    mockFFIBindings.wallet_get_transaction_outputs.mockResolvedValue(JSON.stringify(mockOutputs));
-    mockFFIBindings.wallet_get_transaction_kernels.mockResolvedValue(JSON.stringify(mockKernels));
-    mockFFIBindings.wallet_get_block_info.mockResolvedValue(JSON.stringify(mockBlockInfo));
+    mockFFIBindings.wallet_get_transaction.mockResolvedValue(safeStringify(mockTransaction));
+    mockFFIBindings.wallet_get_transaction_inputs.mockResolvedValue(safeStringify(mockInputs));
+    mockFFIBindings.wallet_get_transaction_outputs.mockResolvedValue(safeStringify(mockOutputs));
+    mockFFIBindings.wallet_get_transaction_kernels.mockResolvedValue(safeStringify(mockKernels));
+    mockFFIBindings.wallet_get_block_info.mockResolvedValue(safeStringify(mockBlockInfo));
     mockFFIBindings.wallet_get_transaction_confirmations.mockResolvedValue(
       JSON.stringify({ confirmations: 5 })
     );

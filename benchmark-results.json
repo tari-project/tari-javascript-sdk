@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-06-13T13:40:12.262Z",
+  "environment": {
+    "nodeVersion": "v24.1.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "results": [
+    {
+      "name": "JSON Serialization",
+      "time": 11,
+      "iterations": 100
+    },
+    {
+      "name": "Array Operations",
+      "time": 18,
+      "iterations": 1000
+    }
+  ],
+  "status": "fallback_completed"
+}

@@ -42,6 +42,11 @@ module.exports = {
     '^@tari-project/tarijs-build$': '<rootDir>/packages/build/src/index.ts',
     // Handle polyfill modules
     '^@tari/core/memory/using-polyfill$': '<rootDir>/packages/core/src/memory/using-polyfill.ts',
+    '^@tari/core/memory/disposable$': '<rootDir>/packages/core/src/memory/disposable.ts',
+    '^@tari/core/memory/resource-base$': '<rootDir>/packages/core/src/memory/resource-base.ts',
+    '^@tari/core/memory/secure-buffer$': '<rootDir>/packages/core/src/memory/secure-buffer.ts',
+    '^@tari/core/memory/memory-utils$': '<rootDir>/packages/core/src/memory/memory-utils.ts',
+    '^@tari/core/memory/crypto-helpers$': '<rootDir>/packages/core/src/memory/crypto-helpers.ts',
   },
   
   // Setup files
