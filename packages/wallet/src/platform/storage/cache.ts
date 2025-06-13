@@ -5,7 +5,8 @@
  * memory handling for storage operations across all platforms.
  */
 
-import type { SecureStorage, StorageResult } from './secure-storage.js';
+import type { SecureStorage } from './secure-storage.js';
+import type { StorageResult, StorageResults } from './types/storage-result.js';
 
 export interface CacheConfig {
   /** Maximum number of cached items */
@@ -114,14 +115,14 @@ export class SecureStorageCache implements SecureStorage {
     this.setupCleanup();
   }
 
-  async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options?: any): Promise<StorageResult<void>> {
     const startTime = Date.now();
     
     try {
       // Store in underlying storage
       const result = await this.storage.store(key, value, options);
       
-      if (result.success) {
+      if (StorageResults.isOk(result)) {
         // Add to cache
         await this.addToCache(key, value, options?.ttl);
       }
@@ -131,10 +132,9 @@ export class SecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache store operation failed',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'Cache store operation failed'
+      );
     }
   }
 
@@ -148,16 +148,16 @@ export class SecureStorageCache implements SecureStorage {
         this.metrics.hits++;
         this.updateAccessOrder(key);
         this.updateMetrics(startTime);
-        return { success: true, data: cached };
+        return StorageResults.ok(cached);
       }
 
       // Cache miss - fetch from storage
       this.metrics.misses++;
       const result = await this.storage.retrieve(key, options);
       
-      if (result.success && result.data) {
+      if (StorageResults.isOk(result)) {
         // Add to cache for future use
-        await this.addToCache(key, result.data, options?.ttl);
+        await this.addToCache(key, result.value, options?.ttl);
       }
 
       this.updateMetrics(startTime);
@@ -165,14 +165,13 @@ export class SecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache retrieve operation failed',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'Cache retrieve operation failed'
+      );
     }
   }
 
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     const startTime = Date.now();
     
     try {
@@ -187,10 +186,9 @@ export class SecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache remove operation failed',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'Cache remove operation failed'
+      );
     }
   }
 
@@ -205,7 +203,7 @@ export class SecureStorageCache implements SecureStorage {
           this.metrics.hits++;
           this.updateAccessOrder(key);
           this.updateMetrics(startTime);
-          return { success: true, data: true };
+          return StorageResults.ok(true);
         } else {
           // Expired entry
           this.removeFromCache(key);
@@ -221,10 +219,9 @@ export class SecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache exists operation failed',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'Cache exists operation failed'
+      );
     }
   }
 
@@ -238,7 +235,7 @@ export class SecureStorageCache implements SecureStorage {
     return this.storage.getMetadata(key);
   }
 
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     const startTime = Date.now();
     
     try {
@@ -253,36 +250,32 @@ export class SecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache clear operation failed',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'Cache clear operation failed'
+      );
     }
   }
 
   async getInfo(): Promise<StorageResult<any>> {
     const storageInfo = await this.storage.getInfo();
     
-    if (!storageInfo.success) {
+    if (StorageResults.isError(storageInfo)) {
       return storageInfo;
     }
 
-    return {
-      success: true,
-      data: {
-        ...storageInfo.data,
-        cache: {
-          enabled: true,
-          config: this.config,
-          metrics: this.getMetrics(),
-          memoryUsage: this.calculateMemoryUsage(),
-          entryCount: this.cache.size,
-        },
+    return StorageResults.ok({
+      ...storageInfo.value,
+      cache: {
+        enabled: true,
+        config: this.config,
+        metrics: this.getMetrics(),
+        memoryUsage: this.calculateMemoryUsage(),
+        entryCount: this.cache.size,
       },
-    };
+    });
   }
 
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     // Test both cache and underlying storage
     const testKey = `__cache_test_${Date.now()}`;
     const testValue = Buffer.from('cache test data');
@@ -290,32 +283,28 @@ export class SecureStorageCache implements SecureStorage {
     try {
       // Test store
       const storeResult = await this.store(testKey, testValue);
-      if (!storeResult.success) {
+      if (StorageResults.isError(storeResult)) {
         return storeResult;
       }
 
       // Test retrieve from cache
       const retrieveResult = await this.retrieve(testKey);
-      if (!retrieveResult.success || !retrieveResult.data?.equals(testValue)) {
-        return {
-          success: false,
-          error: 'Cache retrieve test failed',
-        };
+      if (StorageResults.isError(retrieveResult) || !retrieveResult.value?.equals(testValue)) {
+        return StorageResults.internalError('Cache retrieve test failed');
       }
 
       // Test remove
       const removeResult = await this.remove(testKey);
-      if (!removeResult.success) {
+      if (StorageResults.isError(removeResult)) {
         return removeResult;
       }
 
-      return { success: true };
+      return StorageResults.ok(undefined as void);
 
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache test failed',
-      };
+      return StorageResults.internalError(
+        error instanceof Error ? error.message : 'Cache test failed'
+      );
     }
   }
 
