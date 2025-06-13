@@ -401,7 +401,7 @@ export class TransactionValidator {
     const usableBalance = availableBalance - pendingOutbound - reservedBalance;
     
     // Estimate total cost (amount + estimated fee)
-    const estimatedFee = params.feePerGram * BigInt(250); // Rough estimate
+    const estimatedFee = (params.feePerGram || 0n) * BigInt(250); // Rough estimate
     const totalCost = params.amount + estimatedFee;
 
     // Check if sufficient balance
@@ -434,7 +434,7 @@ export class TransactionValidator {
     warnings: TransactionValidationWarning[]
   ): void {
     // Check fee ratio
-    const estimatedFee = params.feePerGram * BigInt(250);
+    const estimatedFee = (params.feePerGram || 0n) * BigInt(250);
     const feeRatio = Number(estimatedFee) / Number(params.amount);
     
     if (feeRatio > this.config.maxFeeRatio) {
@@ -507,7 +507,7 @@ export class TransactionValidator {
     warnings: TransactionValidationWarning[]
   ): void {
     // Check if amount is economically viable
-    const estimatedFee = params.feePerGram * BigInt(250);
+    const estimatedFee = (params.feePerGram || 0n) * BigInt(250);
     
     // Warn if fee is more than 50% of amount
     if (estimatedFee * 2n > params.amount) {

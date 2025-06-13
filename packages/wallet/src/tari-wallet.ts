@@ -650,7 +650,11 @@ export class TariWallet implements AsyncDisposable {
   async exportTransactionHistory(
     format: 'csv' | 'json' = 'csv',
     options: TransactionQueryOptions = {}
-  ): Promise<string> {
+  ): Promise<{
+    data: string | Buffer;
+    filename: string;
+    mimeType: string;
+  }> {
     this.ensureNotDestroyed();
     
     return await this.transactionAPI.exportTransactionHistory(format, options);
@@ -920,7 +924,7 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get transaction history
    */
-  async getTransactions(): Promise<TransactionInfo[]> {
+  async getTransactions(): Promise<WalletTransactionInfo[]> {
     try {
       // TODO: Implement when transaction history FFI is available
       throw new WalletError(

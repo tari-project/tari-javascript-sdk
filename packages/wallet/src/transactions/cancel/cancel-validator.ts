@@ -89,11 +89,11 @@ export class CancelValidator {
       if (!result.checks.exists) {
         errorCode = WalletErrorCode.TransactionNotFound;
       } else if (!result.checks.isPending) {
-        errorCode = WalletErrorCode.TransactionAlreadyConfirmed;
+        errorCode = WalletErrorCode.TransactionAlreadyExists;
       } else if (!result.checks.isOutbound) {
         errorCode = WalletErrorCode.TransactionCancellationNotAllowed;
       } else if (!result.checks.withinAgeLimit || !result.checks.aboveMinAge) {
-        errorCode = WalletErrorCode.TransactionCancellationExpired;
+        errorCode = WalletErrorCode.TransactionCancellationFailed;
       }
       
       throw new WalletError(
@@ -147,9 +147,9 @@ export class CancelValidator {
     }
 
     // Check 2: Transaction is pending
-    if (transaction.status !== 'Pending') {
+    if (transaction.status !== 'pending') {
       result.checks.isPending = false;
-      result.errors.push(`Transaction is in ${transaction.status} state, not Pending`);
+      result.errors.push(`Transaction is in ${transaction.status} state, not pending`);
     } else {
       result.checks.isPending = true;
     }

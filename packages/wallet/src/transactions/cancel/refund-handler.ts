@@ -227,7 +227,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
       );
     }
     
-    if (transaction.status !== 'Pending') {
+    if (transaction.status !== 'pending') {
       throw new WalletError(
         WalletErrorCode.TransactionCancellationNotAllowed,
         `Cannot refund transaction in ${transaction.status} state`

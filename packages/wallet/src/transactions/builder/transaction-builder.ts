@@ -354,7 +354,7 @@ export class TransactionBuilder {
         return {
           success: false,
           error: `Transaction validation failed: ${validation.errors.map(e => e.message).join(', ')}`,
-          feeEstimate
+          feeEstimate: feeEstimate as any
         };
       }
 
@@ -365,14 +365,14 @@ export class TransactionBuilder {
         return {
           success: false,
           error: `Invalid recipient address: ${this.state.recipient}`,
-          feeEstimate
+          feeEstimate: feeEstimate as any
         };
       }
 
       // Create successful build result
       const result: TransactionBuildResult = {
         success: true,
-        feeEstimate,
+        feeEstimate: feeEstimate as any,
         // Note: transaction property would be populated by the service when actually sending
       };
 
