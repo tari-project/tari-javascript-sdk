@@ -5,9 +5,9 @@
  * and validating error handling behavior in unit tests.
  */
 
-import { WalletError, ErrorContext, createWalletError } from '../wallet-error.js';
-import { WalletErrorCode, ErrorCategory } from '../codes.js';
-import { FFIErrorInfo } from '../ffi-errors.js';
+import { WalletError, ErrorContext, createWalletError } from '../wallet-error';
+import { WalletErrorCode, ErrorCategory } from '../codes';
+import { FFIErrorInfo } from '../ffi-errors';
 
 /**
  * Error test scenario interface

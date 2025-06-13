@@ -5,8 +5,8 @@
  * links, and context-aware formatting for better developer experience.
  */
 
-import { WalletError, ErrorSeverity } from './wallet-error.js';
-import { WalletErrorCode, ErrorCategory } from './codes.js';
+import { WalletError, ErrorSeverity } from './wallet-error';
+import { WalletErrorCode, ErrorCategory } from './codes';
 
 /**
  * Environment modes for error message formatting

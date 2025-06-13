@@ -5,9 +5,9 @@
  * error messages and type-safe validation functions.
  */
 
-import { WalletError, createWalletError } from './wallet-error.js';
-import { WalletErrorCode } from './codes.js';
-import { createEnrichedErrorContext } from './context.js';
+import { WalletError, createWalletError } from './wallet-error';
+import { WalletErrorCode } from './codes';
+import { createEnrichedErrorContext } from './context';
 
 /**
  * Validation result interface

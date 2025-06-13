@@ -6,7 +6,7 @@
  */
 
 import { AsyncLocalStorage } from 'async_hooks';
-import type { ErrorContext } from './wallet-error.js';
+import type { ErrorContext } from './wallet-error';
 
 /**
  * Context storage for tracking error context across async operations

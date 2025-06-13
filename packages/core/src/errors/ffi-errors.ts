@@ -5,9 +5,9 @@
  * instances with proper context and error information.
  */
 
-import { WalletError, ErrorContext, createWalletError, wrapError } from './wallet-error.js';
-import { WalletErrorCode } from './codes.js';
-import type { NativeErrorInfo } from '../ffi/native.js';
+import { WalletError, ErrorContext, createWalletError, wrapError } from './wallet-error';
+import { WalletErrorCode } from './codes';
+import type { NativeErrorInfo } from '../ffi/native';
 
 /**
  * Map of Tari FFI error codes to WalletErrorCode equivalents

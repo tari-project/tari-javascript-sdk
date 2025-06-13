@@ -5,7 +5,7 @@
  * for all wallet operations in the Tari JavaScript SDK.
  */
 
-import { WalletErrorCode, ErrorCategory, getErrorCategory } from './codes.js';
+import { WalletErrorCode, ErrorCategory, getErrorCategory } from './codes';
 
 /**
  * Structured context information for debugging and telemetry

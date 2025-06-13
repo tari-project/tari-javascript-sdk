@@ -5,10 +5,10 @@
  * including connection recovery, resource cleanup, and state restoration.
  */
 
-import { WalletError, isWalletError, createWalletError } from './wallet-error.js';
-import { WalletErrorCode, ErrorCategory } from './codes.js';
-import { createEnrichedErrorContext } from './context.js';
-import { retry, RetryConfigs } from './retry.js';
+import { WalletError, isWalletError, createWalletError } from './wallet-error';
+import { WalletErrorCode, ErrorCategory } from './codes';
+import { createEnrichedErrorContext } from './context';
+import { retry, RetryConfigs } from './retry';
 
 /**
  * Recovery action result

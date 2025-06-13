@@ -5,8 +5,8 @@
  * monitoring wallet health and debugging production issues.
  */
 
-import { WalletError, ErrorSeverity } from './wallet-error.js';
-import { WalletErrorCode, ErrorCategory } from './codes.js';
+import { WalletError, ErrorSeverity } from './wallet-error';
+import { WalletErrorCode, ErrorCategory } from './codes';
 
 /**
  * Error report structure for telemetry

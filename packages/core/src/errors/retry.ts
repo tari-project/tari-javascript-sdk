@@ -5,10 +5,10 @@
  * and circuit breaker patterns for handling transient failures in wallet operations.
  */
 
-import { WalletError, isWalletError, createWalletError } from './wallet-error.js';
-import type { ErrorContext } from './wallet-error.js';
-import { WalletErrorCode } from './codes.js';
-import { createEnrichedErrorContext, ErrorContextInstance } from './context.js';
+import { WalletError, isWalletError, createWalletError } from './wallet-error';
+import type { ErrorContext } from './wallet-error';
+import { WalletErrorCode } from './codes';
+import { createEnrichedErrorContext, ErrorContextInstance } from './context';
 
 /**
  * Retry configuration options
