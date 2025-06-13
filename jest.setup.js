@@ -1,6 +1,10 @@
 /**
  * Jest setup file for global test configuration
  */
+const { setupBigIntSerialization } = require('./tests/utils/bigint-serializer');
+
+// Setup BigInt serialization for all tests
+setupBigIntSerialization();
 
 // Increase timeout for FFI operations (when implemented)
 jest.setTimeout(30000);

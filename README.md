@@ -230,8 +230,9 @@ Direct integration for server applications:
 
 ### Complete Applications
 
-- **[Tauri Wallet App](examples/tauri-wallet-app)** - Full-featured desktop wallet
-- **[Manual Tests](examples/manual-tests)** - Interactive testing with real funds
+- **[Node Console Wallet](examples/node-console)** - Interactive command-line wallet with full functionality
+- **[Manual Tests](examples/manual-tests)** - Interactive testing framework for real funds
+- **[Tauri Wallet App](examples/tauri-wallet-app)** - Full-featured desktop wallet (in development)
 
 ### Integration Guides
 

@@ -392,9 +392,11 @@ export class ContextEnricher {
         continue;
       }
 
-      // Convert value to string for size calculation
-      const stringValue = JSON.stringify(value);
-      const fieldSize = key.length + stringValue.length;
+      // Convert value to string for size calculation, handling BigInt
+      const stringValue = JSON.stringify(value, (key, val) => 
+        typeof val === 'bigint' ? val.toString() : val
+      );
+      const fieldSize = key.length + (stringValue?.length || 0);
 
       // Check size limit
       if (totalSize + fieldSize > this.config.maxMetadataSize) {

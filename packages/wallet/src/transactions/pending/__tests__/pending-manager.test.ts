@@ -4,12 +4,12 @@
 
 import { EventEmitter } from 'node:events';
 import { 
-  PendingTransactionManager, 
+  PendingManager, 
   type PendingManagerConfig,
   type PendingManagerEvents 
-} from '../pending-manager.js';
-import { TimeoutHandler } from '../timeout-handler.js';
-import { PendingTransactionTracker } from '../pending-tracker.js';
+} from '../pending-manager';
+import { TimeoutHandler } from '../timeout-handler';
+import { PendingTransactionTracker } from '../pending-tracker';
 import { 
   WalletError, 
   WalletErrorCode,
@@ -31,8 +31,8 @@ jest.mock('@tari-project/tarijs-core', () => ({
   getFFIBindings: () => mockFFIBindings
 }));
 
-describe('PendingTransactionManager', () => {
-  let manager: PendingTransactionManager;
+describe('PendingManager', () => {
+  let manager: PendingManager;
   let mockWalletHandle: any;
   let config: PendingManagerConfig;
   let emittedEvents: Array<{ event: string; args: any[] }>;
@@ -97,7 +97,7 @@ describe('PendingTransactionManager', () => {
       maxRetryAttempts: 3
     };
 
-    manager = new PendingTransactionManager(mockWalletHandle, config);
+    manager = new PendingManager(mockWalletHandle, config);
 
     // Capture emitted events
     const originalEmit = manager.emit.bind(manager);
