@@ -66,6 +66,7 @@ export class BalanceMapper {
         available,
         pendingIncoming,
         pendingOutgoing,
+        timelocked: BigInt(0), // TODO: Extract from FFI when available
         total,
         lastUpdated: new Date()
       };
@@ -141,6 +142,7 @@ export class BalanceMapper {
       available: 0n,
       pendingIncoming: 0n,
       pendingOutgoing: 0n,
+      timelocked: 0n,
       total: 0n,
       lastUpdated: new Date()
     };
