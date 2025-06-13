@@ -73,6 +73,10 @@ export class ResourceTracker {
   }
 }
 
+// Cross-platform utilities
+export * from './environment-detection';
+export * from './typed-event-emitter';
+
 // Utility types
 export type Awaitable<T> = T | Promise<T>;
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
