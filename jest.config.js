@@ -49,26 +49,34 @@ module.exports = {
   ],
   
   // Module file extensions
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+
   // Transform configuration
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      useESM: false,
-      tsconfig: {
-        target: 'ES2022',
-        module: 'CommonJS',
-        moduleResolution: 'node',
-        allowSyntheticDefaultImports: true,
-        esModuleInterop: true,
-      },
-    }],
+  '^.+\\.tsx?$': ['ts-jest', {
+  useESM: false,
+  tsconfig: {
+  target: 'ES2022',
+  module: 'CommonJS',
+  moduleResolution: 'node',
+  allowSyntheticDefaultImports: true,
+  esModuleInterop: true,
   },
-  
+  }],
+    '\\.node$': '<rootDir>/scripts/node-transform.js',
+  },
+
+  // Transform ignore patterns
+  transformIgnorePatterns: [
+  'node_modules/(?!(.*\\.node$))',
+  ],
+
   // Module resolution
   moduleNameMapper: {
     // Handle .js extensions in TypeScript imports
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    // Mock native modules for unit tests
+    '\\.node$': '<rootDir>/tests/mocks/native-module.js',
     // Package mappings
     '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src',
     '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src',
