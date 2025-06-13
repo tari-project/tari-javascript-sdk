@@ -128,7 +128,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       const service = getElectronWalletService();
       const walletId = await service.createWallet(request.walletId, request.config);
-      return { success: true, data: walletId };
+      return this.createResponse(walletId, request.requestId);
     });
   };
 
@@ -142,7 +142,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       const service = getElectronWalletService();
       await service.openWallet(request.walletId);
-      return { success: true };
+      return this.createResponse(undefined, request.requestId);
     });
   };
 
@@ -156,7 +156,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       const service = getElectronWalletService();
       await service.closeWallet(request.walletId);
-      return { success: true };
+      return this.createResponse(undefined, request.requestId);
     });
   };
 
@@ -170,7 +170,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       const service = getElectronWalletService();
       await service.lockWallet(request.walletId);
-      return { success: true };
+      return this.createResponse(undefined, request.requestId);
     });
   };
 
@@ -184,7 +184,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       const service = getElectronWalletService();
       await service.unlockWallet(request.walletId, request.passphrase);
-      return { success: true };
+      return this.createResponse(undefined, request.requestId);
     });
   };
 
@@ -198,7 +198,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       const service = getElectronWalletService();
       const status = service.getWalletStatus(request.walletId);
-      return { success: true, data: status };
+      return this.createResponse(status, request.requestId);
     });
   };
 
@@ -212,7 +212,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       const service = getElectronWalletService();
       const walletIds = service.getWalletIds();
-      return { success: true, data: walletIds };
+      return this.createResponse(walletIds, request.requestId);
     });
   };
 
@@ -232,7 +232,7 @@ export class IpcHandlersManager {
       }
 
       const balance = await wallet.getBalance();
-      return { success: true, data: balance };
+      return this.createResponse(balance, request.requestId);
     });
   };
 
@@ -252,7 +252,7 @@ export class IpcHandlersManager {
       }
 
       const info = await wallet.getInfo();
-      return { success: true, data: info };
+      return this.createResponse(info, request.requestId);
     });
   };
 
@@ -272,7 +272,7 @@ export class IpcHandlersManager {
       }
 
       const address = await wallet.getAddress();
-      return { success: true, data: address };
+      return this.createResponse(address, request.requestId);
     });
   };
 
@@ -300,7 +300,7 @@ export class IpcHandlersManager {
         message: request.message,
       });
 
-      return { success: true, data: transaction };
+      return this.createResponse(transaction, request.requestId);
     });
   };
 
@@ -324,7 +324,7 @@ export class IpcHandlersManager {
         offset: request.offset || 0,
       });
 
-      return { success: true, data: transactions };
+      return this.createResponse(transactions, request.requestId);
     });
   };
 
@@ -344,7 +344,7 @@ export class IpcHandlersManager {
       }
 
       const transaction = await wallet.getTransaction(request.transactionId);
-      return { success: true, data: transaction };
+      return this.createResponse(transaction, request.requestId);
     });
   };
 
@@ -364,7 +364,7 @@ export class IpcHandlersManager {
       }
 
       await wallet.sync();
-      return { success: true };
+      return this.createResponse(undefined, request.requestId);
     });
   };
 
@@ -384,7 +384,7 @@ export class IpcHandlersManager {
       }
 
       const syncStatus = await wallet.getSyncStatus();
-      return { success: true, data: syncStatus };
+      return this.createResponse(syncStatus, request.requestId);
     });
   };
 
@@ -398,7 +398,7 @@ export class IpcHandlersManager {
     return this.withSecurityValidation(event, request, async () => {
       // Implement address validation logic
       const isValid = /^[a-zA-Z0-9]+$/.test(request.address); // Placeholder
-      return { success: true, data: isValid };
+      return this.createResponse(isValid, request.requestId);
     });
   };
 
@@ -418,7 +418,7 @@ export class IpcHandlersManager {
       }
 
       const fee = await wallet.estimateFee(request.amount, request.priority);
-      return { success: true, data: fee };
+      return this.createResponse(fee, request.requestId);
     });
   };
 
@@ -431,7 +431,7 @@ export class IpcHandlersManager {
   ): Promise<IpcResponse<any>> => {
     return this.withSecurityValidation(event, request, async () => {
       const platform = PlatformDetector.detect();
-      return { success: true, data: platform };
+      return this.createResponse(platform, request.requestId);
     });
   };
 
@@ -444,7 +444,7 @@ export class IpcHandlersManager {
   ): Promise<IpcResponse<any>> => {
     return this.withSecurityValidation(event, request, async () => {
       const capabilities = PlatformDetector.getCapabilities();
-      return { success: true, data: capabilities };
+      return this.createResponse(capabilities, request.requestId);
     });
   };
 
@@ -623,6 +623,18 @@ export class IpcHandlersManager {
     
     this.requestCache.clear();
     this.rateLimiter.clear();
+  }
+
+  /**
+   * Create a properly formatted IPC response
+   */
+  private createResponse<T>(data?: T, requestId?: string): IpcResponse<T> {
+    return {
+      success: true,
+      data,
+      requestId,
+      timestamp: Date.now()
+    };
   }
 }
 
