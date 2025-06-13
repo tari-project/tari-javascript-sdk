@@ -47,3 +47,11 @@ export const configurePerformance = (config: any) => {
   // TODO: Implement performance configuration
   console.log('Performance configuration not yet implemented:', config);
 };
+
+// Stub type for performance configuration
+export interface PerformanceConfig {
+  readonly enableBatching?: boolean;
+  readonly enableCaching?: boolean;
+  readonly enableWorkerPool?: boolean;
+  readonly enableMemoryOptimization?: boolean;
+}
