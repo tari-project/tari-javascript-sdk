@@ -11,7 +11,7 @@
 export class TypedEventEmitter<T extends Record<string, (...args: any[]) => void> = Record<string, (...args: any[]) => void>> {
   private events = new Map<keyof T, Array<T[keyof T]>>();
 
-  protected emit<K extends keyof T>(event: K, ...args: Parameters<T[K]>): boolean {
+  public emit<K extends keyof T>(event: K, ...args: Parameters<T[K]>): boolean {
     const listeners = this.events.get(event) as Array<T[K]> | undefined;
     if (listeners) {
       listeners.forEach(listener => listener(...args));
