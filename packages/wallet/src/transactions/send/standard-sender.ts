@@ -108,7 +108,12 @@ export class StandardSender {
     await this.amountValidator.validateSufficientBalance(amount, options.feePerGram);
 
     // Step 4: Build transaction with all parameters
-    const builder = new TransactionBuilder({ walletHandle: this.walletHandle })
+    const builder = new TransactionBuilder({
+      feeEstimator: this.feeEstimator,
+      validator: this.amountValidator as any,
+      strictValidation: false,
+      defaultOptions: {} as any
+    })
       .to(recipientAddress)
       .amount(amount);
 
@@ -131,7 +136,7 @@ export class StandardSender {
           WalletErrorCode.FEE_ESTIMATION_FAILED,
           'Failed to estimate transaction fee',
           { 
-            cause: error,
+            cause: error instanceof Error ? error : undefined,
             context: {
               operation: 'sendTransaction',
               amount: amount.toString(),
@@ -149,12 +154,12 @@ export class StandardSender {
 
     // Step 7: Submit transaction via FFI
     try {
-      const txId = await FFIBindings.sendTransaction(
+      const txId = await getFFIBindings().walletSendTransaction(
         this.walletHandle,
         recipientAddress.toString(),
-        amount,
-        feePerGram,
-        transactionParams.message || ''
+        amount.toString(),
+        feePerGram.toString(),
+        options.message || ''
       );
 
       return txId as TransactionId;
@@ -163,7 +168,7 @@ export class StandardSender {
         WalletErrorCode.TransactionSendFailed,
         'Failed to send transaction via FFI',
         {
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: {
             operation: 'sendTransaction',
             amount: amount.toString(),

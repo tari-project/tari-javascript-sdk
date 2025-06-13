@@ -144,10 +144,10 @@ export class OneSidedSender {
     // Step 5: Build transaction with one-sided parameters
     const builder = new TransactionBuilder({
       feeEstimator: this.feeEstimator,
-      validator: this.validator,
+      validator: this.oneSidedValidator as any,
       strictValidation: false,
-      defaultOptions: this.config.defaultOptions || {}
-    } as any)
+      defaultOptions: {} as any
+    })
       .to(targetAddress)
       .amount(amount)
       .oneSided(true); // Mark as one-sided transaction
@@ -195,7 +195,7 @@ export class OneSidedSender {
         this.walletHandle,
         targetAddress.base58,
         amount.toString(),
-        feePerGram,
+        feePerGram.toString(),
         options.message || '',
         true // isOneSided = true for one-sided transactions
       );
@@ -385,11 +385,11 @@ export class OneSidedSender {
       // Query wallet for UTXO selection strategy
       const utxoSelection = await this.ffi.walletPreviewUtxoSelection(
         this.walletHandle,
-        totalRequired
+        totalRequired.toString()
       );
 
       return {
-        inputCount: utxoSelection.inputCount || 1,
+        inputCount: (utxoSelection as any).inputCount || 1,
         outputCount: 1, // One-sided transactions create single output
         scriptComplexity: 2 // TariScript complexity factor
       };

@@ -202,7 +202,7 @@ export class OneSidedValidator {
       const totalCost = microTariFromFFI((amount as bigint) + (estimatedFee as bigint));
 
       // Check available balance
-      if (balance.available < totalCost) {
+      if (BigInt(balance.available) < totalCost) {
         throw new WalletError(
           WalletErrorCode.InsufficientFunds,
           `Insufficient funds for one-sided transaction. Required: ${totalCost}, Available: ${balance.available}`,
@@ -232,9 +232,11 @@ export class OneSidedValidator {
         WalletErrorCode.BalanceFailed,
         'Failed to validate UTXO availability for one-sided transaction',
         {
-          operation: 'validateOneSidedTransaction',
-          amount: amount.toString(),
-          cause: error
+          cause: error instanceof Error ? error : undefined,
+          context: {
+            operation: 'validateOneSidedTransaction',
+            amount: amount.toString()
+          }
         }
       );
     }

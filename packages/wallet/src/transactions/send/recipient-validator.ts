@@ -244,7 +244,7 @@ export class RecipientValidator {
         WalletErrorCode.AddressResolutionFailed,
         `Unable to resolve address: ${addressStr}`,
         { 
-          cause: directError,
+          cause: directError instanceof Error ? directError : undefined,
           context: {
             operation: 'resolveAddress',
             address: addressStr
@@ -264,7 +264,7 @@ export class RecipientValidator {
         WalletErrorCode.InvalidAddress,
         `Invalid emoji ID: ${emojiId}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: {
             operation: 'resolveEmojiAddress',
             emojiId
@@ -276,13 +276,13 @@ export class RecipientValidator {
 
   private async resolveBase58Address(base58: string): Promise<TariAddress> {
     try {
-      return TariAddress.fromBase58(base58);
+      return TariAddress.fromBase58(base58 as any);
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,
         `Invalid base58 address: ${base58}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: {
             operation: 'resolveBase58Address',
             base58
@@ -300,7 +300,7 @@ export class RecipientValidator {
         WalletErrorCode.InvalidAddress,
         `Invalid hex address: ${hex}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: {
             operation: 'resolveHexAddress',
             hex
