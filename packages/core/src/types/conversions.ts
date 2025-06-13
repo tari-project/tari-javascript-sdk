@@ -16,7 +16,7 @@ import type {
   Hash,
   Commitment,
   UnixTimestamp
-} from './branded.js';
+} from './branded';
 
 // FFI Conversion Functions for bigint-based branded types
 

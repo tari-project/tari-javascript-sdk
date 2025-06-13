@@ -11,8 +11,8 @@ import type {
   UnixTimestamp,
   Hash,
   PublicKey
-} from './branded.js';
-import { OutputFeatures } from './enums.js';
+} from './branded';
+import { OutputFeatures } from './enums';
 
 // Base output features interface
 export interface BaseOutputFeatures {

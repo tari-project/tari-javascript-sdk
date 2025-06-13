@@ -9,7 +9,7 @@ import {
   NetworkType,
   LogLevel,
   MnemonicWordCount
-} from './enums.js';
+} from './enums';
 import type {
   ValidatedSeedPhrase,
   ValidatedPassphrase,
@@ -17,9 +17,9 @@ import type {
   LogPath,
   DurationMs,
   PublicKey
-} from './branded.js';
-import type { CoreConfig } from './config.js';
-import type { OptionalFields, RequireFields } from './utils.js';
+} from './branded';
+import type { CoreConfig } from './config';
+import type { OptionalFields, RequireFields } from './utils';
 
 // Base wallet configuration
 export interface BaseWalletConfig {

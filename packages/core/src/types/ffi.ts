@@ -14,14 +14,14 @@ import type {
   Commitment,
   UnixTimestamp,
   BlockHeight
-} from './branded.js';
+} from './branded';
 import type {
   UtxoStatus,
   OutputFeatures,
   TransactionStatus
-} from './enums.js';
+} from './enums';
 
-import type { NativeHandle, WalletHandle, ContactHandle } from './branded.js';
+import type { NativeHandle, WalletHandle, ContactHandle } from './branded';
 
 // FFI Contact interface (matches native structure)
 export interface FFIContact {

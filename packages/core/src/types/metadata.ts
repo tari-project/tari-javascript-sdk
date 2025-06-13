@@ -5,7 +5,7 @@
  * about wallet entities like transactions, contacts, and settings.
  */
 
-import type { UnixTimestamp } from './branded.js';
+import type { UnixTimestamp } from './branded';
 
 // Base metadata interface
 export interface Metadata {

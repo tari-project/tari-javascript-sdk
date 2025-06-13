@@ -14,7 +14,7 @@ import type {
   OutputFeatures,
   ConnectivityStatus,
   AddressFormat
-} from './enums.js';
+} from './enums';
 import type {
   MicroTari,
   TransactionId,
@@ -24,11 +24,11 @@ import type {
   HexAddress,
   UnixTimestamp,
   BlockHeight
-} from './branded.js';
+} from './branded';
 import type {
   Balance,
   BalanceInfo
-} from './balance.js';
+} from './balance';
 import type {
   Transaction,
   TransactionInfo,
@@ -37,11 +37,11 @@ import type {
   CompletedTransaction,
   CancelledTransaction,
   CoinbaseTransaction
-} from './transaction.js';
-import type { Contact } from './contact.js';
-import type { UtxoInfo } from './utxo.js';
-import type { WalletConfig } from './wallet-config.js';
-import type { WalletEvent } from './events.js';
+} from './transaction';
+import type { Contact } from './contact';
+import type { UtxoInfo } from './utxo';
+import type { WalletConfig } from './wallet-config';
+import type { WalletEvent } from './events';
 
 // Basic type guards for primitives and branded types
 

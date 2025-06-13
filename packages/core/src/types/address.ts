@@ -11,9 +11,9 @@ import type {
   Base58Address,
   HexAddress,
   PublicKey
-} from './branded.js';
-import { AddressFormat, ValidationResult } from './enums.js';
-import { EMOJI_SET, BASE58_ALPHABET, REGEX_PATTERNS } from './constants.js';
+} from './branded';
+import { AddressFormat, ValidationResult } from './enums';
+import { EMOJI_SET, BASE58_ALPHABET, REGEX_PATTERNS } from './constants';
 
 // Address validation result
 export interface AddressValidationResult {

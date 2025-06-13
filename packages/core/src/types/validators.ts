@@ -24,9 +24,9 @@ import {
   isPositiveNumber,
   isPositiveInteger,
   isStringArray
-} from './guards.js';
+} from './guards';
 
-import { isWalletConfig } from './wallet-config.js';
+import { isWalletConfig } from './wallet-config';
 
 // Validation result types
 export interface ValidatorResult {

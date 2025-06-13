@@ -15,11 +15,11 @@ import type {
   Hash,
   PublicKey,
   Signature
-} from './branded.js';
+} from './branded';
 import {
   TransactionStatus,
   TransactionDirection
-} from './enums.js';
+} from './enums';
 
 // Core transaction information
 export interface BaseTransactionInfo {

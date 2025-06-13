@@ -9,15 +9,15 @@ import {
   NetworkType,
   LogLevel,
   MnemonicWordCount
-} from './enums.js';
+} from './enums';
 import type {
   ValidatedSeedPhrase,
   ValidatedPassphrase,
   WalletPath,
   LogPath,
   DurationMs
-} from './branded.js';
-import type { OptionalFields, RequireFields, DeepPartial } from './utils.js';
+} from './branded';
+import type { OptionalFields, RequireFields, DeepPartial } from './utils';
 
 // Base configuration interface
 export interface BaseConfig {

@@ -6,50 +6,50 @@
  */
 
 // Core enumerations and constants
-export * from './enums.js';
-export * from './constants.js';
+export * from './enums';
+export * from './constants';
 
 // Branded types and utilities
-export * from './branded.js';
-export * from './conversions.js';
-export * from './utils.js';
+export * from './branded';
+export * from './conversions';
+export * from './utils';
 
 // Configuration interfaces
-export * from './config.js';
-export * from './wallet-config.js';
+export * from './config';
+export * from './wallet-config';
 
 // Balance and amount types
-export * from './balance.js';
-export * from './amount.js';
+export * from './balance';
+export * from './amount';
 
 // Address types and validation
-export * from './address.js';
+export * from './address';
 
 // Transaction types
-export * from './transaction.js';
-export * from './transaction-status.js';
+export * from './transaction';
+export * from './transaction-status';
 
 // Contact and metadata types
-export * from './contact.js';
-export * from './metadata.js';
+export * from './contact';
+export * from './metadata';
 
 // UTXO and output types
-export * from './utxo.js';
-export * from './output-features.js';
+export * from './utxo';
+export * from './output-features';
 
 // FFI types and interfaces
-export * from './ffi.js';
+export * from './ffi';
 
 // Additional FFI type exports for backward compatibility
-export type { FFIContact, FFIUtxoInfo } from './ffi.js';
+export type { FFIContact, FFIUtxoInfo } from './ffi';
 
 // Event and callback types
-export * from './events.js';
-export * from './callbacks.js';
+export * from './events';
+export * from './callbacks';
 
 // Validation and type guards
-export * from './guards.js';
-export * from './validators.js';
+export * from './guards';
+export * from './validators';
 
 // Legacy exports for backward compatibility
 export type NativeHandle = bigint;

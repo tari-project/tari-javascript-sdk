@@ -5,8 +5,8 @@
  * for wallet balance management and queries.
  */
 
-import type { MicroTari } from './branded.js';
-import type { UnixTimestamp } from './branded.js';
+import type { MicroTari } from './branded';
+import type { UnixTimestamp } from './branded';
 
 // Core balance interface
 export interface Balance {

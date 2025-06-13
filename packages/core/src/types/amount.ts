@@ -5,11 +5,11 @@
  * with proper bigint handling and JSON serialization support.
  */
 
-import type { MicroTari, Tari } from './branded.js';
-import type { BalanceFormatOptions } from './balance.js';
+import type { MicroTari, Tari } from './branded';
+import type { BalanceFormatOptions } from './balance';
 
 // Import constants to avoid conflicts
-import { TARI_PRECISION, MAX_TARI_SUPPLY, DUST_THRESHOLD } from './constants.js';
+import { TARI_PRECISION, MAX_TARI_SUPPLY, DUST_THRESHOLD } from './constants';
 
 // Amount-specific constants
 export const MIN_AMOUNT = 1n; // Minimum 1 MicroTari

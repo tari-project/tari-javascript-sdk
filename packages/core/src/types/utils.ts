@@ -350,7 +350,7 @@ export type WalletConfigLike<Required extends Record<string, any>, Optional exte
 export type SafeHandler<T extends any[], R = void> = (...args: T) => R | Promise<R>;
 
 // Import NodeCallback from callbacks.js to avoid conflicts
-import type { NodeCallback } from './callbacks.js';
+import type { NodeCallback } from './callbacks';
 
 /**
  * Convert callback-style to promise-style
@@ -362,7 +362,7 @@ export type Promisify<T extends (...args: any[]) => any> = T extends (...args: [
 // Brand-aware utilities
 
 // Import IsBranded from branded types
-import type { IsBranded } from './branded.js';
+import type { IsBranded } from './branded';
 
 /**
  * Extract all branded types from an object

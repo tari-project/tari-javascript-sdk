@@ -9,7 +9,7 @@ import type {
   TariAddressString,
   UnixTimestamp,
   PublicKey
-} from './branded.js';
+} from './branded';
 
 // Core contact interface
 export interface Contact {

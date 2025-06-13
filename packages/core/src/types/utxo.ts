@@ -14,11 +14,11 @@ import type {
   Signature,
   BlockHeight,
   UnixTimestamp
-} from './branded.js';
+} from './branded';
 import {
   UtxoStatus,
   OutputFeatures
-} from './enums.js';
+} from './enums';
 
 // Core UTXO information
 export interface UtxoInfo {

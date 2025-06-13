@@ -13,22 +13,22 @@ import type {
   UnixTimestamp,
   Hash,
   WalletHandle
-} from './branded.js';
+} from './branded';
 import {
   TransactionStatus,
   ConnectivityStatus,
   SyncStatus,
   LogLevel
-} from './enums.js';
+} from './enums';
 import type {
   Transaction,
   TransactionStatusUpdate
-} from './transaction.js';
+} from './transaction';
 import type {
   Balance,
   BalanceChange
-} from './balance.js';
-import type { Contact } from './contact.js';
+} from './balance';
+import type { Contact } from './contact';
 
 // Base event interface
 export interface BaseEvent {
@@ -787,4 +787,4 @@ export class EventUtils {
 // EventUtils is already exported with its class declaration
 
 // Re-export enums used in events for convenience
-export { ConnectivityStatus } from './enums.js';
+export { ConnectivityStatus } from './enums';

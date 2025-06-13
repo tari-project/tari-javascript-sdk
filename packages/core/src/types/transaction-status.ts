@@ -5,9 +5,9 @@
  * and lifecycle management for all transaction types.
  */
 
-import type { TransactionId, UnixTimestamp, BlockHeight } from './branded.js';
-import { TransactionStatus, TransactionDirection } from './enums.js';
-import type { TransactionCancellationReason } from './transaction.js';
+import type { TransactionId, UnixTimestamp, BlockHeight } from './branded';
+import { TransactionStatus, TransactionDirection } from './enums';
+import type { TransactionCancellationReason } from './transaction';
 
 // Transaction state machine states
 export const TransactionState = {

@@ -11,17 +11,17 @@ import type {
   BlockHeight,
   UnixTimestamp,
   WalletHandle
-} from './branded.js';
+} from './branded';
 import type {
   Transaction,
   PendingInboundTransaction,
   PendingOutboundTransaction,
   CompletedTransaction,
   CancelledTransaction
-} from './transaction.js';
-import type { Balance } from './balance.js';
-import type { Contact } from './contact.js';
-import type { UtxoInfo } from './utxo.js';
+} from './transaction';
+import type { Balance } from './balance';
+import type { Contact } from './contact';
+import type { UtxoInfo } from './utxo';
 import type {
   WalletEvent,
   ConnectivityStatus,
@@ -31,7 +31,7 @@ import type {
   ValidationType,
   SecurityAlertEvent,
   ErrorEvent
-} from './events.js';
+} from './events';
 
 // Base callback types
 export type NodeCallback<T = void> = (error?: Error | null, result?: T) => void;
