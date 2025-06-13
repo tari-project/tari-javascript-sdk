@@ -25,6 +25,12 @@ export interface ElectronWalletConfig extends WalletConfig {
   enableBackgroundSync?: boolean;
   /** IPC timeout for operations */
   ipcTimeout?: number;
+  /** Connection timeout for wallet operations */
+  connectionTimeoutMs?: number;
+  /** Transaction timeout for wallet operations */
+  transactionTimeoutMs?: number;
+  /** Sync timeout for wallet operations */
+  syncTimeoutMs?: number;
 }
 
 /**

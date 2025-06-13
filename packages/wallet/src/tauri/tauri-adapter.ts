@@ -6,7 +6,7 @@
  */
 
 import type { SecureStorage, StorageConfig } from '../platform/storage/secure-storage.js';
-import { StorageResults } from '../platform/storage/storage-results.js';
+import { StorageResults } from '../platform/storage/types/storage-result.js';
 import { TauriStorage, type TauriStorageConfig } from './tauri-storage.js';
 import { SecureInvoke, type SecureInvokeConfig } from './secure-invoke.js';
 import { PlatformDetector } from '../platform/detector.js';
@@ -139,8 +139,8 @@ export class TauriAdapter {
 
       // Test storage functionality
       const testResult = await this.storage.test();
-      if (!StorageResults.isOk(testResult)) {
-        throw new Error(`Storage test failed: ${testResult.error}`);
+      if (StorageResults.isError(testResult)) {
+        throw new Error(`Storage test failed: ${testResult.error.message}`);
       }
 
       this.initialized = true;
@@ -336,7 +336,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.retrieve(key, options);
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);
@@ -348,7 +348,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.remove(key);
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);
@@ -360,7 +360,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.exists(key);
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);
@@ -372,7 +372,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.list();
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);
@@ -384,7 +384,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.getMetadata(key);
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);
@@ -396,7 +396,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.clear();
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);
@@ -408,7 +408,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.getInfo();
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);
@@ -420,7 +420,7 @@ export class TauriAdapter {
         const startTime = Date.now();
         try {
           const result = await storage.test();
-          adapter.updateStorageMetrics(Date.now() - startTime, result.success);
+          adapter.updateStorageMetrics(Date.now() - startTime, StorageResults.isOk(result));
           return result;
         } catch (error) {
           adapter.updateStorageMetrics(Date.now() - startTime, false);

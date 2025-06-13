@@ -23,7 +23,7 @@ export { MemoryStorage } from './storage/memory-storage.js';
 
 // Electron integration (conditional exports)
 export type { ElectronWalletService } from '../electron/main/wallet-service.js';
-export type { ElectronIPCHandlers } from '../electron/main/ipc-handlers.js';
+export type { IpcHandlersManager as ElectronIPCHandlers } from '../electron/main/ipc-handlers.js';
 export type { ElectronWalletBridge } from '../electron/renderer/wallet-bridge.js';
 
 // Worker integration
