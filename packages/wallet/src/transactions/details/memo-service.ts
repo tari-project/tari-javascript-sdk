@@ -155,7 +155,7 @@ export class MemoService extends TypedEventEmitter {
         WalletErrorCode.MemoOperationFailed,
         `Failed to set memo for transaction ${transactionId}: ${error}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );
@@ -208,7 +208,7 @@ export class MemoService extends TypedEventEmitter {
         WalletErrorCode.MemoOperationFailed,
         `Failed to get memo for transaction ${transactionId}: ${error}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );
@@ -250,7 +250,7 @@ export class MemoService extends TypedEventEmitter {
         WalletErrorCode.MemoOperationFailed,
         `Failed to delete memo for transaction ${transactionId}: ${error}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );

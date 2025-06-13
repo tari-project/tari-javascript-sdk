@@ -54,13 +54,12 @@ export interface PendingManagerConfig {
 /**
  * Pending transaction manager events
  */
-export interface PendingManagerEvents {
+export interface PendingManagerEvents extends Record<string, (...args: any[]) => void> {
   'pending:updated': (update: TransactionStatusUpdate) => void;
   'pending:timeout': (transactionId: TransactionId, timeoutSeconds: number) => void;
   'pending:refreshed': (inboundCount: number, outboundCount: number) => void;
   'pending:error': (error: WalletError, transactionId?: TransactionId) => void;
   'pending:auto_cancelled': (transactionId: TransactionId, reason: string) => void;
-  [key: string]: (...args: any[]) => void;
 }
 
 /**

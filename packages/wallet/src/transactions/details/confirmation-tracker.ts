@@ -207,7 +207,7 @@ export class ConfirmationTracker extends TypedEventEmitter {
         WalletErrorCode.ConfirmationTrackingFailed,
         `Failed to start tracking transaction ${transactionId}: ${error}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );

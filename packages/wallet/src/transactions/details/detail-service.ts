@@ -221,7 +221,7 @@ export interface TransactionDetails {
 /**
  * Events emitted by the detail service
  */
-export interface DetailServiceEvents {
+export interface DetailServiceEvents extends Record<string, (...args: any[]) => void> {
   'details:enriched': (transactionId: TransactionId, details: TransactionDetails) => void;
   'details:updated': (transactionId: TransactionId, details: TransactionDetails) => void;
   'confirmations:changed': (transactionId: TransactionId, newCount: number, oldCount: number) => void;
@@ -359,7 +359,7 @@ export class DetailService extends TypedEventEmitter<DetailServiceEvents> {
         WalletErrorCode.TransactionDetailRetrievalFailed,
         `Failed to get transaction details for ${transactionId}: ${error}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );
@@ -510,7 +510,7 @@ export class DetailService extends TypedEventEmitter<DetailServiceEvents> {
         WalletErrorCode.FFIOperationFailed,
         `Failed to get basic transaction info: ${error}`,
         { 
-          cause: error,
+          cause: error instanceof Error ? error : undefined,
           context: { transactionId: transactionId.toString() }
         }
       );

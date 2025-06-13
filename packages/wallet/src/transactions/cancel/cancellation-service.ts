@@ -58,7 +58,7 @@ export const DEFAULT_CANCELLATION_CONFIG: CancellationServiceConfig = {
 /**
  * Events emitted by the cancellation service
  */
-export interface CancellationServiceEvents {
+export interface CancellationServiceEvents extends Record<string, (...args: any[]) => void> {
   'cancellation:started': (transactionId: TransactionId) => void;
   'cancellation:completed': (transactionId: TransactionId, refundAmount: MicroTari) => void;
   'cancellation:failed': (transactionId: TransactionId, error: Error) => void;
@@ -279,11 +279,11 @@ export class CancellationService extends TypedEventEmitter<CancellationServiceEv
     
     try {
       // Get all pending outbound transactions
-      const pendingOutboundJson = await this.ffiBindings.wallet_get_pending_outbound_transactions(
+      const pendingOutboundArray = await this.ffiBindings.wallet_get_pending_outbound_transactions(
         this.walletHandle
       );
       
-      const pendingTransactions: PendingOutboundTransaction[] = JSON.parse(pendingOutboundJson as string) as PendingOutboundTransaction[];
+      const pendingTransactions: PendingOutboundTransaction[] = pendingOutboundArray as PendingOutboundTransaction[];
       
       // Filter for cancellable transactions
       const cancellable: PendingOutboundTransaction[] = [];

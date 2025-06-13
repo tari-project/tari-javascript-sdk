@@ -81,7 +81,7 @@ export interface TransactionServiceConfig {
 /**
  * Transaction service events
  */
-export interface TransactionServiceEvents {
+export interface TransactionServiceEvents extends Record<string, (...args: any[]) => void> {
   'transaction:created': (transaction: PendingOutboundTransaction) => void;
   'transaction:updated': (update: TransactionStatusUpdate) => void;
   'transaction:confirmed': (transaction: CompletedTransaction) => void;

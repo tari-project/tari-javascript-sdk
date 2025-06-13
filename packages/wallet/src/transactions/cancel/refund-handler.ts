@@ -48,7 +48,7 @@ export interface RefundResult {
 /**
  * Events emitted by the refund handler
  */
-export interface RefundHandlerEvents {
+export interface RefundHandlerEvents extends Record<string, (...args: any[]) => void> {
   'refund:started': (transactionId: TransactionId) => void;
   'refund:processed': (transactionId: TransactionId, amount: MicroTari) => void;
   'refund:failed': (transactionId: TransactionId, error: Error) => void;
@@ -333,8 +333,8 @@ export class RefundHandler extends TypedEventEmitter<RefundHandlerEvents> {
    */
   private async getCurrentBalance(): Promise<Balance> {
     try {
-      const balanceJson = await this.ffiBindings.walletGetBalance(this.walletHandle);
-      return JSON.parse(balanceJson);
+      const balance = await this.ffiBindings.walletGetBalance(this.walletHandle);
+      return balance as Balance;
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.BalanceQueryFailed,
