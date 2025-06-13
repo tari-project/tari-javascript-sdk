@@ -1,8 +1,9 @@
-import { DisposableResource } from '@tari/core/memory/disposable';
-import { MemoryPressureMonitor, getGlobalMemoryMonitor } from '@tari/core/memory/pressure-monitor';
-import { GCCoordinator, getGlobalGCCoordinator } from '@tari/core/memory/gc-coordinator';
-import { HeapStatsCollector, getGlobalHeapStats } from '@tari/core/memory/heap-stats';
-import { CallBatcher, getGlobalBatcher } from '@tari/core/performance/call-batcher';
+import { 
+  MemoryDisposableResource as DisposableResource,
+  MemoryPressureMonitor,
+  GCCoordinator,
+  HeapStatsCollector
+} from '@tari-project/tarijs-core';
 import { QueryCache, GlobalCaches } from '../cache/query-cache';
 import { TTLManager } from '../cache/ttl-manager';
 import { WorkerManager, getGlobalWorkerManager } from '../workers/worker-manager';

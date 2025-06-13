@@ -1,5 +1,5 @@
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import { DisposableResource } from '@tari/core/memory/disposable';
+import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
 import { performance } from 'perf_hooks';
 
 /**

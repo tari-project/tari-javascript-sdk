@@ -1,4 +1,4 @@
-import { Disposable, AsyncDisposable } from '@tari/core/memory/using-polyfill';
+import { safeDispose, isDisposable, isAsyncDisposable } from '@tari-project/tarijs-core';
 import { ResourceScope, withResource, withAsyncResource } from './using-helpers';
 
 /**

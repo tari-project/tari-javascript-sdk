@@ -2,7 +2,7 @@
  * Performance configuration types and interfaces
  */
 
-import { GCStrategy } from '@tari/core/memory/gc-coordinator';
+import { GCCoordinator } from '@tari-project/tarijs-core';
 import { LoadBalancingStrategy } from '../workers/worker-manager';
 
 /**

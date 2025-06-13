@@ -1,6 +1,5 @@
-import { DisposableResource } from '@tari/core/memory/disposable';
+import { MemoryDisposableResource as DisposableResource, MemoryUtils } from '@tari-project/tarijs-core';
 import { PerformanceManager } from './performance-manager';
-import { MemoryUtils } from '@tari/core/memory/memory-utils';
 
 /**
  * Comprehensive benchmark suite for performance testing

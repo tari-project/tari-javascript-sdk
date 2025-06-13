@@ -1,5 +1,5 @@
-import { Disposable, AsyncDisposable, DisposableStack, AsyncDisposableStack } from '@tari/core/memory/using-polyfill';
-import { DisposableResource } from '@tari/core/memory/disposable';
+import { safeDispose, isDisposable, isAsyncDisposable } from '@tari-project/tarijs-core';
+import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
 
 /**
  * Helper functions for using declarations and resource management
