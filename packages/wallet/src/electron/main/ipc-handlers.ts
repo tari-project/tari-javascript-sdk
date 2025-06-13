@@ -5,7 +5,23 @@
  * error handling for all wallet operations.
  */
 
-import { ipcMain, IpcMainInvokeEvent, WebContents } from 'electron';
+import { ipcMain } from 'electron';
+
+// Fallback type definitions for Electron if not available
+interface IpcMainInvokeEvent {
+  frameId: number;
+  processId: number;
+  sender: WebContents;
+}
+
+interface WebContents {
+  id: number;
+  session: any;
+  getURL(): string;
+}
+
+// Type assertion for ipcMain to include handle method
+const ipcMainTyped = ipcMain as any;
 import { getElectronWalletService } from './wallet-service.js';
 import type { WalletConfig } from '../../types/index.js';
 import { PlatformDetector } from '../../platform/detector.js';
@@ -87,35 +103,35 @@ export class IpcHandlersManager {
    */
   private setupHandlers(): void {
     // Wallet lifecycle handlers
-    ipcMain.handle('wallet:create', this.handleCreateWallet);
-    ipcMain.handle('wallet:open', this.handleOpenWallet);
-    ipcMain.handle('wallet:close', this.handleCloseWallet);
-    ipcMain.handle('wallet:lock', this.handleLockWallet);
-    ipcMain.handle('wallet:unlock', this.handleUnlockWallet);
-    ipcMain.handle('wallet:status', this.handleGetWalletStatus);
-    ipcMain.handle('wallet:list', this.handleListWallets);
+    ipcMainTyped.handle('wallet:create', this.handleCreateWallet);
+    ipcMainTyped.handle('wallet:open', this.handleOpenWallet);
+    ipcMainTyped.handle('wallet:close', this.handleCloseWallet);
+    ipcMainTyped.handle('wallet:lock', this.handleLockWallet);
+    ipcMainTyped.handle('wallet:unlock', this.handleUnlockWallet);
+    ipcMainTyped.handle('wallet:status', this.handleGetWalletStatus);
+    ipcMainTyped.handle('wallet:list', this.handleListWallets);
 
     // Wallet information handlers
-    ipcMain.handle('wallet:get-balance', this.handleGetBalance);
-    ipcMain.handle('wallet:get-info', this.handleGetInfo);
-    ipcMain.handle('wallet:get-address', this.handleGetAddress);
+    ipcMainTyped.handle('wallet:get-balance', this.handleGetBalance);
+    ipcMainTyped.handle('wallet:get-info', this.handleGetInfo);
+    ipcMainTyped.handle('wallet:get-address', this.handleGetAddress);
 
     // Transaction handlers
-    ipcMain.handle('wallet:send-transaction', this.handleSendTransaction);
-    ipcMain.handle('wallet:get-transactions', this.handleGetTransactions);
-    ipcMain.handle('wallet:get-transaction', this.handleGetTransaction);
+    ipcMainTyped.handle('wallet:send-transaction', this.handleSendTransaction);
+    ipcMainTyped.handle('wallet:get-transactions', this.handleGetTransactions);
+    ipcMainTyped.handle('wallet:get-transaction', this.handleGetTransaction);
 
     // Sync handlers
-    ipcMain.handle('wallet:sync', this.handleSync);
-    ipcMain.handle('wallet:get-sync-status', this.handleGetSyncStatus);
+    ipcMainTyped.handle('wallet:sync', this.handleSync);
+    ipcMainTyped.handle('wallet:get-sync-status', this.handleGetSyncStatus);
 
     // Utility handlers
-    ipcMain.handle('wallet:validate-address', this.handleValidateAddress);
-    ipcMain.handle('wallet:estimate-fee', this.handleEstimateFee);
+    ipcMainTyped.handle('wallet:validate-address', this.handleValidateAddress);
+    ipcMainTyped.handle('wallet:estimate-fee', this.handleEstimateFee);
 
     // Platform handlers
-    ipcMain.handle('platform:get-info', this.handleGetPlatformInfo);
-    ipcMain.handle('platform:get-capabilities', this.handleGetCapabilities);
+    ipcMainTyped.handle('platform:get-info', this.handleGetPlatformInfo);
+    ipcMainTyped.handle('platform:get-capabilities', this.handleGetCapabilities);
   }
 
   /**

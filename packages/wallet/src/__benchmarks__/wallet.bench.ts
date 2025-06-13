@@ -69,7 +69,7 @@ export class WalletBenchmarkSuite {
               deviation: event.target.stats?.deviation || 0,
               variance: event.target.stats?.variance || 0,
               samples: event.target.stats?.sample?.length || 0,
-              error: event.target.error,
+              error: (event.target as any)?.error || null,
             });
           }
         })
@@ -186,7 +186,7 @@ export class WalletBenchmarkSuite {
       defer: true,
       fn: async (deferred: any) => {
         const address = await testWallet.getAddress();
-        await testWallet.validateAddress(address);
+        await testWallet.validateAddress(address.toString());
         deferred.resolve();
       },
     });
@@ -218,8 +218,8 @@ export class WalletBenchmarkSuite {
       .storagePath(this.getTempPath())
       .build();
     
-    const sender = await TariWallet.create(senderConfig);
-    const receiver = await TariWallet.create(receiverConfig);
+    const sender = await TariWallet.create(senderConfig as unknown as WalletConfig);
+    const receiver = await TariWallet.create(receiverConfig as unknown as WalletConfig);
     
     this.wallets.push(sender, receiver);
     
