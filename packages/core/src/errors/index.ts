@@ -6,34 +6,34 @@
  */
 
 // Core error classes and codes
-export * from './codes.js';
-export * from './wallet-error.js';
+export * from './codes';
+export * from './wallet-error';
 
 // FFI error handling
-export * from './ffi-errors.js';
+export * from './ffi-errors';
 
 // Error context system
-export * from './context.js';
+export * from './context';
 
 // Input validation
-export * from './validation.js';
+export * from './validation';
 
 // Retry and recovery
-export * from './retry.js';
-export * from './recovery.js';
+export * from './retry';
+export * from './recovery';
 
 // Error reporting and telemetry
-export * from './reporting.js';
+export * from './reporting';
 
 // Developer-friendly messages
-export * from './messages.js';
+export * from './messages';
 
 // Legacy exports for backward compatibility
 export {
   WalletErrorCode as ErrorCode,
-} from './codes.js';
+} from './codes';
 
 export {
   WalletError as TariError,
   createWalletError as createError,
-} from './wallet-error.js';
+} from './wallet-error';
