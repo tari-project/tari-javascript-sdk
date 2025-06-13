@@ -112,12 +112,10 @@ export * from './ffi/debug';
 export * from './ffi/trace';
 
 // Memory management and performance (Phase 10) - specific exports to avoid conflicts
-export { using, usingAsync, DisposableResource } from './memory/using-polyfill';
+export { safeDispose, isDisposable, isAsyncDisposable } from './memory/using-polyfill';
 export { DisposableResource as MemoryDisposableResource } from './memory/disposable';
-export { TariFFIResource, ResourceMetrics } from './memory/resource-base';
-export { SecureBuffer, SecureView } from './memory/secure-buffer';
-export { encrypt, decrypt, hashData, secureCompare } from './memory/crypto-helpers';
-export { cleanupWalletResources, optimizeMemoryUsage, forceGarbageCollection } from './memory/memory-utils';
+export { TariFFIResource } from './memory/resource-base';
+export { SecureBuffer } from './memory/secure-buffer';
 export { 
   MemoryPressureMonitor, 
   type MemoryPressureLevel as MemoryPressureType, 
@@ -125,16 +123,15 @@ export {
   type CleanupHandler as MemoryCleanupHandler 
 } from './memory/pressure-monitor';
 export { GCCoordinator } from './memory/gc-coordinator';
-export { HeapStatsCollector, type HeapUsageStats } from './memory/heap-stats';
+export { HeapStatsCollector } from './memory/heap-stats';
 
 // Performance optimization - specific exports to avoid conflicts
-export { CallBatcher, CallBatchResult, BatchConfig } from './performance/call-batcher';
-export { BatchQueue, QueueStats } from './performance/batch-queue';
-export { 
-  BatchExecutor, 
-  type RetryConfig as PerformanceRetryConfig,
-  type CircuitBreakerConfig as PerformanceCircuitBreakerConfig 
-} from './performance/batch-executor';
+export { CallBatcher } from './performance/call-batcher';
+export type { BatchResult, BatchConfig } from './performance/call-batcher';
+export { BatchQueue } from './performance/batch-queue';
+export { BatchExecutor } from './performance/batch-executor';
+export type { RetryConfig as PerformanceRetryConfig } from './performance/batch-executor';
+export type { CircuitBreakerConfig as PerformanceCircuitBreakerConfig } from './performance/batch-executor';
 
 // Version information
 export const VERSION = '0.0.1';
