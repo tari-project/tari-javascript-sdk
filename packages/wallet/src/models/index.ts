@@ -41,7 +41,12 @@ class Balance {
     return this.balance.pendingOutgoing;
   }
 
-
+  /**
+   * Timelocked balance
+   */
+  get timelocked(): bigint {
+    return this.balance.timelocked;
+  }
 
   /**
    * Total balance including pending incoming
@@ -111,4 +116,4 @@ class TransactionId {
 }
 
 // Export all models
-export { TariAddress, Balance as BalanceModel, TransactionId };
+export { TariAddress, Balance, TransactionId };

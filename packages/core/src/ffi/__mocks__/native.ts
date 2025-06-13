@@ -715,4 +715,14 @@ export function resetMockNativeBindings(): void {
 /**
  * Mock native module export (Jest will replace the actual module with this)
  */
-export default getMockNativeBindings();
+const mockBindings = getMockNativeBindings();
+
+// Export individual functions for compatibility with CommonJS require()
+Object.assign(module.exports, mockBindings);
+
+// Also assign utility functions
+module.exports.getMockNativeBindings = getMockNativeBindings;
+module.exports.resetMockNativeBindings = resetMockNativeBindings;
+
+// Also export as ES module default for compatibility
+export default mockBindings;

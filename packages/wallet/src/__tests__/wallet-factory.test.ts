@@ -7,6 +7,7 @@ import { NetworkType } from '@tari-project/tarijs-core';
 
 // Mock the FFI bindings
 jest.mock('@tari-project/tarijs-core', () => ({
+  ...jest.requireActual('@tari-project/tarijs-core'),
   NetworkType: {
     Mainnet: 'mainnet',
     Testnet: 'testnet',

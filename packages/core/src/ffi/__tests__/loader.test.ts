@@ -5,9 +5,22 @@
 import { NativeModuleLoader, loadNativeModule, getNativeModule } from '../loader';
 import { getMockNativeBindings, resetMockNativeBindings } from '../__mocks__/native';
 
-// Mock the native module loading
-jest.mock('../native', () => {
-return require('../__mocks__/native').default;
+// Mock the native module loading - Jest will automatically use the __mocks__ directory
+jest.mock('../native');
+
+// Mock the binary resolver to return a fake path that resolves to our mock
+jest.mock('../binary-resolver', () => {
+  return {
+    BinaryResolver: jest.fn().mockImplementation(() => ({
+      resolveBinary: jest.fn().mockReturnValue({
+        path: 'mock-native-module',
+        exists: true,
+        source: 'mock'
+      }),
+      validateBinary: jest.fn().mockReturnValue(undefined),
+      getInstallationInstructions: jest.fn().mockReturnValue('Mock installation instructions')
+    }))
+  };
 });
 
 describe('NativeModuleLoader', () => {

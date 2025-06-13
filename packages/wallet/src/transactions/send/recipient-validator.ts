@@ -6,8 +6,8 @@ import {
   withErrorContext,
   validateTariAddress,
   validateRequired,
+  TariAddress,
 } from '@tari-project/tarijs-core';
-import { TariAddress } from '../../models';
 
 /**
  * Recipient validation service for transaction sending

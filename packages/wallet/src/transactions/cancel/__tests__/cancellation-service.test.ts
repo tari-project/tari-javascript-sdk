@@ -49,11 +49,30 @@ describe('CancellationService', () => {
     status: 'Pending'
   };
 
+  // Serializable version for FFI mocks
+  const serializablePendingTransaction = {
+    txId: 'test_tx_123',
+    destinationPublicKey: 'dest_pub_key',
+    amount: '1000000',
+    fee: '1000',
+    message: 'Test transaction',
+    timestamp: mockPendingTransaction.timestamp,
+    status: 'Pending'
+  };
+
   const mockBalance = {
     available: BigInt(5000000),
     pendingIncoming: BigInt(0),
     pendingOutgoing: BigInt(1001000),
     timelocked: BigInt(0)
+  };
+
+  // Serializable version for FFI mocks
+  const serializableBalance = {
+    available: '5000000',
+    pendingIncoming: '0',
+    pendingOutgoing: '1001000',
+    timelocked: '0'
   };
 
   beforeEach(() => {
@@ -82,10 +101,10 @@ describe('CancellationService', () => {
 
     // Setup FFI mocks
     mockFFIBindings.wallet_get_pending_outbound_transaction.mockResolvedValue(
-      JSON.stringify(mockPendingTransaction)
+      JSON.stringify(serializablePendingTransaction)
     );
     mockFFIBindings.wallet_cancel_pending_transaction.mockResolvedValue(true);
-    mockFFIBindings.wallet_get_balance.mockResolvedValue(JSON.stringify(mockBalance));
+    mockFFIBindings.wallet_get_balance.mockResolvedValue(JSON.stringify(serializableBalance));
   });
 
   afterEach(async () => {

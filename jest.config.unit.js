@@ -58,9 +58,11 @@ module.exports = {
   // Module resolution (always use mocks for unit tests)
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    // Always mock native FFI for unit tests - use centralized mock
-    '^../native\\.js$': '<rootDir>/tests/mocks/ffi-bindings.ts',
-    '^@tari-project/tarijs-core/native$': '<rootDir>/tests/mocks/ffi-bindings.ts',
+    // Always mock native FFI for unit tests - use the mock in the __mocks__ directory
+    '^\\.\\./native$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
+    '^../native\\.js$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
+    '^mock-native-module$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
+    '^@tari-project/tarijs-core/native$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
     // Package mappings
     '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src/index.ts',
     '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src/index.ts',
