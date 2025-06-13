@@ -6,7 +6,8 @@
  */
 
 import type { SecureStorage } from './secure-storage.js';
-import type { StorageResult, StorageResults } from './types/storage-result.js';
+import type { StorageResult } from './types/storage-result.js';
+import { StorageResults } from './types/storage-result.js';
 
 export interface CacheConfig {
   /** Maximum number of cached items */
