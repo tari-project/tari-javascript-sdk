@@ -602,9 +602,6 @@ await app.cleanup();
 
 - [Tauri Documentation](https://tauri.app/v1/guides/)
 - [Tari JavaScript SDK API Reference](../packages/wallet/README.md)
-- [Security Best Practices](./security.md)
-- [Performance Optimization Guide](./performance.md)
-- [Cross-Platform Development](./cross-platform.md)
 
 ## Support
 
@@ -612,5 +609,4 @@ For Tauri integration issues:
 
 1. Check [GitHub Issues](https://github.com/tari-project/tari-javascript-sdk/issues)
 2. Review [Troubleshooting Guide](#troubleshooting)
-3. Join [Tari Discord](https://discord.gg/tari) #development channel
-4. Submit detailed bug reports with Tauri version and platform information
+3. Submit detailed bug reports with Tauri version and platform information

@@ -426,6 +426,7 @@ export class FFICallManager {
     // Network and temporary errors are retryable
     if (
       message.includes('timeout') ||
+      message.includes('network') ||
       message.includes('econnrefused') ||
       message.includes('econnreset') ||
       message.includes('temporary') ||

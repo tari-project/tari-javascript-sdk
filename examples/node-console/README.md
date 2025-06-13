@@ -240,16 +240,15 @@ Create a `wallet-config.json` file:
 
 For testnet development, you'll need test funds:
 
-### Option 1: Discord Faucet
-1. Join the [Tari Discord](https://discord.gg/tari)
-2. Navigate to the #faucet channel
-3. Request testnet funds with your wallet address
-4. Use the emoji format for easier copying
+### Option 1: Check Documentation
+1. Refer to the main Tari documentation for testnet fund sources
+2. Look for official testnet faucets
+3. Use the emoji format for easier copying
 
-### Option 2: Community Request
-1. Ask in the Tari community channels
-2. Provide your testnet wallet address
-3. Specify that you need testnet funds for development
+### Option 2: Alternative Sources
+1. Look for community-maintained testnet faucets
+2. Check testnet mining pools if available
+3. Refer to Tari development resources
 
 ### Option 3: Mining (Advanced)
 1. Set up a Tari miner on testnet
@@ -266,7 +265,7 @@ The console wallet includes comprehensive error handling:
 ```
 💰 Insufficient funds for this transaction
 ```
-- Get testnet funds from the Discord faucet
+- Get testnet funds from official sources or faucets
 - Check your balance before sending
 
 **Invalid Address**
@@ -430,8 +429,7 @@ sudo chown -R $(whoami) ~/.npm
 
 1. **Check Console Output**: Look for detailed error messages
 2. **Enable Debug Logging**: Use `--log-level debug` for more information
-3. **Community Support**: Join the [Tari Discord](https://discord.gg/tari)
-4. **GitHub Issues**: Report bugs at the [repository](https://github.com/tari-project/tari-javascript-sdk/issues)
+3. **GitHub Issues**: Report bugs at the [repository](https://github.com/tari-project/tari-javascript-sdk/issues)
 
 ## Contributing
 

@@ -48,9 +48,9 @@ TEST_STORAGE_PATH=/path/to/test/storage  # Default: system temp directory
 1. Set up a Tari miner on testnet
 2. Mine directly to your test wallet addresses
 
-### Option 3: Community
-1. Ask in the Tari community channels for testnet funds
-2. Provide your testnet wallet addresses
+### Option 3: Alternative Sources
+1. Check the main Tari documentation for testnet fund sources
+2. Look for community-maintained testnet faucets
 
 ## Running Manual Tests
 
@@ -209,9 +209,8 @@ runTests().catch(console.error);
 ### Getting Help
 
 1. **Check Logs**: Review wallet logs for detailed error information
-2. **Community**: Ask in Tari community channels
-3. **Documentation**: Refer to the main SDK documentation
-4. **Issues**: Report bugs via GitHub issues
+2. **Documentation**: Refer to the main SDK documentation
+3. **Issues**: Report bugs via GitHub issues
 
 ## Advanced Configuration
 
