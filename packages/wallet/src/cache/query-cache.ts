@@ -111,7 +111,7 @@ export class QueryCache extends DisposableResource {
   /**
    * Get cached value or fetch if not available
    */
-  async get<T>(
+  async get<T extends object>(
     key: string,
     fetcher: QueryFetcher<T>,
     ttl?: number
@@ -136,7 +136,7 @@ export class QueryCache extends DisposableResource {
   /**
    * Get cached value without fetching
    */
-  getCached<T>(key: string): T | undefined {
+  getCached<T extends object>(key: string): T | undefined {
     this.checkDisposed();
 
     const entry = this.cache.get(key);
@@ -533,7 +533,7 @@ export class QueryCache extends DisposableResource {
   /**
    * Update stats for new entry
    */
-  private updateStatsForNewEntry<T>(entry: CacheEntry<T>): void {
+  private updateStatsForNewEntry<T extends object>(entry: CacheEntry<T>): void {
     if (this.config.enableStats) {
       this.stats.totalMemoryUsage += entry.size;
     }
