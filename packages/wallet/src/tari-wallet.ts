@@ -37,8 +37,8 @@ import { ContactManager } from './contacts/contact-manager.js';
 import { UtxoService } from './utxos/utxo-service.js';
 import { CoinService } from './coins/coin-service.js';
 import { 
-  PerformanceManager, 
-  PerformanceConfig, 
+  type PerformanceManager, 
+  type PerformanceConfig, 
   getPerformanceManager,
   configurePerformance
 } from './performance/index.js';
@@ -166,7 +166,7 @@ export class TariWallet implements AsyncDisposable {
   private readonly contactManager: ContactManager;
   private readonly utxoService: UtxoService;
   private readonly coinService: CoinService;
-  private readonly performanceManager: InstanceType<typeof PerformanceManager>;
+  private readonly performanceManager: PerformanceManager;
 
   /**
    * Private constructor - use WalletFactory.create() or WalletFactory.restore()
@@ -283,7 +283,7 @@ export class TariWallet implements AsyncDisposable {
   /**
    * Get global performance manager instance
    */
-  static getGlobalPerformanceManager(): InstanceType<typeof PerformanceManager> {
+  static getGlobalPerformanceManager(): PerformanceManager {
     return getPerformanceManager();
   }
 

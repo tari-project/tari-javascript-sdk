@@ -186,16 +186,17 @@ export function convertLegacyResult<T>(
  * Convert new discriminated union to legacy format
  */
 export function convertToLegacy<T>(result: StorageResult<T>): LegacyStorageResult<T> {
-  return StorageResults.match(result, {
-    ok: (value, requiresUserInteraction) => ({
+  if (StorageResults.isOk(result)) {
+    return {
       success: true,
-      data: value,
-      requiresUserInteraction
-    }),
-    error: (error) => ({
+      data: result.value,
+      requiresUserInteraction: result.requiresUserInteraction
+    };
+  } else {
+    return {
       success: false,
-      error: error.message || `${error.code} error`,
-      requiresUserInteraction: error.requiresUserInteraction
-    })
-  });
+      error: result.error.message || `${result.error.code} error`,
+      requiresUserInteraction: result.error.requiresUserInteraction
+    };
+  }
 }

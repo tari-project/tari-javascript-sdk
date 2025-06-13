@@ -399,7 +399,7 @@ export class RuntimeManager {
   private getActiveHandles(): number {
     if (this.platform.capabilities.nativeModules) {
       try {
-        return process._getActiveHandles().length;
+        return (process as any)._getActiveHandles?.()?.length || 0;
       } catch {
         // Not available
       }

@@ -532,7 +532,7 @@ export class PerformanceManager extends DisposableResource {
 
     return {
       enabled: true,
-      ...this.workerManager.getStats()
+      ...(this.workerManager?.getStats() || {})
     };
   }
 
@@ -677,12 +677,14 @@ export class PerformanceManager extends DisposableResource {
 
     // Submit computation tasks
     for (let i = 0; i < 10; i++) {
-      tasks.push(
-        this.workerManager.executeTask('computation', {
-          operation: 'fibonacci',
-          input: 30
-        })
-      );
+      if (this.workerManager) {
+        tasks.push(
+          this.workerManager.executeTask('computation', {
+            operation: 'fibonacci',
+            input: 30
+          })
+        );
+      }
     }
 
     const results = await Promise.all(tasks);

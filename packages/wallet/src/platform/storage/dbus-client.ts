@@ -77,6 +77,10 @@ export class DbusClient extends EventEmitter {
       // Connect to session bus
       this.bus = dbus.sessionBus();
       
+      if (!this.bus) {
+        throw new Error('Failed to connect to D-Bus session bus');
+      }
+      
       // Get proxy object
       this.proxy = await this.bus.getProxyObject(
         this.config.serviceName,
@@ -93,11 +97,11 @@ export class DbusClient extends EventEmitter {
         this.emit('error', error);
       });
 
-      this.bus.on('disconnect', () => {
+      this.bus.on('disconnect', (() => {
         this.log('D-Bus disconnected');
         this.setState('disconnected');
         this.emit('disconnect');
-      });
+      }) as any);
 
       this.setState('connected');
       this.emit('connect');
