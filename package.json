@@ -28,12 +28,16 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "build:ts": "tsc --build tsconfig.build.json",
+    "build:native": "./scripts/build-native.sh current",
+    "build:native:all": "./scripts/build-native.sh all",
+    "build:native:clean": "./scripts/build-native.sh clean",
     "clean": "npm run clean --workspaces --if-present && ./scripts/clean.sh",
     "dev": "npm-run-all --parallel dev:*",
     "lint": "eslint packages/*/src/**/*.ts",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm run test --workspaces --if-present",
     "test:ci": "npm run test:ci --workspaces --if-present",
+    "test:native": "./scripts/test-native.sh",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
