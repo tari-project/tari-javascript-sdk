@@ -11,6 +11,7 @@ import { createSecureStorage } from '../../platform/storage/storage-factory.js';
 import { PlatformDetector } from '../../platform/detector.js';
 import { getRuntimeManager } from '../../platform/runtime.js';
 import type { SecureStorage } from '../../platform/storage/secure-storage.js';
+import { StorageResults } from '../../platform/storage/types/storage-result';
 
 /**
  * Electron wallet service configuration
@@ -405,9 +406,10 @@ export class ElectronWalletService {
 
     try {
       const result = await this.secureStorage.retrieve(`wallet-state-${id}`);
-      if (result.success && result.data) {
-        return JSON.parse(result.data.toString('utf8'));
-      }
+      return StorageResults.match(result, {
+        ok: (data) => JSON.parse(data.toString('utf8')),
+        error: () => null
+      });
     } catch (error) {
       console.warn(`Failed to load wallet state for ${id}:`, error);
     }

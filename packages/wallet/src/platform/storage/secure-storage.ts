@@ -5,15 +5,16 @@
  * automatic chunking for size limits, encryption fallbacks, and error handling.
  */
 
-/**
- * Storage operation result
- */
-export interface StorageResult<T = void> {
-  success: boolean;
-  data?: T | undefined;
-  error?: string;
-  requiresUserInteraction?: boolean;
-}
+import { 
+  StorageResult, 
+  StorageResults, 
+  StorageOperationResult,
+  type StorageError,
+  type StorageErrorCode
+} from './types/storage-result';
+
+// Re-export for backward compatibility
+export { StorageResult, StorageResults, StorageOperationResult } from './types/storage-result';
 
 /**
  * Storage metadata
@@ -383,7 +384,16 @@ export abstract class BaseSecureStorage implements SecureStorage {
     error?: string,
     requiresUserInteraction?: boolean
   ): StorageResult<T> {
-    return { success, data, error, requiresUserInteraction };
+    if (success) {
+      return StorageResults.ok(data as T, requiresUserInteraction);
+    } else {
+      return StorageResults.error(
+        "internal_error",
+        error || 'Unknown storage error',
+        undefined,
+        requiresUserInteraction
+      ) as StorageResult<T>;
+    }
   }
 
   /**

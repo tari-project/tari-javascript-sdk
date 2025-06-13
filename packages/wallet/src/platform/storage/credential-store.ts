@@ -5,7 +5,8 @@
  * automatic chunking for size limits, and UAC handling.
  */
 
-import { BaseSecureStorage, type StorageResult, type StorageMetadata, type StorageOptions, type StorageInfo, StorageError, AuthenticationError, QuotaExceededError } from './secure-storage.js';
+import { BaseSecureStorage, type StorageMetadata, type StorageOptions, type StorageInfo, StorageError, AuthenticationError, QuotaExceededError } from './secure-storage';
+import { type StorageResult } from './types/storage-result';
 import { PlatformDetector } from '../detector.js';
 
 /**
