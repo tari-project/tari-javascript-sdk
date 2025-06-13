@@ -154,22 +154,51 @@ export const enum WalletErrorCode {
   SigningFailed = 7013,
   VerificationFailed = 7014,
   
-  // Configuration errors (8000-8099)
-  ConfigNotFound = 8000,
-  ConfigInvalid = 8001,
-  ConfigCorrupted = 8002,
-  ConfigVersionMismatch = 8003,
-  MissingRequiredConfig = 8004,
-  InvalidConfigFormat = 8005,
-  ConfigParseError = 8006,
-  ConfigValidationFailed = 8007,
-  UnsupportedConfigVersion = 8008,
-  ConfigMigrationFailed = 8009,
-  ConfigAccessDenied = 8010,
-  ConfigLocked = 8011,
-  DefaultConfigFailed = 8012,
-  ConfigBackupFailed = 8013,
-  ConfigRestoreFailed = 8014,
+  // Contact errors (8000-8099)
+  ContactInitializationFailed = 8000,
+  ContactCleanupFailed = 8001,
+  ContactValidationFailed = 8002,
+  ContactAddFailed = 8003,
+  ContactUpdateFailed = 8004,
+  ContactRemoveFailed = 8005,
+  ContactGetFailed = 8006,
+  ContactListFailed = 8007,
+  ContactSearchFailed = 8008,
+  ContactExportFailed = 8009,
+  ContactImportFailed = 8010,
+  ContactClearFailed = 8011,
+  ContactNotFound = 8012,
+  ContactDuplicateId = 8013,
+  ContactDuplicateAlias = 8014,
+  ContactDuplicateAddress = 8015,
+  ContactStorageInitFailed = 8016,
+  ContactStorageAddFailed = 8017,
+  ContactStorageUpdateFailed = 8018,
+  ContactStorageRemoveFailed = 8019,
+  ContactStorageLoadFailed = 8020,
+  ContactStoragePersistFailed = 8021,
+  ContactStorageClearFailed = 8022,
+  ContactStorageDirectoryFailed = 8023,
+  ContactStoreNotInitialized = 8024,
+  ContactStatsFailed = 8025,
+  ContactEventTimeout = 8026,
+  
+  // Configuration errors (8100-8199)
+  ConfigNotFound = 8100,
+  ConfigInvalid = 8101,
+  ConfigCorrupted = 8102,
+  ConfigVersionMismatch = 8103,
+  MissingRequiredConfig = 8104,
+  InvalidConfigFormat = 8105,
+  ConfigParseError = 8106,
+  ConfigValidationFailed = 8107,
+  UnsupportedConfigVersion = 8108,
+  ConfigMigrationFailed = 8109,
+  ConfigAccessDenied = 8110,
+  ConfigLocked = 8111,
+  DefaultConfigFailed = 8112,
+  ConfigBackupFailed = 8113,
+  ConfigRestoreFailed = 8114,
   
   // General errors (9000-9099)
   Unknown = 9000,
@@ -213,13 +242,13 @@ export const enum WalletErrorCode {
   // FFI errors continued
   FFIOperationFailed = 5018,
   
-  // Configuration errors continued  
-  InvalidConfiguration = 8015,
-  
   // Legacy aliases for compatibility
   UnknownError = 9000, // Alias for Unknown
   FEE_ESTIMATION_FAILED = 2023, // Alias for FeeEstimationFailed
   TRANSACTION_SEND_FAILED = 2022, // Alias for TransactionSendFailed
+  
+  // Legacy configuration error aliases
+  InvalidConfiguration = 8115, // Alias for ConfigInvalid
 }
 
 /**
@@ -233,6 +262,7 @@ export enum ErrorCategory {
   FFI = 'FFI',
   Resource = 'Resource',
   Security = 'Security',
+  Contact = 'Contact',
   Configuration = 'Configuration',
   General = 'General',
 }
@@ -381,7 +411,36 @@ export const ERROR_CATEGORIES: Record<WalletErrorCode, ErrorCategory> = {
   [WalletErrorCode.SigningFailed]: ErrorCategory.Security,
   [WalletErrorCode.VerificationFailed]: ErrorCategory.Security,
   
-  // Configuration errors (8000-8099)
+  // Contact errors (8000-8099)
+  [WalletErrorCode.ContactInitializationFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactCleanupFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactValidationFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactAddFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactUpdateFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactRemoveFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactGetFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactListFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactSearchFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactExportFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactImportFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactClearFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactNotFound]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactDuplicateId]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactDuplicateAlias]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactDuplicateAddress]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStorageInitFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStorageAddFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStorageUpdateFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStorageRemoveFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStorageLoadFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStoragePersistFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStorageClearFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStorageDirectoryFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStoreNotInitialized]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactStatsFailed]: ErrorCategory.Contact,
+  [WalletErrorCode.ContactEventTimeout]: ErrorCategory.Contact,
+  
+  // Configuration errors (8100-8199)
   [WalletErrorCode.ConfigNotFound]: ErrorCategory.Configuration,
   [WalletErrorCode.ConfigInvalid]: ErrorCategory.Configuration,
   [WalletErrorCode.ConfigCorrupted]: ErrorCategory.Configuration,
