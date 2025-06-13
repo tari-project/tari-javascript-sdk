@@ -3,10 +3,10 @@
  * Provides robust error handling, call logging, and performance tracking
  */
 
-import { TariError, ErrorCode } from '../errors/index.js';
-import { generateResourceReport } from './diagnostics.js';
-import { getPlatformOptimizations, getPlatformManager } from './platform-utils.js';
-import { getMemoryMonitor, checkMemoryPressure } from './memory.js';
+import { TariError, ErrorCode } from '../errors/index';
+import { generateResourceReport } from './diagnostics';
+import { getPlatformOptimizations, getPlatformManager } from './platform-utils';
+import { getMemoryMonitor, checkMemoryPressure } from './memory';
 
 /**
  * Circuit breaker states

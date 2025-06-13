@@ -3,10 +3,10 @@
  * Provides type-safe access to native FFI handles with runtime validation
  */
 
-import { TariError, ErrorCode } from '../errors/index.js';
-import { FFIResource, ResourceType, createNativeDisposal } from './resource.js';
-import type { WalletHandle } from './types.js';
-import { isWalletHandle, createWalletHandle, unwrapWalletHandle } from './types.js';
+import { TariError, ErrorCode } from '../errors/index';
+import { FFIResource, ResourceType, createNativeDisposal } from './resource';
+import type { WalletHandle } from './types';
+import { isWalletHandle, createWalletHandle, unwrapWalletHandle } from './types';
 
 /**
  * Configuration for resource handle creation

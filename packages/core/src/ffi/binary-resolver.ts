@@ -4,7 +4,7 @@
 
 import { existsSync } from 'fs';
 import { resolve, join } from 'path';
-import { getCurrentPlatform, getBinaryPaths, normalizePath, getUnsupportedPlatformMessage } from './platforms.js';
+import { getCurrentPlatform, getBinaryPaths, normalizePath, getUnsupportedPlatformMessage } from './platforms';
 
 export interface BinaryResolverOptions {
   searchPaths?: string[];

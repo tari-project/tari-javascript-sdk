@@ -4,9 +4,9 @@
  */
 
 import { EventEmitter } from 'node:events';
-import { TariError, ErrorCode } from '../errors/index.js';
-import { getPlatformManager } from './platform-utils.js';
-import { getResourceTracker } from './tracker.js';
+import { TariError, ErrorCode } from '../errors/index';
+import { getPlatformManager } from './platform-utils';
+import { getResourceTracker } from './tracker';
 
 /**
  * Memory usage information

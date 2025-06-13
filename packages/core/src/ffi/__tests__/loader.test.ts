@@ -6,8 +6,8 @@ import { NativeModuleLoader, loadNativeModule, getNativeModule } from '../loader
 import { getMockNativeBindings, resetMockNativeBindings } from '../__mocks__/native';
 
 // Mock the native module loading
-jest.mock('../native.js', () => {
-  return require('../__mocks__/native.js').default;
+jest.mock('../native', () => {
+return require('../__mocks__/native').default;
 });
 
 describe('NativeModuleLoader', () => {

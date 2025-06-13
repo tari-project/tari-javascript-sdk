@@ -2,7 +2,7 @@
  * Native module loader with lazy loading and error handling
  */
 
-import { BinaryResolver } from './binary-resolver.js';
+import { BinaryResolver } from './binary-resolver';
 
 // Native require function for loading native modules
 declare function require(id: string): any;

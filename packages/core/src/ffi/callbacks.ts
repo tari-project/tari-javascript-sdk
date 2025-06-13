@@ -5,8 +5,8 @@
  * system, enabling JavaScript to receive events from the Rust wallet.
  */
 
-import { getFFIBindings } from './bindings.js';
-import type { WalletHandle } from './types.js';
+import { getFFIBindings } from './bindings';
+import type { WalletHandle } from './types';
 
 /**
  * Raw event payload from native FFI

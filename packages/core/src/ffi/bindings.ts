@@ -3,10 +3,10 @@
  * Provides type-safe wrappers around native functions with validation
  */
 
-import { loadNativeModule } from './loader.js';
-import type { NativeBindings } from './native.js';
-import { executeFFICall, type CallOptions } from './call-manager.js';
-import { getRetryPolicyForOperation, policyToCallOptions } from './retry.js';
+import { loadNativeModule } from './loader';
+import type { NativeBindings } from './native';
+import { executeFFICall, type CallOptions } from './call-manager';
+import { getRetryPolicyForOperation, policyToCallOptions } from './retry';
 import type {
   WalletHandle,
   FFIWalletConfig,
@@ -14,14 +14,14 @@ import type {
   FFITransactionInfo,
   FFISendTransactionOptions,
   FFIBaseNodePeer,
-} from './types.js';
+} from './types';
 import {
   createWalletHandle,
   unwrapWalletHandle,
   validateFFIWalletConfig,
   validateTransactionAmount,
   validateTariAddress,
-} from './types.js';
+} from './types';
 
 /**
  * Type-safe FFI bindings wrapper

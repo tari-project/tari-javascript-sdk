@@ -6,9 +6,9 @@
 // Polyfill for Symbol.dispose if not available
 (Symbol as any).dispose ??= Symbol('Symbol.dispose');
 
-import { TariError, ErrorCode } from '../errors/index.js';
-import type { WalletHandle } from './types.js';
-import { trackResource, untrackResource } from './tracker.js';
+import { TariError, ErrorCode } from '../errors/index';
+import type { WalletHandle } from './types';
+import { trackResource, untrackResource } from './tracker';
 
 /**
  * Type for resource disposal logic

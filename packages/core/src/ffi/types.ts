@@ -4,7 +4,7 @@
  */
 
 // Re-export core types from the core package
-export { NetworkType, LogLevel } from '../types/index.js';
+export { NetworkType, LogLevel } from '../types/index';
 
 // Handle types with branded typing for type safety
 export type WalletHandle = number & { readonly __brand: 'WalletHandle' };

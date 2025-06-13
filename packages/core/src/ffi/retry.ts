@@ -3,7 +3,7 @@
  * Provides configurable retry policies for different FFI operation types
  */
 
-import type { CallOptions } from './call-manager.js';
+import type { CallOptions } from './call-manager';
 
 /**
  * Retry policy configuration

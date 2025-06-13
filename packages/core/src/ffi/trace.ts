@@ -3,8 +3,8 @@
  * Provides detailed operation tracing for debugging and performance analysis
  */
 
-import { traceFFICall, endFFITrace, createDebugLogger } from './debug.js';
-import type { FFICallTrace } from './debug.js';
+import { traceFFICall, endFFITrace, createDebugLogger } from './debug';
+import type { FFICallTrace } from './debug';
 
 /**
  * Trace configuration for method-specific tracing

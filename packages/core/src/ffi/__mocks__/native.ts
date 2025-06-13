@@ -3,7 +3,7 @@
  * Provides deterministic test behavior for CI environments
  */
 
-import type { NativeBindings } from '../native.js';
+import type { NativeBindings } from '../native';
 
 /**
  * Mock wallet state for testing

@@ -3,11 +3,11 @@
  * Provides comprehensive debugging visibility with environment-controlled logging
  */
 
-import { TariError, ErrorCode } from '../errors/index.js';
-import { getResourceTracker } from './tracker.js';
-import { getCallManager } from './call-manager.js';
-import { getMemoryMonitor } from './memory.js';
-import { getPlatformManager } from './platform-utils.js';
+import { TariError, ErrorCode } from '../errors/index';
+import { getResourceTracker } from './tracker';
+import { getCallManager } from './call-manager';
+import { getMemoryMonitor } from './memory';
+import { getPlatformManager } from './platform-utils';
 
 /**
  * Debug namespace configuration

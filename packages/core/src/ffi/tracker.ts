@@ -3,9 +3,9 @@
  * Provides non-intrusive resource monitoring with garbage collection awareness
  */
 
-import { TariError, ErrorCode } from '../errors/index.js';
-import type { FFIResource, ResourceType } from './resource.js';
-import type { WalletHandle } from './types.js';
+import { TariError, ErrorCode } from '../errors/index';
+import type { FFIResource, ResourceType } from './resource';
+import type { WalletHandle } from './types';
 
 /**
  * Resource metadata for tracking and debugging

@@ -5,7 +5,7 @@
 
 import { join, normalize, resolve, sep, delimiter } from 'node:path';
 import { platform, arch, release, cpus } from 'node:os';
-import { TariError, ErrorCode } from '../errors/index.js';
+import { TariError, ErrorCode } from '../errors/index';
 
 /**
  * Supported platform types

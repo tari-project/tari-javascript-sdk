@@ -3,8 +3,8 @@
  * Provides comprehensive resource health monitoring and leak detection tools
  */
 
-import { getResourceTracker, type LeakInfo, type TrackingStats } from './tracker.js';
-import type { ResourceType } from './resource.js';
+import { getResourceTracker, type LeakInfo, type TrackingStats } from './tracker';
+import type { ResourceType } from './resource';
 
 /**
  * Diagnostic severity levels
