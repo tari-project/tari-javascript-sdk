@@ -3,17 +3,18 @@
 // Provides user-scope DPAPI encryption for sensitive data
 // with proper error handling and memory management.
 
-#[cfg(target_os = "windows")]
-use windows::Win32::Security::Cryptography::{
-    CryptProtectData, CryptUnprotectData, CRYPTPROTECT_UI_FORBIDDEN,
-    CRYPT_BLOB, CRYPTPROTECT_LOCAL_MACHINE
-};
+// DPAPI functions use their own local imports to avoid conflicts
 
 /// Encrypt data using Windows DPAPI
 #[cfg(target_os = "windows")]
 pub fn encrypt_data(data: &[u8], description: Option<&str>) -> Result<Vec<u8>, String> {
-    use std::ptr;
+    use windows::Win32::Security::Cryptography::{
+        CryptProtectData, CRYPTPROTECT_UI_FORBIDDEN, CRYPT_BLOB
+    };
+    use windows::Win32::System::Memory::LocalFree;
+    use windows::Win32::Foundation::HLOCAL;
     use windows::core::PWSTR;
+    use std::ptr;
     
     let mut data_in = CRYPT_BLOB {
         cbData: data.len() as u32,
@@ -31,7 +32,7 @@ pub fn encrypt_data(data: &[u8], description: Option<&str>) -> Result<Vec<u8>, S
     });
     
     unsafe {
-        let result = CryptProtectData(
+        match CryptProtectData(
             &mut data_in,
             description_wide.as_ref().map_or(PWSTR::null(), |p| *p),
             ptr::null_mut(),
@@ -39,22 +40,21 @@ pub fn encrypt_data(data: &[u8], description: Option<&str>) -> Result<Vec<u8>, S
             ptr::null_mut(),
             CRYPTPROTECT_UI_FORBIDDEN,
             &mut data_out,
-        );
-        
-        if result.is_ok() {
-            let encrypted_data = std::slice::from_raw_parts(
-                data_out.pbData,
-                data_out.cbData as usize,
-            ).to_vec();
-            
-            // Free the allocated memory
-            windows::Win32::System::Memory::LocalFree(
-                windows::Win32::Foundation::HLOCAL(data_out.pbData as isize)
-            );
-            
-            Ok(encrypted_data)
-        } else {
-            Err("DPAPI encryption failed".to_string())
+        ) {
+            Ok(_) => {
+                let encrypted_data = std::slice::from_raw_parts(
+                    data_out.pbData,
+                    data_out.cbData as usize,
+                ).to_vec();
+                
+                // Free the allocated memory
+                LocalFree(HLOCAL(data_out.pbData as isize));
+                
+                Ok(encrypted_data)
+            }
+            Err(e) => {
+                Err(format!("DPAPI encryption failed: {}", e.code().0))
+            }
         }
     }
 }
@@ -62,6 +62,11 @@ pub fn encrypt_data(data: &[u8], description: Option<&str>) -> Result<Vec<u8>, S
 /// Decrypt data using Windows DPAPI
 #[cfg(target_os = "windows")]
 pub fn decrypt_data(encrypted_data: &[u8]) -> Result<Vec<u8>, String> {
+    use windows::Win32::Security::Cryptography::{
+        CryptUnprotectData, CRYPTPROTECT_UI_FORBIDDEN, CRYPT_BLOB
+    };
+    use windows::Win32::System::Memory::LocalFree;
+    use windows::Win32::Foundation::HLOCAL;
     use std::ptr;
     
     let mut data_in = CRYPT_BLOB {
@@ -75,7 +80,7 @@ pub fn decrypt_data(encrypted_data: &[u8]) -> Result<Vec<u8>, String> {
     };
     
     unsafe {
-        let result = CryptUnprotectData(
+        match CryptUnprotectData(
             &mut data_in,
             ptr::null_mut(),
             ptr::null_mut(),
@@ -83,22 +88,21 @@ pub fn decrypt_data(encrypted_data: &[u8]) -> Result<Vec<u8>, String> {
             ptr::null_mut(),
             CRYPTPROTECT_UI_FORBIDDEN,
             &mut data_out,
-        );
-        
-        if result.is_ok() {
-            let decrypted_data = std::slice::from_raw_parts(
-                data_out.pbData,
-                data_out.cbData as usize,
-            ).to_vec();
-            
-            // Free the allocated memory
-            windows::Win32::System::Memory::LocalFree(
-                windows::Win32::Foundation::HLOCAL(data_out.pbData as isize)
-            );
-            
-            Ok(decrypted_data)
-        } else {
-            Err("DPAPI decryption failed".to_string())
+        ) {
+            Ok(_) => {
+                let decrypted_data = std::slice::from_raw_parts(
+                    data_out.pbData,
+                    data_out.cbData as usize,
+                ).to_vec();
+                
+                // Free the allocated memory
+                LocalFree(HLOCAL(data_out.pbData as isize));
+                
+                Ok(decrypted_data)
+            }
+            Err(e) => {
+                Err(format!("DPAPI decryption failed: {}", e.code().0))
+            }
         }
     }
 }

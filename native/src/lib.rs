@@ -20,6 +20,11 @@ pub mod linux;
 pub mod keychain_bridge;
 pub use keychain_bridge::*;
 
+// Windows credential store bridge
+#[path = "../windows-credential-bridge.rs"]
+pub mod windows_credential_bridge;
+pub use windows_credential_bridge::*;
+
 use napi_derive::napi;
 use napi::{Result, Env};
 
