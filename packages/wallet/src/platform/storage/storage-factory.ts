@@ -10,6 +10,8 @@ import { getCapabilitiesManager, type CapabilityAssessment } from '../capabiliti
 import type { SecureStorage, StorageConfig, StorageResult } from './secure-storage.js';
 import { BackendHealthMonitor, type BackendHealth, type HealthCheckConfig } from './backend-health.js';
 import { StorageMigrator, type MigrationPlan, type MigrationProgress, MigrationStrategy } from './migration.js';
+import { SecureStorageCache, type CacheConfig } from './cache.js';
+import { BatchStorageOperations, type BatchConfig } from './batch-operations.js';
 
 /**
  * Storage backend types
@@ -40,6 +42,14 @@ export interface FactoryConfig extends StorageConfig {
   enableAutoFailover?: boolean;
   /** Minimum number of healthy backends to maintain */
   minHealthyBackends?: number;
+  /** Enable caching layer */
+  enableCaching?: boolean;
+  /** Cache configuration */
+  cacheConfig?: CacheConfig;
+  /** Enable batch operations */
+  enableBatching?: boolean;
+  /** Batch operations configuration */
+  batchConfig?: BatchConfig;
 }
 
 /**
@@ -444,12 +454,24 @@ export class StorageFactory {
       throw new Error('No storage backends available');
     }
 
-    if (backends.length === 1 && !config.enableHealthMonitoring) {
+    if (backends.length === 1 && !config.enableHealthMonitoring && !config.enableCaching && !config.enableBatching) {
       return backends[0];
     }
 
     // Use enhanced multi-backend storage for redundancy and health monitoring
-    return new EnhancedMultiBackendStorage(backends, config, backendTypes);
+    let storage: SecureStorage = new EnhancedMultiBackendStorage(backends, config, backendTypes);
+
+    // Add caching layer if enabled
+    if (config.enableCaching) {
+      storage = new SecureStorageCache(storage, config.cacheConfig);
+    }
+
+    // Add batch operations layer if enabled
+    if (config.enableBatching) {
+      storage = new BatchStorageOperations(storage, config.batchConfig);
+    }
+
+    return storage;
   }
 
   /**
