@@ -22,7 +22,17 @@ export * from './types/utils';
 export { createMicroTari, createTransactionId, asMicroTari } from './types/branded';
 export { microTariFromFFI, microTariToFFI } from './types/conversions';
 // Export specific branded types
-export type { MicroTari, TransactionId, TariAddressString, ValidatedSeedPhrase } from './types/branded';
+export type { 
+  MicroTari, 
+  TransactionId, 
+  TariAddressString, 
+  ValidatedSeedPhrase,
+  UnixTimestamp,
+  BlockHeight,
+  Hash,
+  Commitment,
+  Base58Address
+} from './types/branded';
 export * from './types/config';
 export * from './types/wallet-config';
 export * from './types/balance';
