@@ -58,13 +58,15 @@ module.exports = {
   // Module resolution (always use mocks for unit tests)
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    // Always mock native FFI for unit tests
-    '^../native\\.js$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
-    '^@tari-project/tarijs-core/native$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
+    // Always mock native FFI for unit tests - use centralized mock
+    '^../native\\.js$': '<rootDir>/tests/mocks/ffi-bindings.ts',
+    '^@tari-project/tarijs-core/native$': '<rootDir>/tests/mocks/ffi-bindings.ts',
     // Package mappings
-    '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src',
-    '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src',
-    '^@tari-project/tarijs-build$': '<rootDir>/packages/build/src',
+    '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src/index.ts',
+    '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src/index.ts',
+    '^@tari-project/tarijs-build$': '<rootDir>/packages/build/src/index.ts',
+    // Mock missing polyfill modules  
+    '^@tari/core/memory/using-polyfill$': '<rootDir>/packages/core/src/memory/using-polyfill.ts',
   },
   
   // Setup files

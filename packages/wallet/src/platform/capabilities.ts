@@ -84,6 +84,16 @@ export class CapabilitiesManager {
   }
 
   /**
+   * Initialize capabilities manager (for backward compatibility)
+   * This method is a no-op since initialization happens in constructor
+   */
+  async initialize(): Promise<void> {
+    // Force assessment to run and cache results
+    this.getCapabilityAssessment();
+    this.getOptimizationRecommendations();
+  }
+
+  /**
    * Get detailed capability assessment
    */
   getCapabilityAssessment(): CapabilityAssessment {
