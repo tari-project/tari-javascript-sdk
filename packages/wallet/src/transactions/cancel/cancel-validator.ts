@@ -222,12 +222,12 @@ export class CancelValidator {
       // In a real implementation, this might check just the transaction status
       // without fetching the complete transaction data
       
-      if (!transactionId || transactionId.length === 0) {
+      if (!transactionId || transactionId === BigInt(0)) {
         return false;
       }
       
       // Basic format validation
-      if (typeof transactionId !== 'string') {
+      if (typeof transactionId !== 'bigint') {
         return false;
       }
       

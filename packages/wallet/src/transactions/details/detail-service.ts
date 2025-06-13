@@ -5,7 +5,6 @@
  * memo management, and rich metadata for complete transaction information.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
@@ -14,6 +13,7 @@ import {
   withRetry,
   RetryConfigs,
   TransactionStatus,
+  TypedEventEmitter,
   type TransactionId,
   type WalletHandle,
   type TransactionInfo,
@@ -269,7 +269,7 @@ interface CachedDetailEntry {
  * - Memo management
  * - Intelligent caching
  */
-export class DetailService extends EventEmitter<DetailServiceEvents> {
+export class DetailService extends TypedEventEmitter<DetailServiceEvents> {
   private readonly walletHandle: WalletHandle;
   private readonly config: DetailServiceConfig;
   private readonly confirmationTracker: ConfirmationTracker;

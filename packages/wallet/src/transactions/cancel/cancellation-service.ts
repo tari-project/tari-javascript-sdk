@@ -5,7 +5,6 @@
  * refund handling, and proper state management for the Tari wallet SDK.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
@@ -13,6 +12,7 @@ import {
   withErrorContext,
   withRetry,
   RetryConfigs,
+  TypedEventEmitter,
   type TransactionId,
   type WalletHandle,
   type MicroTari,
@@ -117,7 +117,7 @@ export interface CancellationStatistics {
  * - Statistics and monitoring
  * - Proper error handling and recovery
  */
-export class CancellationService extends EventEmitter<CancellationServiceEvents> {
+export class CancellationService extends TypedEventEmitter<CancellationServiceEvents> {
   private readonly walletHandle: WalletHandle;
   private readonly config: CancellationServiceConfig;
   private readonly validator: CancelValidator;
@@ -239,7 +239,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
       
       // Emit failure event
       if (this.config.enableEventEmission) {
-        this.emit('cancellation:failed', transactionId, result.error);
+        this.emit('cancellation:failed', transactionId, result.error!);
       }
       
       throw error;
@@ -283,7 +283,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
         this.walletHandle
       );
       
-      const pendingTransactions: PendingOutboundTransaction[] = JSON.parse(pendingOutboundJson) as PendingOutboundTransaction[];
+      const pendingTransactions: PendingOutboundTransaction[] = JSON.parse(pendingOutboundJson as string) as PendingOutboundTransaction[];
       
       // Filter for cancellable transactions
       const cancellable: PendingOutboundTransaction[] = [];
@@ -399,7 +399,7 @@ export class CancellationService extends EventEmitter<CancellationServiceEvents>
         transactionId.toString()
       );
       
-      return result === true || result === 'true' || result === 1;
+      return Boolean(result);
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.FFIOperationFailed,

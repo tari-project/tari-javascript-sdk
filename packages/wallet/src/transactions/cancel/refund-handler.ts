@@ -5,7 +5,6 @@
  * balance updates, fee recovery, and event emission.
  */
 
-import { EventEmitter } from 'node:events';
 import {
   getFFIBindings,
   WalletError,
@@ -14,6 +13,7 @@ import {
   withRetry,
   RetryConfigs,
   microTariFromFFI,
+  TypedEventEmitter,
   type TransactionId,
   type WalletHandle,
   type MicroTari,
@@ -82,7 +82,7 @@ export interface RefundStatistics {
  * - Emitting events for UI updates
  * - Providing detailed refund tracking
  */
-export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
+export class RefundHandler extends TypedEventEmitter<RefundHandlerEvents> {
   private readonly walletHandle: WalletHandle;
   private readonly config: CancellationServiceConfig;
   private readonly ffiBindings = getFFIBindings();
@@ -107,7 +107,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
    * Process refund for a cancelled transaction
    */
   @withErrorContext('process_refund', 'refund_handler')
-  @withRetry(() => RetryConfigs.database())
+  @withRetry(RetryConfigs.database())
   async processRefund(
     transactionId: TransactionId,
     transaction: PendingOutboundTransaction
@@ -164,7 +164,7 @@ export class RefundHandler extends EventEmitter<RefundHandlerEvents> {
         error: error instanceof Error ? error : new Error(String(error))
       };
       
-      this.emit('refund:failed', transactionId, result.error);
+      this.emit('refund:failed', transactionId, result.error!);
       
       throw error;
     }
