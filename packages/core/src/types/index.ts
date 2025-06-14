@@ -41,7 +41,7 @@ export * from './output-features';
 export * from './ffi';
 
 // Browser globals and platform types
-export * from './browser-globals';
+export type * from './browser-globals';
 
 // Additional FFI type exports for backward compatibility
 export type { FFIContact, FFIUtxoInfo } from './ffi';
