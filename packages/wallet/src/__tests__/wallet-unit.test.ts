@@ -199,7 +199,7 @@ describe('TariWallet Unit Tests', () => {
       
       // MockNativeBindings generates predictable hex address format in TariAddress object
       expect(typeof addressObj).toBe('object');
-      expect(addressObj).toHaveProperty('address');
+      expect(addressObj.address).toBeDefined();
       expect(typeof addressObj.address).toBe('string');
       expect(addressObj.address).toMatch(/^[0-9a-f]{64}$/); // 64-character hex string
     });

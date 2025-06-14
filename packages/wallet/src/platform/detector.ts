@@ -71,6 +71,12 @@ export interface PlatformInfo {
   electronVersion?: string;
   /** Tauri version (if applicable) */
   tauriVersion?: string;
+  /** Running in Electron environment */
+  isElectron: boolean;
+  /** Running in Node.js environment */
+  isNode: boolean;
+  /** Running in container environment */
+  isContainer: boolean;
 }
 
 /**
@@ -87,12 +93,16 @@ export class PlatformDetector {
       return this.cachedInfo;
     }
 
+    const runtime = this.detectRuntimeEnvironment();
     const info: PlatformInfo = {
       os: this.detectOperatingSystem(),
-      runtime: this.detectRuntimeEnvironment(),
+      runtime,
       arch: this.detectArchitecture(),
       version: this.detectVersion(),
       capabilities: this.detectCapabilities(),
+      isElectron: runtime === 'electron-main' || runtime === 'electron-renderer',
+      isNode: runtime === 'node',
+      isContainer: this.detectContainerEnvironment(),
     };
 
     // Add version information if available
@@ -275,6 +285,44 @@ export class PlatformDetector {
     }
 
     return 'unknown';
+  }
+
+  /**
+   * Detect if running in container environment
+   */
+  private static detectContainerEnvironment(): boolean {
+    if (this.hasNodeProcess()) {
+      try {
+        // Check for common container environment variables
+        const containerVars = [
+          'DOCKER_CONTAINER',
+          'KUBERNETES_SERVICE_HOST',
+          'CI',
+          'GITHUB_ACTIONS',
+          'GITLAB_CI',
+          'CIRCLECI',
+          'TRAVIS'
+        ];
+        
+        const isContainer = containerVars.some(varName => process.env[varName]);
+        
+        // Check for /.dockerenv file
+        if (!isContainer) {
+          try {
+            const fs = require('fs');
+            return fs.existsSync('/.dockerenv');
+          } catch {
+            // fs not available or file check failed
+          }
+        }
+        
+        return isContainer;
+      } catch {
+        // process.env not available
+      }
+    }
+    
+    return false;
   }
 
   /**
