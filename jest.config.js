@@ -56,7 +56,7 @@ module.exports = {
     '^.+\\.(ts|tsx|mts|cts)$': ['ts-jest', {
       useESM: false,
       tsconfig: {
-        target: 'ES2023',
+        target: 'ES2022',
         module: 'CommonJS',
         moduleResolution: 'node',
         allowSyntheticDefaultImports: true,
