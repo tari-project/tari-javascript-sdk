@@ -68,7 +68,7 @@ export class NativeModuleLoader {
     try {
       // In test environment, use mock bindings directly
       if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
-        const { getMockNativeBindings } = await import('./__mocks__/native');
+        const { getMockNativeBindings } = await import('./__mocks__/native.js');
         this.nativeModule = getMockNativeBindings();
       } else {
         const resolvedBinary = this.resolver.resolveBinary();
