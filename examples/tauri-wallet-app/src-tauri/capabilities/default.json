@@ -1,0 +1,36 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main application window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:app:default",
+    "core:window:default",
+    "dialog:default",
+    "notification:default",
+    {
+      "identifier": "wallet:invoke",
+      "allow": [
+        "wallet_initialize",
+        "wallet_get_balance",
+        "wallet_get_address", 
+        "wallet_send_transaction",
+        "wallet_get_transactions",
+        "wallet_get_status",
+        "wallet_destroy",
+        "secure_storage_store",
+        "secure_storage_retrieve",
+        "secure_storage_remove",
+        "secure_storage_exists",
+        "secure_storage_list",
+        "secure_storage_get_metadata",
+        "secure_storage_clear",
+        "secure_storage_get_info",
+        "secure_storage_test",
+        "get_platform_info",
+        "validate_address"
+      ]
+    }
+  ]
+}
