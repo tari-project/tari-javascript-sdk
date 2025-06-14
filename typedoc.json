@@ -9,6 +9,7 @@
   "theme": "default",
   "includeVersion": true,
   "readme": "README.md",
+  "tsconfig": "tsconfig.base.json",
   "exclude": [
     "**/*test*",
     "**/*spec*",

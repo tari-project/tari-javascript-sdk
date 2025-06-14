@@ -10,8 +10,8 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  NODE_VERSION: '18'
-  RUST_VERSION: '1.70'
+  NODE_VERSION: '21.6.0'
+  RUST_VERSION: '1.80'
 
 jobs:
   # Unit tests with mocked FFI
@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [18, 20]
+        node-version: [21.6.0, 22]
       fail-fast: false
     
     steps:
