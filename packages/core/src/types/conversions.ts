@@ -191,6 +191,27 @@ export function unixTimestampFromFFI(value: number): UnixTimestamp {
   return value as UnixTimestamp;
 }
 
+/**
+ * Convert UnixTimestamp to Date object
+ */
+export function unixTimestampToDate(timestamp: UnixTimestamp): Date {
+  return new Date((timestamp as number) * 1000);
+}
+
+/**
+ * Convert UnixTimestamp to ISO string
+ */
+export function unixTimestampToISOString(timestamp: UnixTimestamp): string {
+  return unixTimestampToDate(timestamp).toISOString();
+}
+
+/**
+ * Convert Date to UnixTimestamp
+ */
+export function dateToUnixTimestamp(date: Date): UnixTimestamp {
+  return Math.floor(date.getTime() / 1000) as UnixTimestamp;
+}
+
 // Array conversion helpers
 
 /**
@@ -335,4 +356,46 @@ export function safeWalletHandleFromFFI(value: unknown): WalletHandle | null {
     return walletHandleFromFFI(value);
   }
   return null;
+}
+
+// String representation utilities for display and compatibility
+
+/**
+ * Convert TransactionId to hex string for display/logging
+ */
+export function transactionIdToHex(value: TransactionId): string {
+  return (value as bigint).toString(16);
+}
+
+/**
+ * Convert TransactionId to decimal string for display/logging
+ */
+export function transactionIdToString(value: TransactionId): string {
+  return (value as bigint).toString();
+}
+
+/**
+ * Convert hex string to TransactionId
+ */
+export function transactionIdFromHex(hex: string): TransactionId {
+  return BigInt(`0x${hex.replace(/^0x/, '')}`) as TransactionId;
+}
+
+/**
+ * Convert decimal string to TransactionId
+ */
+export function transactionIdFromString(str: string): TransactionId {
+  return BigInt(str) as TransactionId;
+}
+
+/**
+ * Type predicate to check if string can be converted to TransactionId
+ */
+export function isValidTransactionIdString(value: string): boolean {
+  try {
+    BigInt(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
