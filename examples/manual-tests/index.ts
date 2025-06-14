@@ -4,7 +4,12 @@
  */
 
 import { TariWallet } from '@tari-project/tarijs-wallet';
-import { WalletConfigBuilder, NetworkType } from '@tari-project/tarijs-wallet/testing';
+import { WalletConfigBuilder } from '@tari-project/tarijs-wallet/testing';
+import { 
+  NetworkType,
+  transactionIdToString, 
+  unixTimestampToISOString 
+} from '@tari-project/tarijs-core';
 import * as readline from 'readline';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -199,7 +204,7 @@ export class ManualTestSuite {
     console.log(`Sender balance after: ${balanceAfter.available} µT`);
     console.log(`Pending outgoing: ${balanceAfter.pendingOutgoing} µT`);
     
-    await this.waitForTransactionProgress(txId, this.sender);
+    await this.waitForTransactionProgress(transactionIdToString(txId), this.sender);
   }
 
   /**
@@ -236,7 +241,7 @@ export class ManualTestSuite {
       console.log(`ℹ️  Could not retrieve memo: ${error}`);
     }
     
-    await this.waitForTransactionProgress(txId, this.sender);
+    await this.waitForTransactionProgress(transactionIdToString(txId), this.sender);
   }
 
   /**
@@ -265,7 +270,7 @@ export class ManualTestSuite {
       console.log(`  Status: ${tx.status}`);
       console.log(`  Direction: ${tx.isInbound ? 'Inbound' : 'Outbound'}`);
       console.log(`  Confirmations: ${tx.confirmations}`);
-      console.log(`  Timestamp: ${tx.timestamp.toISOString()}`);
+      console.log(`  Timestamp: ${unixTimestampToISOString(tx.timestamp)}`);
       
       if (tx.message) {
         console.log(`  Message: "${tx.message}"`);
@@ -404,24 +409,24 @@ export class ManualTestSuite {
     const senderSync = await this.sender.getSyncStatus();
     const receiverSync = await this.receiver.getSyncStatus();
     
-    console.log(`Sender sync status: ${senderSync.isSynced ? 'Synced' : 'Not synced'}`);
-    console.log(`  Local height: ${senderSync.localHeight}`);
-    console.log(`  Network height: ${senderSync.networkHeight}`);
+    console.log(`Sender sync status: ${!senderSync.isSyncing ? 'Synced' : 'Not synced'}`);
+    console.log(`  Local height: ${senderSync.currentHeight}`);
+    console.log(`  Network height: ${senderSync.targetHeight}`);
     
-    console.log(`Receiver sync status: ${receiverSync.isSynced ? 'Synced' : 'Not synced'}`);
-    console.log(`  Local height: ${receiverSync.localHeight}`);
-    console.log(`  Network height: ${receiverSync.networkHeight}`);
+    console.log(`Receiver sync status: ${!receiverSync.isSyncing ? 'Synced' : 'Not synced'}`);
+    console.log(`  Local height: ${receiverSync.currentHeight}`);
+    console.log(`  Network height: ${receiverSync.targetHeight}`);
     
-    if (!senderSync.isSynced || !receiverSync.isSynced) {
+    if (senderSync.isSyncing || receiverSync.isSyncing) {
       console.log('\nStarting wallet sync...');
       
       const syncPromises = [];
       
-      if (!senderSync.isSynced) {
+      if (senderSync.isSyncing) {
         syncPromises.push(this.sender.startSync());
       }
       
-      if (!receiverSync.isSynced) {
+      if (receiverSync.isSyncing) {
         syncPromises.push(this.receiver.startSync());
       }
       
@@ -486,9 +491,9 @@ export class ManualTestSuite {
       for (const txId of txIds) {
         try {
           const status = await this.sender.getTransactionStatus(txId);
-          console.log(`  ${txId}: ${status}`);
+          console.log(`  ${transactionIdToString(txId)}: ${status}`);
         } catch (error) {
-          console.log(`  ${txId}: Status check failed - ${error}`);
+          console.log(`  ${transactionIdToString(txId)}: Status check failed - ${error}`);
         }
       }
       
