@@ -63,6 +63,7 @@ module.exports = {
     '^../native\\.js$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
     '^mock-native-module$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
     '^@tari-project/tarijs-core/native$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
+    '^@tari-project/tarijs-core/ffi/__mocks__/native$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
     // Package mappings
     '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src/index.ts',
     '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src/index.ts',
@@ -77,6 +78,9 @@ module.exports = {
     '^@tari/core/memory/pressure-monitor$': '<rootDir>/packages/core/src/memory/pressure-monitor.ts',
     '^@tari/core/memory/gc-coordinator$': '<rootDir>/packages/core/src/memory/gc-coordinator.ts',
     '^@tari/core/memory/heap-stats$': '<rootDir>/packages/core/src/memory/heap-stats.ts',
+    // Additional core memory mappings for inheritance chain fixes
+    '^@tari-project/tarijs-core/memory/(.*)$': '<rootDir>/packages/core/src/memory/$1',
+    '^@core/memory/(.*)$': '<rootDir>/packages/core/src/memory/$1',
     '^@tari-project/tarijs-core/utils/typed-event-emitter$': '<rootDir>/packages/core/src/utils/typed-event-emitter.ts',
     '^@tari/core/performance/call-batcher$': '<rootDir>/packages/core/src/performance/call-batcher.ts',
     '^@tari/core/performance/batch-executor$': '<rootDir>/packages/core/src/performance/batch-executor.ts',
@@ -86,7 +90,7 @@ module.exports = {
   // Setup files
   setupFilesAfterEnv: [
     '<rootDir>/jest.setup.js',
-    '<rootDir>/tests/setup/unit-setup.ts'
+    '<rootDir>/tests/setup/unit-test-setup.ts'
   ],
   
   // Test timeout

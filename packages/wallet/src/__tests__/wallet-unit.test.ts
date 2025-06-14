@@ -17,7 +17,8 @@ import {
   BalanceBuilder,
   TransactionBuilder 
 } from '../testing/builders';
-// Note: FFI mocking is handled automatically by Jest moduleNameMapper
+// Import mock function for unit tests
+import { getMockNativeBindings } from '@tari-project/tarijs-core/ffi/__mocks__/native';
 
 describe('TariWallet Unit Tests', () => {
   let mockFFI: any;
