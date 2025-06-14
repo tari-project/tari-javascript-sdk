@@ -7,9 +7,15 @@ import {
   Balance,
   Transaction,
   PendingTransaction,
-  TransactionStatus,
-  NetworkType,
 } from './factories';
+import {
+  NetworkType,
+  TransactionStatus,
+  createMicroTari,
+  createTransactionId,
+  WalletPath,
+  TariAddressString
+} from '@tari-project/tarijs-core';
 import { randomBytes } from 'crypto';
 
 /**

@@ -4,61 +4,55 @@
  */
 
 import { randomBytes } from 'crypto';
-
-// Transaction status constants
-export enum TransactionStatus {
-  Pending = 'pending',
-  Broadcast = 'broadcast',
-  MinedUnconfirmed = 'mined_unconfirmed',
-  MinedConfirmed = 'mined_confirmed',
-  Cancelled = 'cancelled',
-  Rejected = 'rejected',
-}
-
-// Network types
-export enum NetworkType {
-  Mainnet = 'mainnet',
-  Testnet = 'testnet',
-  Localnet = 'localnet',
-}
+import { 
+  NetworkType,
+  TransactionStatus,
+  createMicroTari, 
+  MicroTari, 
+  TariAddressString, 
+  createTransactionId, 
+  TransactionId,
+  UnixTimestamp,
+  WalletPath
+} from '@tari-project/tarijs-core';
 
 // Balance structure
 export interface Balance {
-  available: bigint;
-  pendingIncoming: bigint;
-  pendingOutgoing: bigint;
-  timelocked: bigint;
+  available: MicroTari;
+  pendingIncoming: MicroTari;
+  pendingOutgoing: MicroTari;
+  timelocked: MicroTari;
 }
 
 // Transaction structure
 export interface Transaction {
-  id: string;
-  amount: bigint;
-  fee: bigint;
+  id: TransactionId;
+  amount: MicroTari;
+  fee: MicroTari;
   status: TransactionStatus;
   message: string;
   timestamp: Date;
   isInbound: boolean;
-  address: string;
+  address: TariAddressString;
   confirmations: number;
 }
 
 // Pending transaction structure
 export interface PendingTransaction {
-  id: string;
-  amount: bigint;
-  fee: bigint;
+  id: TransactionId;
+  amount: MicroTari;
+  fee: MicroTari;
   message: string;
   timestamp: Date;
-  recipientAddress: string;
+  recipientAddress: TariAddressString;
   status: TransactionStatus;
 }
 
 // Wallet configuration
 export interface WalletConfig {
   network: NetworkType;
-  storagePath: string;
-  logPath?: string;
+  storagePath: WalletPath;
+  logPath?: WalletPath;
   logLevel?: number;
   passphrase?: string;
   seedWords?: string[];
@@ -71,7 +65,7 @@ export class WalletConfigFactory {
   static create(overrides?: Partial<WalletConfig>): WalletConfig {
     return {
       network: NetworkType.Testnet,
-      storagePath: `/tmp/test-wallet-${randomBytes(8).toString('hex')}`,
+      storagePath: `/tmp/test-wallet-${randomBytes(8).toString('hex')}` as WalletPath,
       logLevel: 2, // Info level
       ...overrides,
     };
@@ -112,30 +106,30 @@ export class WalletConfigFactory {
 export class BalanceFactory {
   static create(overrides?: Partial<Balance>): Balance {
     return {
-      available: 1000000000n, // 1 Tari in µT
-      pendingIncoming: 0n,
-      pendingOutgoing: 0n,
-      timelocked: 0n,
+      available: createMicroTari(1000000000n), // 1 Tari in µT
+      pendingIncoming: createMicroTari(0n),
+      pendingOutgoing: createMicroTari(0n),
+      timelocked: createMicroTari(0n),
       ...overrides,
     };
   }
 
   static empty(): Balance {
     return this.create({
-      available: 0n,
-      pendingIncoming: 0n,
-      pendingOutgoing: 0n,
-      timelocked: 0n,
+      available: createMicroTari(0n),
+      pendingIncoming: createMicroTari(0n),
+      pendingOutgoing: createMicroTari(0n),
+      timelocked: createMicroTari(0n),
     });
   }
 
-  static withAvailable(amount: bigint): Balance {
+  static withAvailable(amount: MicroTari): Balance {
     return this.create({
       available: amount,
     });
   }
 
-  static withPending(incoming: bigint, outgoing: bigint): Balance {
+  static withPending(incoming: MicroTari, outgoing: MicroTari): Balance {
     return this.create({
       pendingIncoming: incoming,
       pendingOutgoing: outgoing,
@@ -144,10 +138,10 @@ export class BalanceFactory {
 
   static rich(): Balance {
     return this.create({
-      available: 100000000000n, // 100 Tari
-      pendingIncoming: 5000000000n, // 5 Tari
-      pendingOutgoing: 2000000000n, // 2 Tari
-      timelocked: 1000000000n, // 1 Tari
+      available: createMicroTari(100000000000n), // 100 Tari
+      pendingIncoming: createMicroTari(5000000000n), // 5 Tari
+      pendingOutgoing: createMicroTari(2000000000n), // 2 Tari
+      timelocked: createMicroTari(1000000000n), // 1 Tari
     });
   }
 }
@@ -157,16 +151,16 @@ export class BalanceFactory {
  */
 export class TransactionFactory {
   static create(overrides?: Partial<Transaction>): Transaction {
-    const id = randomBytes(16).toString('hex');
+    const idStr = randomBytes(16).toString('hex');
     return {
-      id,
-      amount: 1000000n, // 0.001 Tari
-      fee: 5000n, // Standard fee
+      id: createTransactionId(BigInt(`0x${idStr}`)),
+      amount: createMicroTari(1000000n), // 0.001 Tari
+      fee: createMicroTari(5000n), // Standard fee
       status: TransactionStatus.Pending,
-      message: `Test transaction ${id.slice(0, 8)}`,
+      message: `Test transaction ${idStr.slice(0, 8)}`,
       timestamp: new Date(),
       isInbound: false,
-      address: `tari://testnet/mock_address_${randomBytes(8).toString('hex')}`,
+      address: `tari://testnet/mock_address_${randomBytes(8).toString('hex')}` as TariAddressString,
       confirmations: 0,
       ...overrides,
     };
@@ -212,8 +206,8 @@ export class TransactionFactory {
 
   static largeAmount(overrides?: Partial<Transaction>): Transaction {
     return this.create({
-      amount: 10000000000n, // 10 Tari
-      fee: 25000n, // Higher fee for large amount
+      amount: createMicroTari(10000000000n), // 10 Tari
+      fee: createMicroTari(25000n), // Higher fee for large amount
       ...overrides,
     });
   }
@@ -231,14 +225,14 @@ export class TransactionFactory {
  */
 export class PendingTransactionFactory {
   static create(overrides?: Partial<PendingTransaction>): PendingTransaction {
-    const id = randomBytes(16).toString('hex');
+    const idStr = randomBytes(16).toString('hex');
     return {
-      id,
-      amount: 1000000n, // 0.001 Tari
-      fee: 5000n,
-      message: `Test pending transaction ${id.slice(0, 8)}`,
+      id: createTransactionId(BigInt(`0x${idStr}`)),
+      amount: createMicroTari(1000000n), // 0.001 Tari
+      fee: createMicroTari(5000n),
+      message: `Test pending transaction ${idStr.slice(0, 8)}`,
       timestamp: new Date(),
-      recipientAddress: `tari://testnet/recipient_${randomBytes(8).toString('hex')}`,
+      recipientAddress: `tari://testnet/recipient_${randomBytes(8).toString('hex')}` as TariAddressString,
       status: TransactionStatus.Pending,
       ...overrides,
     };
