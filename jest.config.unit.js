@@ -101,8 +101,8 @@ module.exports = {
     '<rootDir>/tests/setup/unit-setup.ts'
   ],
   
-  // Test timeout
-  testTimeout: 10000,
+  // Test timeout - reduced since mocks should be fast
+  testTimeout: 5000,
   
   // Performance
   verbose: false,

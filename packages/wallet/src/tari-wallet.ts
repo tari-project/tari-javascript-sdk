@@ -1584,6 +1584,15 @@ export class TariWallet implements AsyncDisposable {
   }
 
   /**
+   * Static factory method for restoring wallet instances from seed words
+   */
+  static async restore(seedWords: string[], config: WalletConfig): Promise<TariWallet> {
+    // This will be delegated to WalletFactory to avoid circular imports
+    const { WalletFactory } = await import('./wallet-factory.js');
+    return WalletFactory.restore(seedWords, config);
+  }
+
+  /**
    * Initialize event system (internal use)
    */
   private async initializeEventSystem(): Promise<void> {

@@ -44,7 +44,11 @@ describe('TariWallet', () => {
   });
 
   describe('Wallet Restoration', () => {
-    const validSeedWords = Array(24).fill('abandon');
+    const validSeedWords = [
+      'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
+      'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
+      'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual'
+    ];
 
     it('should create wallet from valid seed words', async () => {
       const wallet = await TariWallet.restore(validSeedWords, validConfig);
@@ -55,11 +59,11 @@ describe('TariWallet', () => {
 
     it('should throw error for invalid seed word count', async () => {
       const invalidSeeds = ['abandon', 'ability'];
-      await expect(TariWallet.restore(invalidSeeds, validConfig)).rejects.toThrow('Seed words must be exactly 24 words');
+      await expect(TariWallet.restore(invalidSeeds, validConfig)).rejects.toThrow('Invalid word count');
     });
 
     it('should throw error for empty seed words', async () => {
-      await expect(TariWallet.restore([], validConfig)).rejects.toThrow('Seed words must be exactly 24 words');
+      await expect(TariWallet.restore([], validConfig)).rejects.toThrow('Seed phrase cannot be empty');
     });
   });
 
@@ -76,12 +80,16 @@ describe('TariWallet', () => {
       }
     });
 
-    it('should throw not implemented for getAddress', async () => {
-      await expect(wallet.getAddress()).rejects.toThrow('not yet implemented');
+    it('should get wallet address successfully', async () => {
+      const address = await wallet.getAddress();
+      expect(address).toBeDefined();
+      expect(typeof address.normalized).toBe('string');
     });
 
-    it('should throw not implemented for getBalance', async () => {
-      await expect(wallet.getBalance()).rejects.toThrow('not yet implemented');
+    it('should get wallet balance successfully', async () => {
+      const balance = await wallet.getBalance();
+      expect(balance).toBeDefined();
+      expect(typeof balance.total).toBe('bigint');
     });
 
     it('should throw not implemented for sendTransaction', async () => {
@@ -129,7 +137,7 @@ describe('TariWallet', () => {
       await wallet.destroy();
 
       expect(wallet.isDestroyed).toBe(true);
-      await expect(wallet.getBalance()).rejects.toThrow('Wallet instance has been destroyed');
+      await expect(wallet.getBalance()).rejects.toThrow('Cannot use wallet after it has been destroyed');
     });
 
     it('should allow multiple destroy calls', async () => {

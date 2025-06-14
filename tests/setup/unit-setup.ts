@@ -3,6 +3,9 @@
  * Uses centralized mock to avoid circular dependencies
  */
 
+import { getMockStateManager, resetMockStateManager } from '../../packages/core/src/ffi/__mocks__/mock-state-manager';
+import { resetMockNativeBindings } from '../../packages/core/src/ffi/__mocks__/native';
+
 // Jest will substitute the native module using moduleNameMapper
 // This file just provides test utilities and setup
 
@@ -13,21 +16,52 @@ beforeEach(() => {
   
   // Reset mock implementations to defaults
   // Note: Actual mock functions are managed by Jest moduleNameMapper
+  resetMockNativeBindings();
+  resetMockStateManager();
   
   // Mock timers to prevent performance monitoring from running during tests
-  jest.useFakeTimers();
+  // Use 'modern' implementation which handles setImmediate correctly
+  jest.useFakeTimers({ legacyFakeTimers: false });
   
   // Set environment variable to disable performance monitoring in tests
   process.env.NODE_ENV = 'test';
   process.env.DISABLE_PERFORMANCE_MONITORING = 'true';
+  
+  // Take initial state snapshot for debugging
+  getMockStateManager().takeSnapshot();
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Take final state snapshot
+  const stateManager = getMockStateManager();
+  stateManager.takeSnapshot();
+  
+  // Validate mock state consistency
+  const validation = stateManager.validateState();
+  if (!validation.isValid) {
+    console.warn('Mock state validation failed:', validation.errors);
+  }
+  
+  // Check for potential memory leaks
+  const leakCheck = stateManager.checkForLeaks();
+  if (leakCheck.hasLeaks) {
+    console.warn('Potential mock memory leaks detected:', leakCheck.issues);
+  }
+  
+  // Advance any pending timers to completion
+  jest.runOnlyPendingTimers();
+  
+  // Clear pending immediate callbacks
+  jest.clearAllTimers();
+  
   // Clean up fake timers
   jest.useRealTimers();
   
   // Clean up environment
   delete process.env.DISABLE_PERFORMANCE_MONITORING;
+  
+  // Force any pending setImmediate callbacks to complete
+  await new Promise(resolve => setImmediate(resolve));
 });
 
 // Global test utilities for unit tests

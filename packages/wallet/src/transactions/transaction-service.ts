@@ -781,6 +781,153 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
   }
 
   /**
+   * Get pending outbound transactions
+   */
+  async getPendingOutboundTransactions(): Promise<TransactionInfo[]> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    try {
+      // For now, return empty array - implementation would query FFI
+      return [];
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionQueryFailed,
+        'Failed to get pending outbound transactions',
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error instanceof Error ? error : undefined
+        }
+      );
+    }
+  }
+
+  /**
+   * Get pending inbound transactions
+   */
+  async getPendingInboundTransactions(): Promise<TransactionInfo[]> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    try {
+      // For now, return empty array - implementation would query FFI
+      return [];
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionQueryFailed,
+        'Failed to get pending inbound transactions',
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error instanceof Error ? error : undefined
+        }
+      );
+    }
+  }
+
+  /**
+   * Cancel a pending transaction
+   */
+  async cancelPendingTransaction(transactionId: TransactionId): Promise<boolean> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    if (!transactionId || transactionId.trim() === '') {
+      throw new WalletError(
+        WalletErrorCode.InvalidTransactionId,
+        'Transaction ID is required',
+        { severity: ErrorSeverity.Error }
+      );
+    }
+
+    try {
+      // For now, return false - implementation would call FFI
+      return false;
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionCancellationFailed,
+        'Failed to cancel pending transaction',
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error instanceof Error ? error : undefined,
+          context: { transactionId }
+        }
+      );
+    }
+  }
+
+  /**
+   * Get transaction status
+   */
+  async getTransactionStatus(transactionId: TransactionId): Promise<string> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    try {
+      // For now, return placeholder - implementation would query FFI
+      return 'unknown';
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionQueryFailed,
+        'Failed to get transaction status',
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error instanceof Error ? error : undefined,
+          context: { transactionId }
+        }
+      );
+    }
+  }
+
+  /**
+   * Get transaction confirmations
+   */
+  async getTransactionConfirmations(transactionId: TransactionId): Promise<{ confirmations: number; required: number }> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    try {
+      // For now, return placeholder - implementation would query FFI
+      return { confirmations: 0, required: 3 };
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionQueryFailed,
+        'Failed to get transaction confirmations',
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error instanceof Error ? error : undefined,
+          context: { transactionId }
+        }
+      );
+    }
+  }
+
+  /**
+   * Get fee per gram statistics
+   */
+  async getFeePerGramStats(): Promise<{ minFeePerGram: bigint; avgFeePerGram: bigint; maxFeePerGram: bigint }> {
+    this.ensureNotDisposed();
+    await this.checkOperationLimit();
+
+    try {
+      // For now, return placeholder values - implementation would query FFI
+      return {
+        minFeePerGram: BigInt(1000),
+        avgFeePerGram: BigInt(5000),
+        maxFeePerGram: BigInt(10000)
+      };
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.FeeEstimationFailed,
+        'Failed to get fee per gram statistics',
+        { 
+          severity: ErrorSeverity.Error,
+          cause: error instanceof Error ? error : undefined
+        }
+      );
+    }
+  }
+
+  /**
    * Dispose of the service and clean up resources
    */
   async dispose(): Promise<void> {
