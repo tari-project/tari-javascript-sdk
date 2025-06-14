@@ -37,8 +37,9 @@
     "README.md"
   ],
   "scripts": {
-    "build": "npm run build:ts",
+    "build": "npm run build:ts && npm run build:esm",
     "build:ts": "tsc -b",
+    "build:esm": "cp dist/index.js dist/index.mjs && cp dist/testing/index.js dist/testing/index.mjs 2>/dev/null || true",
     "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "npm run build:ts -- --watch",
     "lint": "eslint src/**/*.ts",
@@ -55,10 +56,10 @@
   },
   "devDependencies": {
     "@types/benchmark": "^2.1.5",
-    "@types/jest": "^30.0.0",
+    "@types/jest": "^29.5.0",
     "benchmark": "^2.1.4",
-    "jest": "^30.4.0",
-    "ts-jest": "^30.3.0"
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0"
   },
   "publishConfig": {
     "access": "public",

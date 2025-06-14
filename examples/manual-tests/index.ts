@@ -10,9 +10,17 @@ import {
     transactionIdToString,
     transactionIdFromString,
     unixTimestampToISOString,
-    TransactionDirection,
-    LogLevel
+    TransactionDirection
 } from '@tari-project/tarijs-core';
+
+// Import LogLevel directly with explicit type
+const LogLevel = {
+    Error: 0,
+    Warn: 1,
+    Info: 2,
+    Debug: 3,
+    Trace: 4
+} as const;
 import * as readline from 'readline';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -713,4 +721,73 @@ export function createManualTestConfig(): ManualTestConfig {
         testAmount: BigInt(process.env.TEST_AMOUNT || '1000000'), // 0.001 Tari default
         storagePath: process.env.TEST_STORAGE_PATH || join(tmpdir(), 'manual-test-wallets'),
     };
+}
+
+// Main execution
+async function main(): Promise<void> {
+    console.log('🚀 Starting Tari Manual Test Suite');
+    console.log('=====================================\n');
+
+    let testSuite: ManualTestSuite | undefined;
+
+    try {
+        // Create test configuration
+        console.log('Creating test configuration...');
+        const config = createManualTestConfig();
+        
+        // Create test suite
+        testSuite = new ManualTestSuite(config);
+        
+        // Setup wallets
+        await testSuite.setup();
+        
+        // Run interactive tests
+        await testSuite.runInteractiveTests();
+        
+    } catch (error) {
+        console.error('❌ Manual test execution failed:', error);
+        
+        if (error instanceof Error && error.message.includes('environment variable')) {
+            console.log('\n📋 Setup Instructions:');
+            console.log('1. Set SENDER_SEED_WORDS environment variable (24 space-separated words)');
+            console.log('2. Set RECEIVER_SEED_WORDS environment variable (24 space-separated words)');
+            console.log('3. Optional: Set TARI_NETWORK (testnet|mainnet, default: testnet)');
+            console.log('4. Optional: Set TEST_AMOUNT (default: 1000000 µT)');
+            console.log('5. Optional: Set TARI_BASE_NODE_PUBLIC_KEY and TARI_BASE_NODE_ADDRESS');
+            console.log('\nExample:');
+            console.log('export SENDER_SEED_WORDS="word1 word2 word3 ... word24"');
+            console.log('export RECEIVER_SEED_WORDS="word1 word2 word3 ... word24"');
+            console.log('npm run test:manual');
+        }
+        
+        process.exitCode = 1;
+    } finally {
+        // Cleanup
+        if (testSuite) {
+            try {
+                await testSuite.cleanup();
+            } catch (cleanupError) {
+                console.error('⚠️  Cleanup failed:', cleanupError);
+            }
+        }
+    }
+}
+
+// Handle process signals for graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('\n\n🛑 Received SIGINT, shutting down gracefully...');
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\n\n🛑 Received SIGTERM, shutting down gracefully...');
+    process.exit(0);
+});
+
+// Run main function
+if (require.main === module) {
+    main().catch((error) => {
+        console.error('💥 Unhandled error:', error);
+        process.exit(1);
+    });
 }

@@ -11,7 +11,6 @@ use std::collections::HashMap;
 
 use crate::types::WalletHandle;
 use crate::callbacks::{emit_wallet_event, emit_wallet_event_direct};
-use crate::error::TariWalletError;
 
 /// Transaction event types from Tari wallet
 #[derive(Debug, Clone)]
@@ -83,7 +82,7 @@ impl EventBridge {
     }
 
     /// Handle a transaction event
-    pub fn handle_transaction_event(&self, event: TransactionEvent) -> Result<(), TariWalletError> {
+    pub fn handle_transaction_event(&self, event: TransactionEvent) -> napi::Result<()> {
         let (event_type, data) = match event {
             TransactionEvent::Received { tx_id, amount, source_address, message } => {
                 let data = json!({
@@ -136,7 +135,7 @@ impl EventBridge {
     }
 
     /// Handle a balance update event
-    pub fn handle_balance_event(&self, event: BalanceEvent) -> Result<(), TariWalletError> {
+    pub fn handle_balance_event(&self, event: BalanceEvent) -> napi::Result<()> {
         let data = json!({
             "available": event.available.to_string(),
             "pendingIncoming": event.pending_incoming.to_string(),
@@ -149,7 +148,7 @@ impl EventBridge {
     }
 
     /// Handle a connectivity event
-    pub fn handle_connectivity_event(&self, event: ConnectivityEvent) -> Result<(), TariWalletError> {
+    pub fn handle_connectivity_event(&self, event: ConnectivityEvent) -> napi::Result<()> {
         let (status, data) = match event {
             ConnectivityEvent::Connected { base_node_address, peer_count } => {
                 let data = json!({
@@ -185,7 +184,7 @@ impl EventBridge {
     }
 
     /// Handle a sync progress event
-    pub fn handle_sync_progress(&self, event: SyncProgressEvent) -> Result<(), TariWalletError> {
+    pub fn handle_sync_progress(&self, event: SyncProgressEvent) -> napi::Result<()> {
         let percent = if event.total > 0 {
             ((event.current as f64 / event.total as f64) * 100.0) as u32
         } else {
@@ -213,7 +212,7 @@ impl EventBridge {
     }
 
     /// Handle wallet lifecycle events
-    pub fn handle_wallet_started(&self) -> Result<(), TariWalletError> {
+    pub fn handle_wallet_started(&self) -> napi::Result<()> {
         let data = json!({
             "timestamp": chrono::Utc::now().timestamp_millis()
         });
@@ -222,7 +221,7 @@ impl EventBridge {
         emit_wallet_event_direct(self.wallet_handle, "wallet:started", data)
     }
 
-    pub fn handle_wallet_stopped(&self) -> Result<(), TariWalletError> {
+    pub fn handle_wallet_stopped(&self) -> napi::Result<()> {
         let data = json!({
             "timestamp": chrono::Utc::now().timestamp_millis()
         });
@@ -231,7 +230,7 @@ impl EventBridge {
     }
 
     /// Handle base node connection events
-    pub fn handle_base_node_connected(&self, address: String) -> Result<(), TariWalletError> {
+    pub fn handle_base_node_connected(&self, address: String) -> napi::Result<()> {
         let data = json!({
             "address": address,
             "timestamp": chrono::Utc::now().timestamp_millis()
@@ -240,7 +239,7 @@ impl EventBridge {
         emit_wallet_event(self.wallet_handle, "basenode:connected", data)
     }
 
-    pub fn handle_base_node_disconnected(&self, address: String) -> Result<(), TariWalletError> {
+    pub fn handle_base_node_disconnected(&self, address: String) -> napi::Result<()> {
         let data = json!({
             "address": address,
             "timestamp": chrono::Utc::now().timestamp_millis()
@@ -250,7 +249,7 @@ impl EventBridge {
     }
 
     /// Handle error events
-    pub fn handle_error(&self, error: &str, context: HashMap<String, String>) -> Result<(), TariWalletError> {
+    pub fn handle_error(&self, error: &str, context: HashMap<String, String>) -> napi::Result<()> {
         let data = json!({
             "error": error,
             "context": context,
@@ -262,7 +261,7 @@ impl EventBridge {
     }
 
     /// Handle sync completion
-    pub fn handle_sync_completed(&self, duration_ms: u64) -> Result<(), TariWalletError> {
+    pub fn handle_sync_completed(&self, duration_ms: u64) -> napi::Result<()> {
         let data = json!({
             "timestamp": chrono::Utc::now().timestamp_millis(),
             "duration": duration_ms
@@ -272,7 +271,7 @@ impl EventBridge {
     }
 
     /// Handle sync failure
-    pub fn handle_sync_failed(&self, error: &str) -> Result<(), TariWalletError> {
+    pub fn handle_sync_failed(&self, error: &str) -> napi::Result<()> {
         let data = json!({
             "error": error,
             "timestamp": chrono::Utc::now().timestamp_millis()
@@ -290,13 +289,13 @@ pub fn create_event_bridge(wallet_handle: WalletHandle) -> EventBridge {
 }
 
 /// Simulate a transaction received event (for testing)
-#[cfg(any(test, feature = "test-utils"))]
+#[cfg(test)]
 pub fn simulate_transaction_received(
     wallet_handle: WalletHandle,
     tx_id: u64,
     amount: u64,
     source: &str,
-) -> Result<(), TariWalletError> {
+) -> napi::Result<()> {
     let bridge = EventBridge::new(wallet_handle);
     let event = TransactionEvent::Received {
         tx_id,
@@ -308,13 +307,13 @@ pub fn simulate_transaction_received(
 }
 
 /// Simulate a balance update event (for testing)
-#[cfg(any(test, feature = "test-utils"))]
+#[cfg(test)]
 pub fn simulate_balance_update(
     wallet_handle: WalletHandle,
     available: u64,
     pending_incoming: u64,
     pending_outgoing: u64,
-) -> Result<(), TariWalletError> {
+) -> napi::Result<()> {
     let bridge = EventBridge::new(wallet_handle);
     let event = BalanceEvent {
         available,

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Manual testing framework for funded Tari wallet operations",
   "main": "dist/index.js",
-  "type": "module",
+
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/index.js",
@@ -21,7 +21,7 @@
   "author": "The Tari Community",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@tari-project/tarijs-wallet": "workspace:*"
+    "@tari-project/tarijs-wallet": "file:../../packages/wallet"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

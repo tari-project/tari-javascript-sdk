@@ -50,6 +50,25 @@ impl fmt::Display for LegacyTariWalletError {
 
 impl std::error::Error for LegacyTariWalletError {}
 
+// Implement AsRef<str> for NAPI-RS compatibility
+impl AsRef<str> for LegacyTariWalletError {
+    fn as_ref(&self) -> &str {
+        match self {
+            LegacyTariWalletError::InvalidConfig(_) => "InvalidConfig",
+            LegacyTariWalletError::WalletNotFound => "WalletNotFound",
+            LegacyTariWalletError::WalletAlreadyExists => "WalletAlreadyExists",
+            LegacyTariWalletError::InsufficientFunds => "InsufficientFunds",
+            LegacyTariWalletError::InvalidAddress(_) => "InvalidAddress",
+            LegacyTariWalletError::TransactionNotFound(_) => "TransactionNotFound",
+            LegacyTariWalletError::NetworkError(_) => "NetworkError",
+            LegacyTariWalletError::StorageError(_) => "StorageError",
+            LegacyTariWalletError::FFIError(_) => "FFIError",
+            LegacyTariWalletError::ValidationError(_) => "ValidationError",
+            LegacyTariWalletError::TemporaryFailure(_) => "TemporaryFailure",
+        }
+    }
+}
+
 impl From<LegacyTariWalletError> for napi::Error {
     fn from(err: LegacyTariWalletError) -> Self {
         let (status, message) = match &err {

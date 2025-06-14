@@ -98,18 +98,18 @@ build_native() {
             ;;
     esac
     
-    # Build the native module
-    if cargo build --target "$target" $build_flag; then
-        log_info "Successfully built for $target"
+    # Build the wallet FFI module instead of secure storage
+    if cargo build --target "$target" $build_flag --package tari-wallet-ffi; then
+        log_info "Successfully built wallet FFI for $target"
         
         # Copy the built library to output directory
-        local lib_name="libtari_secure_storage"
+        local lib_name="libtari_wallet_ffi"
         local lib_ext=""
         local target_dir="target/$target"
         
         case "$target" in
             *windows*)
-                lib_name="tari_secure_storage"
+                lib_name="tari_wallet_ffi"
                 lib_ext=".dll"
                 ;;
             *apple*)

@@ -15,7 +15,6 @@ use tokio::sync::mpsc;
 use std::collections::HashMap;
 
 use crate::types::WalletHandle;
-use crate::error::TariWalletError;
 
 /// Event payload structure sent to JavaScript
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -110,7 +109,7 @@ pub fn emit_wallet_event(
     wallet_handle: WalletHandle,
     event_type: &str,
     data: serde_json::Value,
-) -> Result<(), TariWalletError> {
+) -> napi::Result<()> {
     let payload = EventPayload {
         event_type: event_type.to_string(),
         wallet_handle,
@@ -122,7 +121,7 @@ pub fn emit_wallet_event(
     if let Ok(emitter_lock) = EVENT_EMITTER.lock() {
         if let Some(sender) = emitter_lock.as_ref() {
             sender.send(payload).map_err(|e| {
-                TariWalletError::FFIError(format!("Failed to send event: {}", e))
+                napi::Error::new(Status::GenericFailure, format!("Failed to send event: {}", e))
             })?;
         }
     }
@@ -135,7 +134,7 @@ pub fn emit_wallet_event_direct(
     wallet_handle: WalletHandle,
     event_type: &str,
     data: serde_json::Value,
-) -> Result<(), TariWalletError> {
+) -> napi::Result<()> {
     let payload = EventPayload {
         event_type: event_type.to_string(),
         wallet_handle,
@@ -144,7 +143,7 @@ pub fn emit_wallet_event_direct(
     };
 
     let callbacks = WALLET_CALLBACKS.lock().map_err(|_| {
-        TariWalletError::FFIError("Failed to acquire callback lock".to_string())
+        napi::Error::new(Status::GenericFailure, "Failed to acquire callback lock")
     })?;
 
     if let Some(callback) = callbacks.get(&wallet_handle) {
