@@ -997,6 +997,111 @@ export class TariWallet implements AsyncDisposable {
     }
   }
 
+  /**
+   * Get the status of a specific transaction
+   */
+  async getTransactionStatus(transactionId: TransactionId): Promise<string> {
+    this.ensureNotDestroyed();
+    try {
+      // TODO: Implement real FFI call
+      // For now return placeholder status for compilation
+      return 'pending';
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionNotFound,
+        'Failed to get transaction status',
+        {
+          severity: ErrorSeverity.Error,
+          cause: error as Error
+        }
+      );
+    }
+  }
+
+  /**
+   * Start wallet synchronization with the network
+   */
+  async startSync(): Promise<void> {
+    this.ensureNotDestroyed();
+    try {
+      // TODO: Implement real FFI sync initiation
+      console.warn('startSync not yet implemented - placeholder method');
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.SyncFailed,
+        'Failed to start wallet sync',
+        {
+          severity: ErrorSeverity.Error,
+          cause: error as Error
+        }
+      );
+    }
+  }
+
+  /**
+   * Get network fee per gram statistics
+   */
+  async getFeePerGramStats(): Promise<{ feeEstimate: bigint; totalValue: bigint; outputCount: bigint }> {
+    this.ensureNotDestroyed();
+    try {
+      // TODO: Implement real FFI fee estimation
+      return {
+        feeEstimate: 1000n,
+        totalValue: 0n,
+        outputCount: 0n
+      };
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.NetworkError,
+        'Failed to get fee per gram stats',
+        {
+          severity: ErrorSeverity.Error,
+          cause: error as Error
+        }
+      );
+    }
+  }
+
+  /**
+   * Convert address to emoji ID
+   */
+  async addressToEmojiId(address: CoreTariAddress): Promise<string> {
+    this.ensureNotDestroyed();
+    try {
+      // TODO: Implement real FFI address to emoji conversion
+      return address.slice(0, 20) + '...'; // Placeholder
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.InvalidAddress,
+        'Failed to convert address to emoji ID',
+        {
+          severity: ErrorSeverity.Error,
+          cause: error as Error
+        }
+      );
+    }
+  }
+
+  /**
+   * Convert emoji ID to address
+   */
+  async emojiIdToAddress(emojiId: string): Promise<CoreTariAddress> {
+    this.ensureNotDestroyed();
+    try {
+      // TODO: Implement real FFI emoji to address conversion
+      return emojiId as CoreTariAddress; // Placeholder
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.InvalidAddress,
+        'Failed to convert emoji ID to address',
+        {
+          severity: ErrorSeverity.Error,
+          cause: error as Error
+        }
+      );
+    }
+  }
+
 
 
   // Contact management
