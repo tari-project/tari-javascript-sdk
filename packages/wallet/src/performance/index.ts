@@ -6,9 +6,9 @@
 // Core memory management
 export type { 
   using, 
-  usingAsync, 
-  MemoryDisposableResource as CoreDisposableResource
+  usingAsync
 } from '@tari-project/tarijs-core';
+export type { DisposableResource as CoreDisposableResource } from '@tari-project/tarijs-core/memory/disposable';
 
 // Re-export available performance types from core
 export type {

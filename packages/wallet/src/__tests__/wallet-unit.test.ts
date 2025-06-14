@@ -199,9 +199,9 @@ describe('TariWallet Unit Tests', () => {
       
       // MockNativeBindings generates predictable hex address format in TariAddress object
       expect(typeof addressObj).toBe('object');
-      expect(addressObj.address).toBeDefined();
-      expect(typeof addressObj.address).toBe('string');
-      expect(addressObj.address).toMatch(/^[0-9a-f]{64}$/); // 64-character hex string
+      expect(addressObj.hex).toBeDefined();
+      expect(typeof addressObj.hex).toBe('string');
+      expect(addressObj.hex).toMatch(/^[0-9a-f]{64}$/); // 64-character hex string
     });
 
     test('should handle address retrieval failure', async () => {
@@ -216,7 +216,7 @@ describe('TariWallet Unit Tests', () => {
       const addressObj = await wallet.getAddress();
       
       // Test with the address we just got from the wallet (hex format)
-      expect(addressObj.address).toMatch(/^[0-9a-f]{64}$/);
+      expect(addressObj.hex).toMatch(/^[0-9a-f]{64}$/);
       expect(addressObj.format).toBe('hex');
     });
   });

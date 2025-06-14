@@ -1,4 +1,4 @@
-import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
+import { DisposableResource } from '@tari-project/tarijs-core/memory/disposable';
 
 /**
  * TTL (Time To Live) manager for sophisticated cache expiration strategies

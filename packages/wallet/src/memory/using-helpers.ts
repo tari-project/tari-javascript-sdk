@@ -1,5 +1,5 @@
 import { safeDispose, isDisposable, isAsyncDisposable } from '@tari-project/tarijs-core';
-import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
+import { DisposableResource } from '@tari-project/tarijs-core/memory/disposable';
 
 /**
  * Helper functions for using declarations and resource management

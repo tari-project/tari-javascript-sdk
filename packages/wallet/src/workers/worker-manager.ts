@@ -1,4 +1,4 @@
-import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
+import { DisposableResource } from '@tari-project/tarijs-core/memory/disposable';
 import { WorkerPool, TaskType, TaskPriority, TaskResult, PoolStats } from './worker-pool';
 import { GlobalWorkerPools } from './worker-pool';
 import path from 'path';
