@@ -64,6 +64,10 @@ module.exports = {
     '^mock-native-module$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
     '^@tari-project/tarijs-core/native$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
     '^@tari-project/tarijs-core/ffi/__mocks__/native$': '<rootDir>/packages/core/src/ffi/__mocks__/native.ts',
+    // Mock FFI loader to prevent real binary loading in unit tests
+    '^@tari-project/tarijs-core/ffi/loader$': '<rootDir>/tests/mocks/ffi-loader-mock.ts',
+    '^\\.\\./loader$': '<rootDir>/tests/mocks/ffi-loader-mock.ts',
+    '^\\./loader$': '<rootDir>/tests/mocks/ffi-loader-mock.ts',
     // Package mappings
     '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src/index.ts',
     '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src/index.ts',
@@ -81,6 +85,10 @@ module.exports = {
     // Additional core memory mappings for inheritance chain fixes
     '^@tari-project/tarijs-core/memory/(.*)$': '<rootDir>/packages/core/src/memory/$1',
     '^@core/memory/(.*)$': '<rootDir>/packages/core/src/memory/$1',
+    // Core memory component imports
+    '^@tari-project/tarijs-core/MemoryPressureMonitor$': '<rootDir>/packages/core/src/memory/pressure-monitor.ts',
+    '^@tari-project/tarijs-core/GCCoordinator$': '<rootDir>/packages/core/src/memory/gc-coordinator.ts',
+    '^@tari-project/tarijs-core/HeapStatsCollector$': '<rootDir>/packages/core/src/memory/heap-stats.ts',
     '^@tari-project/tarijs-core/utils/typed-event-emitter$': '<rootDir>/packages/core/src/utils/typed-event-emitter.ts',
     '^@tari/core/performance/call-batcher$': '<rootDir>/packages/core/src/performance/call-batcher.ts',
     '^@tari/core/performance/batch-executor$': '<rootDir>/packages/core/src/performance/batch-executor.ts',
@@ -90,7 +98,7 @@ module.exports = {
   // Setup files
   setupFilesAfterEnv: [
     '<rootDir>/jest.setup.js',
-    '<rootDir>/tests/setup/unit-test-setup.ts'
+    '<rootDir>/tests/setup/unit-setup.ts'
   ],
   
   // Test timeout

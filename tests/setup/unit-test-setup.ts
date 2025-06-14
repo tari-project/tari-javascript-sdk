@@ -27,8 +27,7 @@ const mockFFI = {
 // Make getMockNativeBindings available globally
 (global as any).getMockNativeBindings = () => mockFFI;
 
-// Mock the native module at the module level to prevent real FFI loading
-jest.mock('../../packages/core/src/ffi/native', () => mockFFI);
-jest.mock('@tari-project/tarijs-core/native', () => mockFFI);
+// Note: Jest moduleNameMapper automatically redirects native imports to mocks
+// Global setup for getMockNativeBindings function availability
 
 export { mockFFI };

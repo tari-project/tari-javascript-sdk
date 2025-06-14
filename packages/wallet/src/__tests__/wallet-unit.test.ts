@@ -17,8 +17,8 @@ import {
   BalanceBuilder,
   TransactionBuilder 
 } from '../testing/builders';
-// Import mock function for unit tests
-import { getMockNativeBindings } from '@tari-project/tarijs-core/ffi/__mocks__/native';
+// Import mock function - Jest moduleNameMapper will redirect to __mocks__
+const { getMockNativeBindings } = require('@tari-project/tarijs-core/native');
 
 describe('TariWallet Unit Tests', () => {
   let mockFFI: any;

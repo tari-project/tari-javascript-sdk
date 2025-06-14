@@ -59,7 +59,7 @@ export interface WalletConfig {
   network: NetworkType;
   storagePath: string;
   logPath?: string;
-  logLevel?: string;
+  logLevel?: number;
   passphrase?: string;
   seedWords?: string[];
 }
@@ -72,7 +72,7 @@ export class WalletConfigFactory {
     return {
       network: NetworkType.Testnet,
       storagePath: `/tmp/test-wallet-${randomBytes(8).toString('hex')}`,
-      logLevel: 'info',
+      logLevel: 2, // Info level
       ...overrides,
     };
   }
