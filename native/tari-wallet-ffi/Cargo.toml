@@ -22,7 +22,9 @@ once_cell = { workspace = true }
 chrono = { workspace = true }
 
 # Tari FFI dependency (path will be set dynamically during build)
-# minotari_wallet_ffi = { path = "../../.tari-cache/tari-current/base_layer/wallet_ffi" }
+# Note: This path will be resolved automatically based on TARI_SOURCE_PATH
+# or from .tari-cache/tari-{version}/base_layer/wallet_ffi
+minotari_wallet_ffi = { path = "../../.tari-cache/tari-current/base_layer/wallet_ffi" }
 
 [build-dependencies]
 napi-build = "2.1"

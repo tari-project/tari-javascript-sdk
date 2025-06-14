@@ -63,6 +63,19 @@ check_dependencies() {
     log_info "Dependencies check passed"
 }
 
+setup_tari_source() {
+    log_info "Setting up Tari source dependencies..."
+    
+    # Run the Tari setup script using Node.js
+    if node scripts/setup-tari.mjs; then
+        log_info "Tari source setup completed successfully"
+    else
+        log_error "Failed to set up Tari source dependencies"
+        log_error "Please ensure you have internet connectivity and sufficient disk space"
+        exit 1
+    fi
+}
+
 setup_targets() {
     log_info "Setting up Rust targets..."
     
@@ -230,12 +243,14 @@ main() {
     case "$command" in
         all)
             check_dependencies
+            setup_tari_source
             setup_targets
             clean_build
             build_all_targets
             ;;
         current)
             check_dependencies
+            setup_tari_source
             build_current_platform
             ;;
         clean)
@@ -243,6 +258,7 @@ main() {
             ;;
         check)
             check_dependencies
+            setup_tari_source
             ;;
         help|--help|-h)
             show_help
