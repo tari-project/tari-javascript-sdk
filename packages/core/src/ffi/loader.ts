@@ -186,12 +186,10 @@ export class NativeModuleLoader {
       throw new Error('Native module is null after loading');
     }
 
-    // In test environment, check if mock is in failure mode
+    // In test environment, validate the module loaded correctly
     if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
-      if (this.nativeModule.shouldFail || 
-          (this.nativeModule.shouldSimulateFailure && this.nativeModule.shouldSimulateFailure())) {
-        throw new Error('Mock logging initialization failed');
-      }
+      // The mock itself will throw errors when in failure mode during operations
+      // We don't need to check failure mode here, just ensure the module is valid
     }
 
     // Check for essential wallet functions (these will be implemented in Task 2)

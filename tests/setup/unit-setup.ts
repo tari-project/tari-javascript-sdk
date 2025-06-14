@@ -9,10 +9,14 @@ import { resetMockNativeBindings } from '../../packages/core/src/ffi/__mocks__/n
 // Jest will substitute the native module using moduleNameMapper
 // This file just provides test utilities and setup
 
-// Set up mock before each test
+// Set up mock before each test with comprehensive isolation
 beforeEach(() => {
-  // Clear all mocks
+  // Reset module cache for complete isolation between tests
+  jest.resetModules();
+  
+  // Clear all mocks and restore original implementations
   jest.clearAllMocks();
+  jest.restoreAllMocks();
   
   // Reset mock implementations to defaults
   // Note: Actual mock functions are managed by Jest moduleNameMapper
@@ -20,7 +24,7 @@ beforeEach(() => {
   resetMockStateManager();
   
   // Mock timers to prevent performance monitoring from running during tests
-  // Use 'modern' implementation which handles setImmediate correctly
+  // Use modern implementation which handles setImmediate correctly
   jest.useFakeTimers({ legacyFakeTimers: false });
   
   // Set environment variable to disable performance monitoring in tests
@@ -48,17 +52,22 @@ afterEach(async () => {
     console.warn('Potential mock memory leaks detected:', leakCheck.issues);
   }
   
-  // Advance any pending timers to completion
+  // Run only pending timers to avoid infinite loops
   jest.runOnlyPendingTimers();
   
-  // Clear pending immediate callbacks
+  // Clear all timers and restore real timers
   jest.clearAllTimers();
-  
-  // Clean up fake timers
   jest.useRealTimers();
+  
+  // Reset all mocks after each test for complete isolation
+  jest.resetAllMocks();
   
   // Clean up environment
   delete process.env.DISABLE_PERFORMANCE_MONITORING;
+  
+  // Reset mock state after cleanup
+  resetMockNativeBindings();
+  resetMockStateManager();
   
   // Force any pending setImmediate callbacks to complete
   await new Promise(resolve => setImmediate(resolve));
