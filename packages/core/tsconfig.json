@@ -6,7 +6,8 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "noEmit": false
+    "noEmit": false,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
     "src/**/*"
