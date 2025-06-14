@@ -6,6 +6,7 @@
  */
 
 import type { SecureStorage, StorageResult } from '../platform/storage/secure-storage.js';
+import { StorageResults } from '../platform/storage/types/storage-result.js';
 import type { BatchOperation, BatchResult, BatchConfig } from '../platform/storage/batch-operations.js';
 import type { TauriStorageCommand, TauriStorageResponse } from '../types/tauri.js';
 
@@ -145,7 +146,7 @@ export class TauriBatchStorageOperations implements SecureStorage {
     };
   }
 
-  async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options?: any): Promise<StorageResult<void>> {
     if (!this.config.enableAutoBatch) {
       return this.storage.store(key, value, options);
     }
@@ -175,7 +176,7 @@ export class TauriBatchStorageOperations implements SecureStorage {
     });
   }
 
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     if (!this.config.enableAutoBatch) {
       return this.storage.remove(key);
     }
@@ -211,7 +212,7 @@ export class TauriBatchStorageOperations implements SecureStorage {
     return this.storage.getMetadata(key);
   }
 
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     // Clear operations flush pending operations first
     await this.flushPendingOperations();
     return this.storage.clear();
@@ -220,14 +221,12 @@ export class TauriBatchStorageOperations implements SecureStorage {
   async getInfo(): Promise<StorageResult<any>> {
     const storageInfo = await this.storage.getInfo();
     
-    if (!storageInfo.success) {
+    if (StorageResults.isError(storageInfo)) {
       return storageInfo;
     }
 
-    return {
-      success: true,
-      data: {
-        ...storageInfo.data,
+    return StorageResults.ok({
+      ...storageInfo.value,
         tauriBatch: {
           enabled: this.config.enableAutoBatch,
           config: this.config,
@@ -235,11 +234,10 @@ export class TauriBatchStorageOperations implements SecureStorage {
           activeInvokes: this.activeInvokes,
           queueSize: this.operationQueue.length,
         },
-      },
-    };
+      });
   }
 
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     // Test operations are not batched
     return this.storage.test();
   }
@@ -578,9 +576,9 @@ export class TauriBatchStorageOperations implements SecureStorage {
         
         return {
           id: op.id,
-          success: result.success,
-          data: result.data,
-          error: result.error,
+          success: StorageResults.isOk(result),
+          data: StorageResults.isOk(result) ? result.value : undefined,
+          error: StorageResults.isError(result) ? result.error.message : undefined,
           ipcLatency,
           priority: op.priority,
         };

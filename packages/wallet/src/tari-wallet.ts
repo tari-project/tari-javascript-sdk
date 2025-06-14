@@ -37,11 +37,11 @@ import { ContactManager } from './contacts/contact-manager.js';
 import { UtxoService } from './utxos/utxo-service.js';
 import { CoinService } from './coins/coin-service.js';
 import { 
-  type PerformanceManager, 
   type PerformanceConfig, 
   getPerformanceManager,
   configurePerformance
 } from './performance/index.js';
+import type { PerformanceManager } from './performance/performance-manager.js';
 import type { 
   CreateContactParams,
   UpdateContactParams,

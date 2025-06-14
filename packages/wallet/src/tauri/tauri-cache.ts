@@ -6,6 +6,7 @@
  */
 
 import type { SecureStorage, StorageResult } from '../platform/storage/secure-storage.js';
+import { StorageResults } from '../platform/storage/types/storage-result.js';
 import type { CacheConfig, CacheEntry, CacheMetrics } from '../platform/storage/cache.js';
 
 /**
@@ -162,14 +163,14 @@ export class TauriSecureStorageCache implements SecureStorage {
     }
   }
 
-  async store(key: string, value: Buffer, options?: any): Promise<StorageResult> {
+  async store(key: string, value: Buffer, options?: any): Promise<StorageResult<void>> {
     const startTime = Date.now();
     
     try {
       // Store in underlying storage
       const result = await this.storage.store(key, value, options);
       
-      if (result.success) {
+      if (StorageResults.isOk(result)) {
         // Add to cache with Tauri optimizations
         await this.addToTauriCache(key, value, options?.ttl);
         
@@ -182,10 +183,7 @@ export class TauriSecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache store operation failed',
-      };
+      return StorageResults.internalError(error instanceof Error ? error.message : 'Cache store operation failed');
     }
   }
 
@@ -218,7 +216,7 @@ export class TauriSecureStorageCache implements SecureStorage {
           this.triggerPrefetch(key);
         }
         
-        return { success: true, data: cached };
+        return StorageResults.ok(cached);
       }
 
       // Cache miss - fetch from storage with deduplication
@@ -244,9 +242,9 @@ export class TauriSecureStorageCache implements SecureStorage {
       
       const result = await operationPromise;
       
-      if (result.success && result.data) {
+      if (StorageResults.isOk(result) && result.value) {
         // Add to cache for future use
-        await this.addToTauriCache(key, result.data, options?.ttl);
+        await this.addToTauriCache(key, result.value, options?.ttl);
         this.updateAccessPattern(key);
       }
 
@@ -255,14 +253,11 @@ export class TauriSecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache retrieve operation failed',
-      };
+      return StorageResults.internalError(error instanceof Error ? error.message : 'Cache retrieve operation failed');
     }
   }
 
-  async remove(key: string): Promise<StorageResult> {
+  async remove(key: string): Promise<StorageResult<void>> {
     const startTime = Date.now();
     
     try {
@@ -277,10 +272,7 @@ export class TauriSecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache remove operation failed',
-      };
+      return StorageResults.internalError(error instanceof Error ? error.message : 'Cache remove operation failed');
     }
   }
 
@@ -296,7 +288,7 @@ export class TauriSecureStorageCache implements SecureStorage {
           this.metrics.ipcOperationsSaved++;
           this.updateAccessOrder(key);
           this.updateMetrics(startTime);
-          return { success: true, data: true };
+          return StorageResults.ok(true);
         } else {
           // Expired entry
           this.removeFromTauriCache(key);
@@ -324,10 +316,7 @@ export class TauriSecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache exists operation failed',
-      };
+      return StorageResults.internalError(error instanceof Error ? error.message : 'Cache exists operation failed');
     }
   }
 
@@ -344,15 +333,12 @@ export class TauriSecureStorageCache implements SecureStorage {
         this.metrics.hits++;
         this.metrics.ipcOperationsSaved++;
         
-        return {
-          success: true,
-          data: {
-            createdAt: new Date(entry.timestamp),
-            modifiedAt: new Date(entry.lastAccessed),
-            size: entry.originalSize,
-            encrypted: entry.encrypted,
-          },
-        };
+        return StorageResults.ok({
+          createdAt: new Date(entry.timestamp),
+          modifiedAt: new Date(entry.lastAccessed),
+          size: entry.originalSize,
+          encrypted: entry.encrypted,
+        });
       }
     }
     
@@ -360,7 +346,7 @@ export class TauriSecureStorageCache implements SecureStorage {
     return this.storage.getMetadata(key);
   }
 
-  async clear(): Promise<StorageResult> {
+  async clear(): Promise<StorageResult<void>> {
     const startTime = Date.now();
     
     try {
@@ -375,24 +361,19 @@ export class TauriSecureStorageCache implements SecureStorage {
 
     } catch (error) {
       this.updateMetrics(startTime);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Cache clear operation failed',
-      };
+      return StorageResults.internalError(error instanceof Error ? error.message : 'Cache clear operation failed');
     }
   }
 
   async getInfo(): Promise<StorageResult<any>> {
     const storageInfo = await this.storage.getInfo();
     
-    if (!storageInfo.success) {
+    if (StorageResults.isError(storageInfo)) {
       return storageInfo;
     }
 
-    return {
-      success: true,
-      data: {
-        ...storageInfo.data,
+    return StorageResults.ok({
+      ...storageInfo.value,
         tauriCache: {
           enabled: true,
           config: this.config,
@@ -402,11 +383,10 @@ export class TauriSecureStorageCache implements SecureStorage {
           pendingOperations: this.pendingOperations.size,
           backgroundTasks: this.backgroundTasks.size,
         },
-      },
-    };
+      });
   }
 
-  async test(): Promise<StorageResult> {
+  async test(): Promise<StorageResult<void>> {
     return this.storage.test();
   }
 
@@ -573,8 +553,8 @@ export class TauriSecureStorageCache implements SecureStorage {
   private async backgroundPrefetch(key: string): Promise<void> {
     try {
       const result = await this.storage.retrieve(key);
-      if (result.success && result.data) {
-        await this.addToTauriCache(key, result.data);
+      if (StorageResults.isOk(result) && result.value) {
+        await this.addToTauriCache(key, result.value);
         this.metrics.prefetchHitRate = 
           (this.metrics.prefetchHitRate * 0.9) + (1 * 0.1); // Exponential moving average
       }
@@ -656,10 +636,10 @@ export class TauriSecureStorageCache implements SecureStorage {
     try {
       // Get list of keys to warm
       const listResult = await this.storage.list();
-      if (!listResult.success || !listResult.data) return;
+      if (StorageResults.isError(listResult) || !listResult.value) return;
       
       // Warm most recently accessed keys
-      const keysToWarm = listResult.data
+      const keysToWarm = listResult.value
         .slice(0, Math.min(10, this.config.maxSize / 4)); // Warm 25% of cache
       
       for (const key of keysToWarm) {
@@ -667,8 +647,8 @@ export class TauriSecureStorageCache implements SecureStorage {
         
         try {
           const result = await this.storage.retrieve(key);
-          if (result.success && result.data) {
-            await this.addToTauriCache(key, result.data);
+          if (StorageResults.isOk(result) && result.value) {
+            await this.addToTauriCache(key, result.value);
           }
         } catch (error) {
           // Ignore individual warming errors
@@ -816,8 +796,9 @@ export class TauriSecureStorageCache implements SecureStorage {
    */
   private shouldEvictForMemoryPressure(): boolean {
     try {
-      if (typeof performance !== 'undefined' && performance.memory) {
-        const usage = performance.memory.usedJSHeapSize / performance.memory.totalJSHeapSize;
+      if (typeof performance !== 'undefined' && (performance as any).memory) {
+        const memory = (performance as any).memory;
+        const usage = memory.usedJSHeapSize / memory.totalJSHeapSize;
         return usage > this.config.memoryPressureThreshold;
       }
     } catch (error) {

@@ -97,11 +97,11 @@ export class DbusClient extends EventEmitter {
         this.emit('error', error);
       });
 
-      this.bus.on('disconnect', (() => {
+      (this.bus as any).on('disconnect', () => {
         this.log('D-Bus disconnected');
         this.setState('disconnected');
         this.emit('disconnect');
-      }) as any);
+      });
 
       this.setState('connected');
       this.emit('connect');
