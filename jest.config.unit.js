@@ -38,19 +38,23 @@ module.exports = {
     },
   },
   
-  // Module file extensions
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  // Module file extensions - updated for Jest 30
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'mts', 'cts'],
   
-  // Transform configuration
+  // Transform configuration for Jest 30 and ts-jest 30.x
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
+    '^.+\\.(ts|tsx|mts|cts)$': ['ts-jest', {
       useESM: false,
       tsconfig: {
-        target: 'ES2022',
+        target: 'ES2023',
         module: 'CommonJS',
         moduleResolution: 'node',
         allowSyntheticDefaultImports: true,
         esModuleInterop: true,
+        strict: true,
+        strictNullChecks: true,
+        exactOptionalPropertyTypes: true,
+        noUncheckedIndexedAccess: true,
       },
     }],
   },

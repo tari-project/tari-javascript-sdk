@@ -1,6 +1,6 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  // Use TypeScript preset
+  // Use TypeScript preset with updated configuration for Jest 30
   preset: 'ts-jest',
   
   // Test environment
@@ -48,30 +48,34 @@ module.exports = {
     '<rootDir>/packages/*/tests/**/*.spec.ts',
   ],
   
-  // Module file extensions
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  // Module file extensions - updated for Jest 30 native TypeScript support
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node', 'mts', 'cts'],
 
-  // Transform configuration
+  // Transform configuration for Jest 30 and ts-jest 30.x
   transform: {
-  '^.+\\.tsx?$': ['ts-jest', {
-  useESM: false,
-  tsconfig: {
-  target: 'ES2022',
-  module: 'CommonJS',
-  moduleResolution: 'node',
-  allowSyntheticDefaultImports: true,
-  esModuleInterop: true,
-  },
-  }],
+    '^.+\\.(ts|tsx|mts|cts)$': ['ts-jest', {
+      useESM: false,
+      tsconfig: {
+        target: 'ES2023',
+        module: 'CommonJS',
+        moduleResolution: 'node',
+        allowSyntheticDefaultImports: true,
+        esModuleInterop: true,
+        strict: true,
+        strictNullChecks: true,
+        exactOptionalPropertyTypes: true,
+        noUncheckedIndexedAccess: true,
+      },
+    }],
     '\\.node$': '<rootDir>/scripts/node-transform.js',
   },
 
   // Transform ignore patterns
   transformIgnorePatterns: [
-  'node_modules/(?!(.*\\.node$))',
+    'node_modules/(?!(.*\\.node$))',
   ],
 
-  // Module resolution
+  // Module resolution - updated for Jest 30 improvements
   moduleNameMapper: {
     // Handle .js extensions in TypeScript imports
     '^(\\.{1,2}/.*)\\.js$': '$1',
@@ -101,4 +105,13 @@ module.exports = {
   
   // Cache directory
   cacheDirectory: '<rootDir>/node_modules/.cache/jest',
+  
+  // Jest 30 specific improvements
+  snapshotFormat: {
+    escapeString: true,
+    printBasicPrototype: true
+  },
+  
+  // Improved test timeout for FFI operations
+  testTimeout: 30000,
 };
