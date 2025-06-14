@@ -96,7 +96,7 @@ jobs:
           JEST_INTEGRATION_MODE: 'true'
           
       - name: Upload integration test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-results
@@ -159,7 +159,7 @@ jobs:
         timeout-minutes: 30
         
       - name: Upload E2E test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-test-results
@@ -211,7 +211,7 @@ jobs:
           CI: true
           
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: benchmark-results/
