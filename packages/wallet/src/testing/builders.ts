@@ -55,11 +55,11 @@ export class WalletConfigBuilder {
   }
 
   debug(): this {
-    return this.logLevel(1); // Debug level
+    return this.logLevel(3); // Debug level
   }
 
   quiet(): this {
-    return this.logLevel(4); // Error level
+    return this.logLevel(0); // Error level
   }
 
   withPassphrase(passphrase: string): this {

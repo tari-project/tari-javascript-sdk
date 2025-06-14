@@ -9,7 +9,7 @@ describe('TariWallet', () => {
   const validConfig = {
     network: NetworkType.Testnet,
     storagePath: '/tmp/test-wallet',
-    logLevel: 'info' as const,
+    logLevel: 2, // info
   };
 
   describe('Configuration Validation', () => {

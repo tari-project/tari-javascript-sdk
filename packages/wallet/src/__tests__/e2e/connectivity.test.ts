@@ -27,7 +27,7 @@ describeIfE2EEnabled('Network Connectivity E2E Tests', () => {
 
     beforeEach(async () => {
       const config = global.testUtils.createE2EWalletConfig({
-        logLevel: 'debug',
+        logLevel: 3, // debug
       });
       
       wallet = await TariWallet.create(config);

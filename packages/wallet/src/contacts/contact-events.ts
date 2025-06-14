@@ -10,7 +10,7 @@ import {
   WalletError,
   WalletErrorCode
 } from '@tari-project/tarijs-core';
-import { TypedEventEmitter } from '@tari-project/tarijs-core/utils/typed-event-emitter';
+import { TypedEventEmitter } from '@tari-project/tarijs-core';
 
 /**
  * Contact-specific event types

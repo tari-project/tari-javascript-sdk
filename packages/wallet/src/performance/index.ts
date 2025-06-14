@@ -8,7 +8,7 @@ export type {
   using, 
   usingAsync
 } from '@tari-project/tarijs-core';
-export type { DisposableResource as CoreDisposableResource } from '@tari-project/tarijs-core/memory/disposable';
+export type { MemoryDisposableResource as CoreDisposableResource } from '@tari-project/tarijs-core';
 
 // Re-export available performance types from core
 export type {

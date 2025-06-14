@@ -1,5 +1,4 @@
-import { DisposableResource } from '@tari-project/tarijs-core/memory/disposable';
-import { MemoryUtils } from '@tari-project/tarijs-core';
+import { MemoryDisposableResource as DisposableResource, MemoryUtils } from '@tari-project/tarijs-core';
 import { PerformanceManager } from './performance-manager';
 
 /**

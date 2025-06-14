@@ -1,5 +1,5 @@
-import { DisposableResource } from '@tari-project/tarijs-core/memory/disposable';
-import {
+import { 
+  MemoryDisposableResource as DisposableResource,
   MemoryPressureMonitor,
   GCCoordinator,
   HeapStatsCollector,

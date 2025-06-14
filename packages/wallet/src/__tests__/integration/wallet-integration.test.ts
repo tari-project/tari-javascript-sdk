@@ -29,7 +29,7 @@ describeIfFFIAvailable('TariWallet Integration Tests', () => {
   describe('Wallet Lifecycle', () => {
     test('should create and destroy wallet with real FFI', async () => {
       const config = global.testUtils.createIsolatedWalletConfig({
-        logLevel: 'debug',
+        logLevel: 3, // debug
       });
       
       const wallet = await TariWallet.create(config);

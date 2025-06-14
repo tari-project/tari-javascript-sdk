@@ -70,7 +70,7 @@ export const TEST_WALLET_CONFIGS: Record<string, WalletConfig> = {
     network: NetworkType.Testnet,
     storagePath: '/tmp/test-wallet-alice-testnet',
     logPath: '/tmp/test-wallet-alice-testnet.log',
-    logLevel: 'debug',
+    logLevel: 3, // debug
     seedWords: TEST_SEED_WORDS.ALICE,
   },
   
@@ -78,7 +78,7 @@ export const TEST_WALLET_CONFIGS: Record<string, WalletConfig> = {
     network: NetworkType.Testnet,
     storagePath: '/tmp/test-wallet-bob-testnet',
     logPath: '/tmp/test-wallet-bob-testnet.log',
-    logLevel: 'info',
+    logLevel: 2, // info
     seedWords: TEST_SEED_WORDS.BOB,
   },
   
@@ -86,14 +86,14 @@ export const TEST_WALLET_CONFIGS: Record<string, WalletConfig> = {
     network: NetworkType.Testnet,
     storagePath: '/tmp/test-wallet-new-testnet',
     logPath: '/tmp/test-wallet-new-testnet.log',
-    logLevel: 'info',
+    logLevel: 2, // info
   },
   
   RECOVERY_WALLET: {
     network: NetworkType.Testnet,
     storagePath: '/tmp/test-wallet-recovery',
     logPath: '/tmp/test-wallet-recovery.log',
-    logLevel: 'debug',
+    logLevel: 3, // debug
     seedWords: TEST_SEED_WORDS.CHARLIE,
     passphrase: 'test_passphrase_123',
   },
@@ -102,7 +102,7 @@ export const TEST_WALLET_CONFIGS: Record<string, WalletConfig> = {
     network: NetworkType.Mainnet,
     storagePath: '/tmp/test-wallet-mainnet',
     logPath: '/tmp/test-wallet-mainnet.log',
-    logLevel: 'error',
+    logLevel: 0, // error
   },
 };
 
