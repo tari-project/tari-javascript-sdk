@@ -6,6 +6,7 @@ import { BalanceService } from '../balance-service';
 import { BalanceFactory } from '../../testing/factories';
 import { BalanceBuilder } from '../../testing/builders';
 // Note: FFI mocking is handled automatically by Jest moduleNameMapper
+const { getMockNativeBindings } = require('@tari-project/tarijs-core/native');
 
 describe('BalanceService Unit Tests', () => {
   let mockFFI: any;

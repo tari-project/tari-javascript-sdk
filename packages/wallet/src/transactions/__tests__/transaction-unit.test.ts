@@ -14,6 +14,7 @@ import {
   PendingTransactionBuilder 
 } from '../../testing/builders';
 // Note: FFI mocking is handled automatically by Jest moduleNameMapper
+const { getMockNativeBindings } = require('@tari-project/tarijs-core/native');
 
 describe('TransactionService Unit Tests', () => {
   let mockFFI: any;
