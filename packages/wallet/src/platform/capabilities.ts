@@ -42,17 +42,60 @@ export interface CapabilityInfo {
 }
 
 /**
+ * Extended capability information for storage features
+ */
+export interface ExtendedSecureStorageCapability extends CapabilityInfo {
+  /** Available storage backends */
+  backends: string[];
+  /** Preferred backend for current platform */
+  preferredBackend: string;
+}
+
+/**
+ * Extended capability information for file system features  
+ */
+export interface ExtendedFileSystemCapability extends CapabilityInfo {
+  /** Whether file system is writable */
+  writable: boolean;
+  /** Whether storage is persistent */
+  persistent: boolean;
+}
+
+/**
+ * Extended capability information for network features
+ */
+export interface ExtendedNetworkCapability extends CapabilityInfo {
+  /** Whether HTTP is supported */
+  httpSupported: boolean;
+  /** Whether HTTPS is supported */
+  httpsSupported: boolean;
+}
+
+/**
+ * Extended capability information for crypto features
+ */
+export interface ExtendedCryptoCapability extends CapabilityInfo {
+  /** Whether hardware acceleration is supported */
+  hardwareSupported: boolean;
+  /** Available cryptographic algorithms */
+  algorithms: string[];
+}
+
+/**
  * Capability assessment results
  */
 export interface CapabilityAssessment {
-  secureStorage: CapabilityInfo;
+  secureStorage: ExtendedSecureStorageCapability;
   workerThreads: CapabilityInfo;
   nativeModules: CapabilityInfo;
   sharedMemory: CapabilityInfo;
-  fileSystem: CapabilityInfo;
-  networkAccess: CapabilityInfo;
+  fileSystem: ExtendedFileSystemCapability;
+  network: ExtendedNetworkCapability;
+  networkAccess: CapabilityInfo; // Keep for backward compatibility
   ipcCommunication: CapabilityInfo;
-  cryptoApis: CapabilityInfo;
+  crypto: ExtendedCryptoCapability;
+  cryptoApis: CapabilityInfo; // Keep for backward compatibility
+  notifications?: CapabilityInfo;
 }
 
 /**
@@ -102,14 +145,17 @@ export class CapabilitiesManager {
     }
 
     this.cachedAssessment = {
-      secureStorage: this.assessSecureStorage(),
+      secureStorage: this.assessExtendedSecureStorage(),
       workerThreads: this.assessWorkerThreads(),
       nativeModules: this.assessNativeModules(),
       sharedMemory: this.assessSharedMemory(),
-      fileSystem: this.assessFileSystem(),
-      networkAccess: this.assessNetworkAccess(),
+      fileSystem: this.assessExtendedFileSystem(),
+      network: this.assessExtendedNetwork(),
+      networkAccess: this.assessNetworkAccess(), // Backward compatibility
       ipcCommunication: this.assessIpcCommunication(),
-      cryptoApis: this.assessCryptoApis(),
+      crypto: this.assessExtendedCrypto(),
+      cryptoApis: this.assessCryptoApis(), // Backward compatibility
+      notifications: this.assessNotifications(),
     };
 
     return this.cachedAssessment;
@@ -194,6 +240,155 @@ export class CapabilitiesManager {
       default:
         return 2; // Conservative default
     }
+  }
+
+  /**
+   * Assess extended secure storage capability with backends
+   */
+   private assessExtendedSecureStorage(): ExtendedSecureStorageCapability {
+    const baseCapability = this.assessSecureStorage();
+    const backends: string[] = [];
+    let preferredBackend = 'memory'; // fallback
+    
+    const { os, runtime } = this.platform;
+    
+    // Determine available backends based on platform without circular dependency
+    if (runtime === 'tauri' && baseCapability.available) {
+      backends.push('tauri');
+      preferredBackend = 'tauri'; // Highest priority
+    }
+    
+    if (os === 'darwin' && baseCapability.available) {
+      backends.push('keychain');
+      if (preferredBackend === 'memory') preferredBackend = 'keychain';
+    }
+    
+    if (os === 'win32' && baseCapability.available) {
+      backends.push('credential-store');
+      if (preferredBackend === 'memory') preferredBackend = 'credential-store';
+    }
+    
+    if (os === 'linux' && baseCapability.available) {
+      backends.push('secret-service');
+      if (preferredBackend === 'memory') preferredBackend = 'secret-service';
+    }
+    
+    // Encrypted file storage is available if we have file system access
+    if (this.platform.capabilities.fileSystem) {
+      backends.push('encrypted-file');
+      if (preferredBackend === 'memory') preferredBackend = 'encrypted-file';
+    }
+    
+    // Memory storage is always available as last resort
+    backends.push('memory');
+    
+    return {
+      ...baseCapability,
+      backends,
+      preferredBackend
+    };
+  }
+
+  /**
+   * Assess extended file system capability with writable and persistent flags
+   */
+  private assessExtendedFileSystem(): ExtendedFileSystemCapability {
+    const baseCapability = this.assessFileSystem();
+    
+    return {
+      ...baseCapability,
+      writable: baseCapability.available && this.platform.capabilities.fileSystem,
+      persistent: baseCapability.available && this.platform.capabilities.fileSystem
+    };
+  }
+
+  /**
+   * Assess extended network capability with HTTP/HTTPS support
+   */
+  private assessExtendedNetwork(): ExtendedNetworkCapability {
+    const baseCapability = this.assessNetworkAccess();
+    
+    return {
+      ...baseCapability,
+      httpSupported: baseCapability.available,
+      httpsSupported: baseCapability.available
+    };
+  }
+
+  /**
+   * Assess extended crypto capability with hardware support and algorithms
+   */
+  private assessExtendedCrypto(): ExtendedCryptoCapability {
+    const baseCapability = this.assessCryptoApis();
+    
+    // Common crypto algorithms that should be available
+    const algorithms = [
+      'AES-256-GCM',
+      'AES-256-CBC', 
+      'ChaCha20-Poly1305',
+      'HMAC-SHA256',
+      'PBKDF2',
+      'RSA-OAEP'
+    ];
+    
+    // Hardware support depends on platform and runtime
+    let hardwareSupported = false;
+    const { os, runtime } = this.platform;
+    
+    if (runtime === 'tauri') {
+      hardwareSupported = true; // Tauri can access hardware crypto
+    } else if (os === 'darwin') {
+      hardwareSupported = true; // macOS has Secure Enclave
+    } else if (os === 'win32') {
+      hardwareSupported = true; // Windows has TPM
+    }
+    
+    return {
+      ...baseCapability,
+      hardwareSupported,
+      algorithms
+    };
+  }
+
+  /**
+   * Assess notification capability
+   */
+  private assessNotifications(): CapabilityInfo {
+    const { runtime } = this.platform;
+    
+    if (runtime === 'browser') {
+      return {
+        available: typeof Notification !== 'undefined',
+        level: 'native',
+        details: 'Web Notifications API available',
+        recommendation: 'Use for user alerts and updates'
+      };
+    }
+    
+    if (runtime === 'tauri') {
+      return {
+        available: true,
+        level: 'native',
+        details: 'Tauri notification plugin available',
+        recommendation: 'Use for native system notifications'
+      };
+    }
+    
+    if (runtime.startsWith('electron')) {
+      return {
+        available: true,
+        level: 'native',
+        details: 'Electron notification API available',
+        recommendation: 'Use for cross-platform notifications'
+      };
+    }
+    
+    return {
+      available: false,
+      level: 'unavailable',
+      details: 'No notification system available in this runtime',
+      recommendation: 'Use console logging or in-app messages'
+    };
   }
 
   /**

@@ -8,6 +8,7 @@
 import { PlatformDetector, type PlatformInfo } from '../detector.js';
 import { getCapabilitiesManager, type CapabilityAssessment } from '../capabilities.js';
 import { StorageFactory } from '../storage/storage-factory.js';
+import { StorageResults } from '../storage/types/storage-result.js';
 
 describe('Platform Detection and Capabilities', () => {
   let platform: PlatformInfo;
@@ -204,7 +205,7 @@ describe('Platform Detection and Capabilities', () => {
         expect(storage).toBeDefined();
         
         const testResult = await storage.test();
-        expect(testResult.success).toBe(true);
+        expect(StorageResults.isOk(testResult)).toBe(true);
       }
     });
   });
@@ -221,22 +222,28 @@ describe('Platform Detection and Capabilities', () => {
       const data = Buffer.from('test-data');
 
       const storeResult = await storage.store(key, data);
-      expect(storeResult.success).toBe(true);
+      expect(StorageResults.isOk(storeResult)).toBe(true);
 
       const retrieveResult = await storage.retrieve(key);
-      expect(retrieveResult.success).toBe(true);
-      expect(retrieveResult.data).toEqual(data);
+      expect(StorageResults.isOk(retrieveResult)).toBe(true);
+      if (StorageResults.isOk(retrieveResult)) {
+        expect(retrieveResult.value).toEqual(data);
+      }
 
       const existsResult = await storage.exists(key);
-      expect(existsResult.success).toBe(true);
-      expect(existsResult.data).toBe(true);
+      expect(StorageResults.isOk(existsResult)).toBe(true);
+      if (StorageResults.isOk(existsResult)) {
+        expect(existsResult.value).toBe(true);
+      }
 
       const removeResult = await storage.remove(key);
-      expect(removeResult.success).toBe(true);
+      expect(StorageResults.isOk(removeResult)).toBe(true);
 
       const existsAfterRemove = await storage.exists(key);
-      expect(existsAfterRemove.success).toBe(true);
-      expect(existsAfterRemove.data).toBe(false);
+      expect(StorageResults.isOk(existsAfterRemove)).toBe(true);
+      if (StorageResults.isOk(existsAfterRemove)) {
+        expect(existsAfterRemove.value).toBe(false);
+      }
     });
 
     test('should handle platform-specific data size limits', async () => {
@@ -256,16 +263,18 @@ describe('Platform Detection and Capabilities', () => {
         const data = Buffer.alloc(size, 'x');
         
         const result = await storage.store(key, data);
-        if (result.success) {
+        if (StorageResults.isOk(result)) {
           // If storage succeeded, retrieval should work
           const retrieveResult = await storage.retrieve(key);
-          expect(retrieveResult.success).toBe(true);
-          expect(retrieveResult.data).toEqual(data);
+          expect(StorageResults.isOk(retrieveResult)).toBe(true);
+          if (StorageResults.isOk(retrieveResult)) {
+            expect(retrieveResult.value).toEqual(data);
+          }
           
           await storage.remove(key);
         } else {
           // If storage failed, it might be due to size limits
-          console.log(`Storage failed for ${size} bytes: ${result.error}`);
+          console.log(`Storage failed for ${size} bytes: ${result.error.message}`);
         }
       }
     });
