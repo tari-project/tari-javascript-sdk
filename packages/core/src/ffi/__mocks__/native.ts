@@ -671,12 +671,8 @@ class MockNativeBindings implements NativeBindings {
   // Method to ensure test environment is properly configured
   ensureTestEnvironment(): void {
     if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
-      // Reset latency to 0 for tests
-      this.latency = 0;
-      // Ensure failure rate is reset
-      this.failureRate = 0;
-      // Clear failure mode
-      this.shouldFail = false;
+      // In test environment, just ensure we don't have stale state
+      // Individual tests can control failure modes as needed
     }
   }
 

@@ -1,58 +1,109 @@
 /**
- * Mock FFI loader for unit tests
- * Prevents loading of real native bindings
+ * Mock for FFI loader to prevent real binary loading in unit tests
+ * This file is referenced by Jest moduleNameMapper configuration
  */
 
 import { getMockNativeBindings } from '../../packages/core/src/ffi/__mocks__/native';
 
 /**
- * Mock NativeModuleLoader class
+ * Mock loader that returns the mock FFI bindings
  */
-export class NativeModuleLoader {
-  private static instance: NativeModuleLoader | null = null;
-  private mockModule: any = null;
+export class MockNativeModuleLoader {
+  private static instance: MockNativeModuleLoader | null = null;
+  private nativeModule: any = null;
+  private loaded = false;
+  private loading = false;
 
   private constructor() {
-    this.mockModule = getMockNativeBindings();
+    // Initialize with mock bindings
+    this.nativeModule = getMockNativeBindings();
+    this.loaded = true;
   }
 
-  static getInstance(): NativeModuleLoader {
-    if (!NativeModuleLoader.instance) {
-      NativeModuleLoader.instance = new NativeModuleLoader();
+  public static getInstance(): MockNativeModuleLoader {
+    if (!this.instance) {
+      this.instance = new MockNativeModuleLoader();
     }
-    return NativeModuleLoader.instance;
+    return this.instance;
   }
 
-  async loadModule(): Promise<any> {
-    // Return mock instead of loading real module
-    return this.mockModule;
+  public async loadModule(): Promise<any> {
+    if (this.loaded) {
+      return this.nativeModule;
+    }
+
+    this.loading = true;
+    
+    try {
+      // Use mock bindings
+      this.nativeModule = getMockNativeBindings();
+      this.loaded = true;
+      this.loading = false;
+      
+      return this.nativeModule;
+    } catch (error) {
+      this.loading = false;
+      throw error;
+    }
   }
 
-  getModule(): any {
-    return this.mockModule;
+  public getModule(): any {
+    if (!this.loaded) {
+      throw new Error('Native module not loaded - call loadModule() first');
+    }
+    
+    return this.nativeModule;
   }
 
-  isLoaded(): boolean {
-    return true; // Always loaded in tests
+  public isLoaded(): boolean {
+    return this.loaded;
   }
 
-  reset(): void {
-    this.mockModule = getMockNativeBindings();
+  public async reloadModule(): Promise<any> {
+    this.loaded = false;
+    this.loading = false;
+    this.nativeModule = null;
+    
+    return this.loadModule();
+  }
+
+  public reset(): void {
+    this.loaded = false;
+    this.loading = false;
+    this.nativeModule = null;
   }
 }
 
-/**
- * Mock loadNativeModule function
- */
+// Export mock classes and functions that match the real loader interface
+export const NativeModuleLoader = MockNativeModuleLoader;
+
 export async function loadNativeModule(): Promise<any> {
-  const loader = NativeModuleLoader.getInstance();
+  const loader = MockNativeModuleLoader.getInstance();
   return loader.loadModule();
 }
 
-/**
- * Mock getNativeModule function
- */
 export function getNativeModule(): any {
-  const loader = NativeModuleLoader.getInstance();
+  const loader = MockNativeModuleLoader.getInstance();
   return loader.getModule();
 }
+
+// Mock binary resolver
+export class MockBinaryResolver {
+  public resolveBinary() {
+    return {
+      path: 'mock-native-module',
+      exists: true,
+      source: 'mock'
+    };
+  }
+
+  public validateBinary() {
+    return; // Always valid for mocks
+  }
+
+  public getInstallationInstructions(): string {
+    return 'Mock installation instructions - FFI is mocked for testing';
+  }
+}
+
+export const BinaryResolver = MockBinaryResolver;

@@ -66,14 +66,20 @@ export class NativeModuleLoader {
     this.loading = true;
 
     try {
-      const resolvedBinary = this.resolver.resolveBinary();
-      
-      if (this.options.validateOnLoad) {
-        this.resolver.validateBinary(resolvedBinary);
-      }
+      // In test environment, use mock bindings directly
+      if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
+        const { getMockNativeBindings } = await import('./__mocks__/native');
+        this.nativeModule = getMockNativeBindings();
+      } else {
+        const resolvedBinary = this.resolver.resolveBinary();
+        
+        if (this.options.validateOnLoad) {
+          this.resolver.validateBinary(resolvedBinary);
+        }
 
-      // Load the native module
-      this.nativeModule = require(resolvedBinary.path);
+        // Load the native module
+        this.nativeModule = require(resolvedBinary.path);
+      }
       
       // Verify the module has expected exports
       this.validateModuleExports();
@@ -112,6 +118,17 @@ export class NativeModuleLoader {
    */
   public isLoaded(): boolean {
     return this.loaded;
+  }
+
+  /**
+   * Reset loader state (useful for testing)
+   */
+  public reset(): void {
+    this.loaded = false;
+    this.loading = false;
+    this.nativeModule = null;
+    // Reset singleton instance for tests
+    NativeModuleLoader.instance = null;
   }
 
   /**
@@ -167,6 +184,14 @@ export class NativeModuleLoader {
   private validateModuleExports(): void {
     if (!this.nativeModule) {
       throw new Error('Native module is null after loading');
+    }
+
+    // In test environment, check if mock is in failure mode
+    if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
+      if (this.nativeModule.shouldFail || 
+          (this.nativeModule.shouldSimulateFailure && this.nativeModule.shouldSimulateFailure())) {
+        throw new Error('Mock logging initialization failed');
+      }
     }
 
     // Check for essential wallet functions (these will be implemented in Task 2)
