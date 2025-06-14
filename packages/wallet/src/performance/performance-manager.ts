@@ -25,7 +25,7 @@ export class PerformanceManager extends DisposableResource {
   private config: PerformanceConfig;
   private features: PerformanceFeatures;
   
-  // Core components
+  // Core components - initialized in constructor
   private memoryMonitor: MemoryPressureMonitor;
   private gcCoordinator: GCCoordinator;
   private heapStats: HeapStatsCollector;
@@ -43,6 +43,12 @@ export class PerformanceManager extends DisposableResource {
 
   constructor(config: Partial<PerformanceConfig> = {}) {
     super();
+    
+    // Initialize core components with defaults
+    this.memoryMonitor = getGlobalMemoryMonitor();
+    this.gcCoordinator = getGlobalGCCoordinator();
+    this.heapStats = getGlobalHeapStats();
+    this.callBatcher = getGlobalBatcher();
     
     this.config = {
       memory: {
@@ -323,31 +329,18 @@ export class PerformanceManager extends DisposableResource {
       return;
     }
     
-    // Initialize memory monitoring
-    if (this.features.memoryPressureMonitoring) {
-      this.memoryMonitor = getGlobalMemoryMonitor();
-      if (this.memoryMonitor) {
-        this.setupMemoryMonitoring();
-      }
+    // Setup memory monitoring
+    if (this.features.memoryPressureMonitoring && this.memoryMonitor) {
+      this.setupMemoryMonitoring();
     }
 
-    // Initialize GC coordination
-    if (this.features.gcCoordination) {
-      this.gcCoordinator = getGlobalGCCoordinator();
-      if (this.gcCoordinator) {
-        this.setupGCCoordination();
-      }
+    // Setup GC coordination
+    if (this.features.gcCoordination && this.gcCoordinator) {
+      this.setupGCCoordination();
     }
 
-    // Initialize heap statistics
-    if (this.features.heapStats) {
-      this.heapStats = getGlobalHeapStats();
-    }
-
-    // Initialize call batching
-    if (this.features.ffiCallBatching) {
-      this.callBatcher = getGlobalBatcher();
-    }
+    // Heap statistics are already initialized
+    // Call batching is already initialized
 
     // Initialize worker management
     if (this.features.workerPool) {
@@ -387,11 +380,13 @@ export class PerformanceManager extends DisposableResource {
    * Setup GC coordination
    */
   private setupGCCoordination(): void {
-    this.gcCoordinator.updateConfig({
-      strategy: this.config.memory.gcStrategy,
-      timing: 'idle',
-      pressureThreshold: this.config.memory.pressureThresholds.high
-    });
+    if (this.gcCoordinator && this.gcCoordinator.updateConfig) {
+      this.gcCoordinator.updateConfig({
+        strategy: this.config.memory.gcStrategy as any,
+        timing: 'idle',
+        pressureThreshold: this.config.memory.pressureThresholds.high
+      });
+    }
   }
 
   /**
@@ -572,9 +567,9 @@ export class PerformanceManager extends DisposableResource {
       this.memoryMonitor.updateThresholds(this.config.memory.pressureThresholds);
     }
 
-    if (this.features.gcCoordination) {
+    if (this.features.gcCoordination && this.gcCoordinator && this.gcCoordinator.updateConfig) {
       this.gcCoordinator.updateConfig({
-        strategy: this.config.memory.gcStrategy
+        strategy: this.config.memory.gcStrategy as any
       });
     }
   }
