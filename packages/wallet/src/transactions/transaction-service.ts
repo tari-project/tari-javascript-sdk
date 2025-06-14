@@ -17,6 +17,7 @@ import {
   TypedEventEmitter,
   microTariFromFFI,
   microTariToFFI,
+  transactionIdToString,
   type WalletHandle,
   type MicroTari,
   type TransactionId,
@@ -831,9 +832,9 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
     this.ensureNotDisposed();
     await this.checkOperationLimit();
 
-    if (!transactionId || transactionId.trim() === '') {
+    if (!transactionId || transactionId === 0n) {
       throw new WalletError(
-        WalletErrorCode.InvalidTransactionId,
+        WalletErrorCode.InvalidAmount,
         'Transaction ID is required',
         { severity: ErrorSeverity.Error }
       );
@@ -849,7 +850,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
         { 
           severity: ErrorSeverity.Error,
           cause: error instanceof Error ? error : undefined,
-          context: { transactionId }
+          context: { transactionId: transactionIdToString(transactionId) }
         }
       );
     }
@@ -872,7 +873,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
         { 
           severity: ErrorSeverity.Error,
           cause: error instanceof Error ? error : undefined,
-          context: { transactionId }
+          context: { transactionId: transactionIdToString(transactionId) }
         }
       );
     }
@@ -895,7 +896,7 @@ export class TransactionService extends TypedEventEmitter<TransactionServiceEven
         { 
           severity: ErrorSeverity.Error,
           cause: error instanceof Error ? error : undefined,
-          context: { transactionId }
+          context: { transactionId: transactionIdToString(transactionId) }
         }
       );
     }

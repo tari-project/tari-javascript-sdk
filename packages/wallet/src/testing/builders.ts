@@ -13,6 +13,8 @@ import {
   TransactionStatus,
   createMicroTari,
   createTransactionId,
+  createWalletPath,
+  createTariAddressString,
   WalletPath,
   TariAddressString
 } from '@tari-project/tarijs-core';
@@ -42,7 +44,7 @@ export class WalletConfigBuilder {
   }
 
   storagePath(path: string): this {
-    this.config.storagePath = path;
+    this.config.storagePath = createWalletPath(path);
     return this;
   }
 
@@ -51,7 +53,7 @@ export class WalletConfigBuilder {
   }
 
   logPath(path: string): this {
-    this.config.logPath = path;
+    this.config.logPath = createWalletPath(path);
     return this;
   }
 
@@ -90,7 +92,7 @@ export class WalletConfigBuilder {
     // Set defaults
     const defaults: WalletConfig = {
       network: NetworkType.Testnet,
-      storagePath: `/tmp/test-wallet-${randomBytes(8).toString('hex')}`,
+      storagePath: createWalletPath(`/tmp/test-wallet-${randomBytes(8).toString('hex')}`),
       logLevel: 2, // Info level
     };
 
@@ -109,69 +111,69 @@ export class BalanceBuilder {
   }
 
   available(amount: bigint): this {
-    this.balance.available = amount;
+    this.balance.available = createMicroTari(amount);
     return this;
   }
 
   pendingIncoming(amount: bigint): this {
-    this.balance.pendingIncoming = amount;
+    this.balance.pendingIncoming = createMicroTari(amount);
     return this;
   }
 
   pendingOutgoing(amount: bigint): this {
-    this.balance.pendingOutgoing = amount;
+    this.balance.pendingOutgoing = createMicroTari(amount);
     return this;
   }
 
   timelocked(amount: bigint): this {
-    this.balance.timelocked = amount;
+    this.balance.timelocked = createMicroTari(amount);
     return this;
   }
 
   empty(): this {
-    this.balance.available = 0n;
-    this.balance.pendingIncoming = 0n;
-    this.balance.pendingOutgoing = 0n;
-    this.balance.timelocked = 0n;
+    this.balance.available = createMicroTari(0n);
+    this.balance.pendingIncoming = createMicroTari(0n);
+    this.balance.pendingOutgoing = createMicroTari(0n);
+    this.balance.timelocked = createMicroTari(0n);
     return this;
   }
 
   rich(): this {
-    this.balance.available = 100000000000n; // 100 Tari
-    this.balance.pendingIncoming = 5000000000n; // 5 Tari
-    this.balance.pendingOutgoing = 2000000000n; // 2 Tari
-    this.balance.timelocked = 1000000000n; // 1 Tari
+    this.balance.available = createMicroTari(100000000000n); // 100 Tari
+    this.balance.pendingIncoming = createMicroTari(5000000000n); // 5 Tari
+    this.balance.pendingOutgoing = createMicroTari(2000000000n); // 2 Tari
+    this.balance.timelocked = createMicroTari(1000000000n); // 1 Tari
     return this;
   }
 
   justEnough(amount: bigint, fee: bigint = 5000n): this {
-    this.balance.available = amount + fee;
-    this.balance.pendingIncoming = 0n;
-    this.balance.pendingOutgoing = 0n;
-    this.balance.timelocked = 0n;
+    this.balance.available = createMicroTari(amount + fee);
+    this.balance.pendingIncoming = createMicroTari(0n);
+    this.balance.pendingOutgoing = createMicroTari(0n);
+    this.balance.timelocked = createMicroTari(0n);
     return this;
   }
 
   insufficient(amount: bigint, fee: bigint = 5000n): this {
-    this.balance.available = amount + fee - 1n;
-    this.balance.pendingIncoming = 0n;
-    this.balance.pendingOutgoing = 0n;
-    this.balance.timelocked = 0n;
+    this.balance.available = createMicroTari(amount + fee - 1n);
+    this.balance.pendingIncoming = createMicroTari(0n);
+    this.balance.pendingOutgoing = createMicroTari(0n);
+    this.balance.timelocked = createMicroTari(0n);
     return this;
   }
 
   withPendingActivity(): this {
-    this.balance.pendingIncoming = 1000000000n; // 1 Tari
-    this.balance.pendingOutgoing = 500000000n; // 0.5 Tari
+    this.balance.pendingIncoming = createMicroTari(1000000000n); // 1 Tari
+    this.balance.pendingOutgoing = createMicroTari(500000000n); // 0.5 Tari
     return this;
   }
 
   build(): Balance {
     const defaults: Balance = {
-      available: 1000000000n, // 1 Tari
-      pendingIncoming: 0n,
-      pendingOutgoing: 0n,
-      timelocked: 0n,
+      available: createMicroTari(1000000000n), // 1 Tari
+      pendingIncoming: createMicroTari(0n),
+      pendingOutgoing: createMicroTari(0n),
+      timelocked: createMicroTari(0n),
     };
 
     return { ...defaults, ...this.balance };
@@ -189,7 +191,7 @@ export class TransactionBuilder {
   }
 
   id(id: string): this {
-    this.transaction.id = id;
+    this.transaction.id = createTransactionId(BigInt(id));
     return this;
   }
 
@@ -198,7 +200,7 @@ export class TransactionBuilder {
   }
 
   amount(amount: bigint): this {
-    this.transaction.amount = amount;
+    this.transaction.amount = createMicroTari(amount);
     return this;
   }
 
@@ -211,7 +213,7 @@ export class TransactionBuilder {
   }
 
   fee(fee: bigint): this {
-    this.transaction.fee = fee;
+    this.transaction.fee = createMicroTari(fee);
     return this;
   }
 
@@ -278,7 +280,7 @@ export class TransactionBuilder {
   }
 
   address(address: string): this {
-    this.transaction.address = address;
+    this.transaction.address = createTariAddressString(address);
     return this;
   }
 
@@ -347,14 +349,14 @@ export class TransactionBuilder {
 
   build(): Transaction {
     const defaults: Transaction = {
-      id: randomBytes(16).toString('hex'),
-      amount: 1000000n, // 0.001 Tari
-      fee: 5000n,
+      id: createTransactionId(BigInt('0x' + randomBytes(16).toString('hex').slice(0, 15))),
+      amount: createMicroTari(1000000n), // 0.001 Tari
+      fee: createMicroTari(5000n),
       status: TransactionStatus.Pending,
       message: 'Test transaction',
       timestamp: new Date(),
       isInbound: false,
-      address: `tari://testnet/${randomBytes(32).toString('hex')}`,
+      address: createTariAddressString(`tari://testnet/${randomBytes(32).toString('hex')}`),
       confirmations: 0,
     };
 
@@ -373,7 +375,7 @@ export class PendingTransactionBuilder {
   }
 
   id(id: string): this {
-    this.transaction.id = id;
+    this.transaction.id = createTransactionId(BigInt(id));
     return this;
   }
 
@@ -382,7 +384,7 @@ export class PendingTransactionBuilder {
   }
 
   amount(amount: bigint): this {
-    this.transaction.amount = amount;
+    this.transaction.amount = createMicroTari(amount);
     return this;
   }
 
@@ -391,7 +393,7 @@ export class PendingTransactionBuilder {
   }
 
   fee(fee: bigint): this {
-    this.transaction.fee = fee;
+    this.transaction.fee = createMicroTari(fee);
     return this;
   }
 
@@ -414,7 +416,7 @@ export class PendingTransactionBuilder {
   }
 
   recipientAddress(address: string): this {
-    this.transaction.recipientAddress = address;
+    this.transaction.recipientAddress = createTariAddressString(address);
     return this;
   }
 
@@ -472,12 +474,12 @@ export class PendingTransactionBuilder {
 
   build(): PendingTransaction {
     const defaults: PendingTransaction = {
-      id: randomBytes(16).toString('hex'),
-      amount: 1000000n, // 0.001 Tari
-      fee: 5000n,
+      id: createTransactionId(BigInt('0x' + randomBytes(16).toString('hex').slice(0, 15))),
+      amount: createMicroTari(1000000n), // 0.001 Tari
+      fee: createMicroTari(5000n),
       message: 'Test pending transaction',
       timestamp: new Date(),
-      recipientAddress: `tari://testnet/${randomBytes(32).toString('hex')}`,
+      recipientAddress: createTariAddressString(`tari://testnet/${randomBytes(32).toString('hex')}`),
       status: TransactionStatus.Pending,
     };
 

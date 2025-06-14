@@ -26,6 +26,7 @@ import { getElectronWalletService } from './wallet-service.js';
 import { IPCErrorBoundary, IPCTypeConverter } from '../utils/type-converters.js';
 import type { WalletConfig } from '../../types/index.js';
 import { PlatformDetector } from '../../platform/detector.js';
+import { transactionIdFromString } from '@tari-project/tarijs-core';
 
 /**
  * IPC request validation
@@ -358,7 +359,7 @@ export class IpcHandlersManager {
         throw new Error('Wallet not available');
       }
 
-      const transaction = await wallet.getTransaction(request.transactionId);
+      const transaction = await wallet.getTransaction(transactionIdFromString(request.transactionId));
       return this.createResponse(transaction, request.requestId);
     });
   };

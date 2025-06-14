@@ -298,6 +298,26 @@ export function createTransactionId(value: bigint): TransactionId {
 }
 
 /**
+ * Create a validated WalletPath
+ */
+export function createWalletPath(value: string): WalletPath {
+  if (!value || typeof value !== 'string') {
+    throw new Error('WalletPath must be a non-empty string');
+  }
+  return value as WalletPath;
+}
+
+/**
+ * Create a validated TariAddressString
+ */
+export function createTariAddressString(value: string): TariAddressString {
+  if (!value || typeof value !== 'string') {
+    throw new Error('TariAddressString must be a non-empty string');
+  }
+  return value as TariAddressString;
+}
+
+/**
  * Convert a number to MicroTari (assuming the number represents Tari)
  */
 export function tariToMicroTari(tari: number): MicroTari {

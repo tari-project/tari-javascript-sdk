@@ -1069,7 +1069,7 @@ export class TariWallet implements AsyncDisposable {
     this.ensureNotDestroyed();
     try {
       // TODO: Implement real FFI address to emoji conversion
-      return (address as string).slice(0, 20) + '...'; // Placeholder
+      return address.toString().slice(0, 20) + '...'; // Placeholder
     } catch (error: unknown) {
       throw new WalletError(
         WalletErrorCode.InvalidAddress,

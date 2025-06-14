@@ -8,11 +8,17 @@ import {
   Balance,
   Transaction,
   PendingTransaction,
-  TransactionStatus,
-  NetworkType,
   SeedWordsFactory,
   PublicKeyFactory,
 } from './factories';
+import {
+  TransactionStatus,
+  NetworkType,
+  createMicroTari,
+  createTransactionId,
+  createWalletPath,
+  createTariAddressString,
+} from '@tari-project/tarijs-core';
 
 /**
  * Known test seed word sets for deterministic testing
@@ -68,31 +74,31 @@ export const TEST_PUBLIC_KEYS = {
 export const TEST_WALLET_CONFIGS: Record<string, WalletConfig> = {
   ALICE_TESTNET: {
     network: NetworkType.Testnet,
-    storagePath: '/tmp/test-wallet-alice-testnet',
-    logPath: '/tmp/test-wallet-alice-testnet.log',
+    storagePath: createWalletPath('/tmp/test-wallet-alice-testnet'),
+    logPath: createWalletPath('/tmp/test-wallet-alice-testnet.log'),
     logLevel: 3, // debug
     seedWords: TEST_SEED_WORDS.ALICE,
   },
   
   BOB_TESTNET: {
     network: NetworkType.Testnet,
-    storagePath: '/tmp/test-wallet-bob-testnet',
-    logPath: '/tmp/test-wallet-bob-testnet.log',
+    storagePath: createWalletPath('/tmp/test-wallet-bob-testnet'),
+    logPath: createWalletPath('/tmp/test-wallet-bob-testnet.log'),
     logLevel: 2, // info
     seedWords: TEST_SEED_WORDS.BOB,
   },
   
   NEW_WALLET_TESTNET: {
     network: NetworkType.Testnet,
-    storagePath: '/tmp/test-wallet-new-testnet',
-    logPath: '/tmp/test-wallet-new-testnet.log',
+    storagePath: createWalletPath('/tmp/test-wallet-new-testnet'),
+    logPath: createWalletPath('/tmp/test-wallet-new-testnet.log'),
     logLevel: 2, // info
   },
   
   RECOVERY_WALLET: {
     network: NetworkType.Testnet,
-    storagePath: '/tmp/test-wallet-recovery',
-    logPath: '/tmp/test-wallet-recovery.log',
+    storagePath: createWalletPath('/tmp/test-wallet-recovery'),
+    logPath: createWalletPath('/tmp/test-wallet-recovery.log'),
     logLevel: 3, // debug
     seedWords: TEST_SEED_WORDS.CHARLIE,
     passphrase: 'test_passphrase_123',
@@ -100,8 +106,8 @@ export const TEST_WALLET_CONFIGS: Record<string, WalletConfig> = {
   
   MAINNET_WALLET: {
     network: NetworkType.Mainnet,
-    storagePath: '/tmp/test-wallet-mainnet',
-    logPath: '/tmp/test-wallet-mainnet.log',
+    storagePath: createWalletPath('/tmp/test-wallet-mainnet'),
+    logPath: createWalletPath('/tmp/test-wallet-mainnet.log'),
     logLevel: 0, // error
   },
 };
@@ -111,45 +117,45 @@ export const TEST_WALLET_CONFIGS: Record<string, WalletConfig> = {
  */
 export const TEST_BALANCES: Record<string, Balance> = {
   EMPTY: {
-    available: 0n,
-    pendingIncoming: 0n,
-    pendingOutgoing: 0n,
-    timelocked: 0n,
+    available: createMicroTari(0n),
+    pendingIncoming: createMicroTari(0n),
+    pendingOutgoing: createMicroTari(0n),
+    timelocked: createMicroTari(0n),
   },
   
   SMALL: {
-    available: 1000000n, // 0.001 Tari
-    pendingIncoming: 0n,
-    pendingOutgoing: 0n,
-    timelocked: 0n,
+    available: createMicroTari(1000000n), // 0.001 Tari
+    pendingIncoming: createMicroTari(0n),
+    pendingOutgoing: createMicroTari(0n),
+    timelocked: createMicroTari(0n),
   },
   
   MEDIUM: {
-    available: 1000000000n, // 1 Tari
-    pendingIncoming: 500000000n, // 0.5 Tari
-    pendingOutgoing: 100000000n, // 0.1 Tari
-    timelocked: 0n,
+    available: createMicroTari(1000000000n), // 1 Tari
+    pendingIncoming: createMicroTari(500000000n), // 0.5 Tari
+    pendingOutgoing: createMicroTari(100000000n), // 0.1 Tari
+    timelocked: createMicroTari(0n),
   },
   
   LARGE: {
-    available: 100000000000n, // 100 Tari
-    pendingIncoming: 10000000000n, // 10 Tari
-    pendingOutgoing: 5000000000n, // 5 Tari
-    timelocked: 2000000000n, // 2 Tari
+    available: createMicroTari(100000000000n), // 100 Tari
+    pendingIncoming: createMicroTari(10000000000n), // 10 Tari
+    pendingOutgoing: createMicroTari(5000000000n), // 5 Tari
+    timelocked: createMicroTari(2000000000n), // 2 Tari
   },
   
   JUST_ENOUGH_FOR_SMALL_TX: {
-    available: 1005000n, // 0.001005 Tari (amount + fee)
-    pendingIncoming: 0n,
-    pendingOutgoing: 0n,
-    timelocked: 0n,
+    available: createMicroTari(1005000n), // 0.001005 Tari (amount + fee)
+    pendingIncoming: createMicroTari(0n),
+    pendingOutgoing: createMicroTari(0n),
+    timelocked: createMicroTari(0n),
   },
   
   INSUFFICIENT_FOR_SMALL_TX: {
-    available: 1004999n, // 0.001004999 Tari (less than amount + fee)
-    pendingIncoming: 0n,
-    pendingOutgoing: 0n,
-    timelocked: 0n,
+    available: createMicroTari(1004999n), // 0.001004999 Tari (less than amount + fee)
+    pendingIncoming: createMicroTari(0n),
+    pendingOutgoing: createMicroTari(0n),
+    timelocked: createMicroTari(0n),
   },
 };
 
@@ -158,74 +164,74 @@ export const TEST_BALANCES: Record<string, Balance> = {
  */
 export const TEST_TRANSACTIONS: Record<string, Transaction> = {
   SMALL_CONFIRMED_OUTBOUND: {
-    id: 'tx_small_confirmed_outbound_001',
-    amount: 1000000n, // 0.001 Tari
-    fee: 5000n,
+    id: createTransactionId(BigInt('0x001')),
+    amount: createMicroTari(1000000n), // 0.001 Tari
+    fee: createMicroTari(5000n),
     status: TransactionStatus.MinedConfirmed,
     message: 'Small confirmed outbound payment',
     timestamp: new Date('2024-01-15T10:30:00Z'),
     isInbound: false,
-    address: TEST_ADDRESSES.BOB_TESTNET,
+    address: createTariAddressString(TEST_ADDRESSES.BOB_TESTNET),
     confirmations: 5,
   },
   
   LARGE_CONFIRMED_INBOUND: {
-    id: 'tx_large_confirmed_inbound_002',
-    amount: 10000000000n, // 10 Tari
-    fee: 0n, // Receiver doesn't pay fee
+    id: createTransactionId(BigInt('0x002')),
+    amount: createMicroTari(10000000000n), // 10 Tari
+    fee: createMicroTari(0n), // Receiver doesn't pay fee
     status: TransactionStatus.MinedConfirmed,
     message: 'Large confirmed inbound payment',
     timestamp: new Date('2024-01-14T15:45:00Z'),
     isInbound: true,
-    address: TEST_ADDRESSES.ALICE_TESTNET,
+    address: createTariAddressString(TEST_ADDRESSES.ALICE_TESTNET),
     confirmations: 10,
   },
   
   PENDING_OUTBOUND: {
-    id: 'tx_pending_outbound_003',
-    amount: 500000000n, // 0.5 Tari
-    fee: 7500n,
+    id: createTransactionId(BigInt('0x003')),
+    amount: createMicroTari(500000000n), // 0.5 Tari
+    fee: createMicroTari(7500n),
     status: TransactionStatus.Pending,
     message: 'Pending outbound payment',
     timestamp: new Date('2024-01-16T09:15:00Z'),
     isInbound: false,
-    address: TEST_ADDRESSES.CHARLIE_TESTNET,
+    address: createTariAddressString(TEST_ADDRESSES.CHARLIE_TESTNET),
     confirmations: 0,
   },
   
   CANCELLED_OUTBOUND: {
-    id: 'tx_cancelled_outbound_004',
-    amount: 2000000000n, // 2 Tari
-    fee: 10000n,
+    id: createTransactionId(BigInt('0x004')),
+    amount: createMicroTari(2000000000n), // 2 Tari
+    fee: createMicroTari(10000n),
     status: TransactionStatus.Cancelled,
     message: 'Cancelled outbound payment',
     timestamp: new Date('2024-01-13T14:20:00Z'),
     isInbound: false,
-    address: TEST_ADDRESSES.BOB_TESTNET,
+    address: createTariAddressString(TEST_ADDRESSES.BOB_TESTNET),
     confirmations: 0,
   },
   
   BROADCAST_OUTBOUND: {
-    id: 'tx_broadcast_outbound_005',
-    amount: 750000000n, // 0.75 Tari
-    fee: 6000n,
+    id: createTransactionId(BigInt('0x005')),
+    amount: createMicroTari(750000000n), // 0.75 Tari
+    fee: createMicroTari(6000n),
     status: TransactionStatus.Broadcast,
     message: 'Broadcast outbound payment',
     timestamp: new Date('2024-01-16T11:00:00Z'),
     isInbound: false,
-    address: TEST_ADDRESSES.ALICE_TESTNET,
+    address: createTariAddressString(TEST_ADDRESSES.ALICE_TESTNET),
     confirmations: 0,
   },
   
   OLD_CONFIRMED_INBOUND: {
-    id: 'tx_old_confirmed_inbound_006',
-    amount: 5000000000n, // 5 Tari
-    fee: 0n,
+    id: createTransactionId(BigInt('0x006')),
+    amount: createMicroTari(5000000000n), // 5 Tari
+    fee: createMicroTari(0n),
     status: TransactionStatus.MinedConfirmed,
     message: 'Old confirmed inbound payment',
     timestamp: new Date('2023-12-01T08:30:00Z'),
     isInbound: true,
-    address: TEST_ADDRESSES.CHARLIE_TESTNET,
+    address: createTariAddressString(TEST_ADDRESSES.CHARLIE_TESTNET),
     confirmations: 1000,
   },
 };
@@ -235,32 +241,32 @@ export const TEST_TRANSACTIONS: Record<string, Transaction> = {
  */
 export const TEST_PENDING_TRANSACTIONS: Record<string, PendingTransaction> = {
   STANDARD_PENDING: {
-    id: 'pending_tx_standard_001',
-    amount: 1000000000n, // 1 Tari
-    fee: 5000n,
+    id: createTransactionId(BigInt('0x101')),
+    amount: createMicroTari(1000000000n), // 1 Tari
+    fee: createMicroTari(5000n),
     message: 'Standard pending payment',
     timestamp: new Date('2024-01-16T12:00:00Z'),
-    recipientAddress: TEST_ADDRESSES.BOB_TESTNET,
+    recipientAddress: createTariAddressString(TEST_ADDRESSES.BOB_TESTNET),
     status: TransactionStatus.Pending,
   },
   
   LARGE_PENDING: {
-    id: 'pending_tx_large_002',
-    amount: 50000000000n, // 50 Tari
-    fee: 25000n,
+    id: createTransactionId(BigInt('0x102')),
+    amount: createMicroTari(50000000000n), // 50 Tari
+    fee: createMicroTari(25000n),
     message: 'Large pending payment',
     timestamp: new Date('2024-01-16T10:30:00Z'),
-    recipientAddress: TEST_ADDRESSES.CHARLIE_TESTNET,
+    recipientAddress: createTariAddressString(TEST_ADDRESSES.CHARLIE_TESTNET),
     status: TransactionStatus.Pending,
   },
   
   BROADCAST_PENDING: {
-    id: 'pending_tx_broadcast_003',
-    amount: 2500000000n, // 2.5 Tari
-    fee: 8000n,
+    id: createTransactionId(BigInt('0x103')),
+    amount: createMicroTari(2500000000n), // 2.5 Tari
+    fee: createMicroTari(8000n),
     message: 'Broadcast pending payment',
     timestamp: new Date('2024-01-16T09:45:00Z'),
-    recipientAddress: TEST_ADDRESSES.ALICE_TESTNET,
+    recipientAddress: createTariAddressString(TEST_ADDRESSES.ALICE_TESTNET),
     status: TransactionStatus.Broadcast,
   },
 };

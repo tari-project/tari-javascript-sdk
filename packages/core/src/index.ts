@@ -26,8 +26,24 @@ export {
   MIN_CONTACT_ALIAS_LENGTH, 
   VALIDATION_PATTERNS 
 } from './types/constants';
-export { createMicroTari, createTransactionId, asMicroTari } from './types/branded';
-export { microTariFromFFI, microTariToFFI } from './types/conversions';
+export { 
+  createMicroTari, 
+  createTransactionId, 
+  createWalletPath, 
+  createTariAddressString, 
+  asMicroTari 
+} from './types/branded';
+export { 
+  microTariFromFFI, 
+  microTariToFFI,
+  transactionIdToString,
+  transactionIdFromString,
+  transactionIdToHex,
+  transactionIdFromHex,
+  unixTimestampToISOString,
+  unixTimestampToDate,
+  dateToUnixTimestamp
+} from './types/conversions';
 // Export specific branded types
 export type { 
   MicroTari, 
