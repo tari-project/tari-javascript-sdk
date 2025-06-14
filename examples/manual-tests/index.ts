@@ -3,9 +3,8 @@
  * Provides interactive test scenarios for real wallet operations
  */
 
-import { TariWallet } from '../../packages/wallet/src/wallet';
-import { WalletConfigBuilder } from '../../packages/wallet/src/testing/builders';
-import { NetworkType } from '../../packages/wallet/src/testing/factories';
+import { TariWallet } from '@tari-project/tarijs-wallet';
+import { WalletConfigBuilder, NetworkType } from '@tari-project/tarijs-wallet/testing';
 import * as readline from 'readline';
 import { tmpdir } from 'os';
 import { join } from 'path';
