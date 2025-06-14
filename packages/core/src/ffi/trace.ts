@@ -207,15 +207,15 @@ export class FFITracer {
         const duration = Date.now() - startTime;
         
         // End the trace
-        const trace = endFFITrace(
+        endFFITrace(
           traceId,
           config.includeResult && !error ? this.sanitizeResult(result!, config.maxArgSize) : undefined,
           error
         );
 
         // Add to session if specified
-        if (sessionId && trace) {
-          this.addTraceToSession(sessionId, trace);
+        if (sessionId) {
+          // Note: trace data is managed internally by debug system
         }
 
         // Update metrics
@@ -270,15 +270,15 @@ export class FFITracer {
         const duration = Date.now() - startTime;
         
         // End the trace
-        const trace = endFFITrace(
+        endFFITrace(
           traceId,
           config.includeResult && !error ? this.sanitizeResult(result!, config.maxArgSize) : undefined,
           error
         );
 
         // Add to session if specified
-        if (sessionId && trace) {
-          this.addTraceToSession(sessionId, trace);
+        if (sessionId) {
+          // Note: trace data is managed internally by debug system
         }
 
         // Update metrics

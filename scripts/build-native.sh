@@ -111,38 +111,60 @@ build_native() {
             ;;
     esac
     
-    # Build the wallet FFI module instead of secure storage
+    # Build using NAPI-RS with Cargo for Node.js FFI module
     if cargo build --target "$target" $build_flag --package tari-wallet-ffi; then
         log_info "Successfully built wallet FFI for $target"
         
-        # Copy the built library to output directory
-        local lib_name="libtari_wallet_ffi"
+        # NAPI-RS generates .node files, but we need to rename from .dylib/.so/.dll
+        local lib_name=""
         local lib_ext=""
-        local target_dir="target/$target"
+        local node_file=""
         
         case "$target" in
-            *windows*)
+            x86_64-apple-darwin)
+                lib_name="libtari_wallet_ffi"
+                lib_ext=".dylib"
+                node_file="tari-wallet-ffi.darwin-x64.node"
+                ;;
+            aarch64-apple-darwin)
+                lib_name="libtari_wallet_ffi"
+                lib_ext=".dylib"
+                node_file="tari-wallet-ffi.darwin-arm64.node"
+                ;;
+            x86_64-pc-windows-msvc)
                 lib_name="tari_wallet_ffi"
                 lib_ext=".dll"
+                node_file="tari-wallet-ffi.win32-x64.node"
                 ;;
-            *apple*)
-                lib_ext=".dylib"
-                ;;
-            *linux*)
+            x86_64-unknown-linux-gnu)
+                lib_name="libtari_wallet_ffi"
                 lib_ext=".so"
+                node_file="tari-wallet-ffi.linux-x64.node"
+                ;;
+            aarch64-unknown-linux-gnu)
+                lib_name="libtari_wallet_ffi"
+                lib_ext=".so"
+                node_file="tari-wallet-ffi.linux-arm64.node"
+                ;;
+            *)
+                log_error "Unsupported target: $target"
+                return 1
                 ;;
         esac
         
+        local target_dir="target/$target"
         local source_dir="$target_dir/$BUILD_TYPE"
+        local source_file="$source_dir/$lib_name$lib_ext"
         local output_subdir="../$OUTPUT_DIR/$target"
         
         mkdir -p "$output_subdir"
         
-        if [ -f "$source_dir/$lib_name$lib_ext" ]; then
-            cp "$source_dir/$lib_name$lib_ext" "$output_subdir/"
-            log_info "Copied library to $output_subdir/"
+        if [ -f "$source_file" ]; then
+            # Copy and rename to .node extension for NAPI compatibility
+            cp "$source_file" "$output_subdir/$node_file"
+            log_info "Copied NAPI module to $output_subdir/$node_file"
         else
-            log_warn "Library not found at expected path: $source_dir/$lib_name$lib_ext"
+            log_warn "NAPI module not found at expected path: $source_file"
         fi
         
         return 0
