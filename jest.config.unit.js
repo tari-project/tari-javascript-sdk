@@ -102,11 +102,16 @@ module.exports = {
   ],
   
   // Test timeout - reduced since mocks should be fast
-  testTimeout: 5000,
+  testTimeout: 3000,
   
   // Performance
   verbose: false,
   errorOnDeprecated: true,
+  
+  // Optimize for speed
+  maxWorkers: '50%',
+  detectOpenHandles: true,
+  forceExit: true,
   
   // Cache
   cacheDirectory: '<rootDir>/node_modules/.cache/jest-unit',

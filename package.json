@@ -26,12 +26,15 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "./scripts/build-ordered.sh all",
+    "build:ordered": "./scripts/build-ordered.sh all",
+    "build:workspace": "npm run build --workspaces --if-present",
     "build:ts": "tsc --build tsconfig.build.json",
     "build:native": "./scripts/build-native.sh current",
     "build:native:all": "./scripts/build-native.sh all",
     "build:native:clean": "./scripts/build-native.sh clean",
-    "clean": "npm run clean --workspaces --if-present && ./scripts/clean.sh",
+    "clean": "./scripts/clean-rebuild.sh clean",
+    "clean:rebuild": "./scripts/clean-rebuild.sh rebuild",
     "dev": "npm-run-all --parallel dev:*",
     "lint": "eslint packages/*/src/**/*.ts",
     "lint:fix": "npm run lint -- --fix",
