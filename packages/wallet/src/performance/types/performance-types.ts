@@ -116,6 +116,13 @@ export function getGlobalMemoryMonitor(): any {
     start: () => {},
     stop: () => {},
     getMetrics: () => ({ used: 0, total: 0, pressure: 0 }),
+    updateThresholds: () => {},
+    on: () => {},
+    addCleanupHandler: () => {},
+    removeCleanupHandler: () => {},
+    isMonitoring: () => false,
+    getCurrentPressureLevel: () => 'normal',
+    getCurrentMetrics: () => ({ used: 0, total: 0, pressure: 0, level: 'normal' }),
   };
 }
 
@@ -124,6 +131,12 @@ export function getGlobalGCCoordinator(): any {
   return {
     scheduleCollection: () => {},
     getMetrics: () => ({ collections: 0, totalTime: 0, averageTime: 0 }),
+    updateConfig: () => {},
+    start: () => {},
+    stop: () => {},
+    on: () => {},
+    isActive: () => false,
+    getStats: () => ({ collections: 0, totalTime: 0, averageTime: 0 }),
   };
 }
 
@@ -132,6 +145,10 @@ export function getGlobalHeapStats(): any {
   return {
     collect: () => {},
     getStats: () => ({ used: 0, total: 0 }),
+    start: () => {},
+    stop: () => {},
+    isCollecting: () => false,
+    on: () => {},
   };
 }
 
@@ -140,6 +157,9 @@ export function getGlobalBatcher(): any {
   return {
     batch: (fn: Function) => fn(),
     flush: () => {},
+    start: () => {},
+    stop: () => {},
+    getStats: () => ({ batched: 0, executed: 0 }),
   };
 }
 

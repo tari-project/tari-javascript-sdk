@@ -318,6 +318,11 @@ export class PerformanceManager extends DisposableResource {
    * Initialize all components
    */
   private initialize(): void {
+    // Skip initialization if performance monitoring is disabled (e.g., in tests)
+    if (process.env.DISABLE_PERFORMANCE_MONITORING === 'true') {
+      return;
+    }
+    
     // Initialize memory monitoring
     if (this.features.memoryPressureMonitoring) {
       this.memoryMonitor = getGlobalMemoryMonitor();

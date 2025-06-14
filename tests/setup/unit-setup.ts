@@ -13,6 +13,21 @@ beforeEach(() => {
   
   // Reset mock implementations to defaults
   // Note: Actual mock functions are managed by Jest moduleNameMapper
+  
+  // Mock timers to prevent performance monitoring from running during tests
+  jest.useFakeTimers();
+  
+  // Set environment variable to disable performance monitoring in tests
+  process.env.NODE_ENV = 'test';
+  process.env.DISABLE_PERFORMANCE_MONITORING = 'true';
+});
+
+afterEach(() => {
+  // Clean up fake timers
+  jest.useRealTimers();
+  
+  // Clean up environment
+  delete process.env.DISABLE_PERFORMANCE_MONITORING;
 });
 
 // Global test utilities for unit tests
