@@ -84,7 +84,7 @@ class MockNativeBindings implements NativeBindings {
         pending_outgoing: '0',
         timelocked: '0',
       },
-      address: `tari://testnet/mock_address_${handle}`,
+      address: this.generateMockAddress(handle),
       seedWords: this.generateMockSeedWords(),
       destroyed: false,
       transactionMemos: new Map(),
@@ -673,11 +673,21 @@ class MockNativeBindings implements NativeBindings {
     }
   }
 
+  private generateMockAddress(handle: number): string {
+    // Generate a valid hex address format for testing
+    // Use handle number to create predictable but valid hex addresses
+    const baseHex = handle.toString(16).padStart(2, '0');
+    // Create a 64-character hex string (32 bytes) which is a valid Tari address format
+    const fullHex = baseHex.repeat(32).substring(0, 64);
+    return fullHex;
+  }
+
   private generateMockSeedWords(): string[] {
+    // Generate valid BIP39 test seed words (this is a valid 24-word BIP39 mnemonic for testing)
     const words = [
-      'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
-      'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
-      'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual',
+      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
+      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
+      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'art'
     ];
     return words;
   }

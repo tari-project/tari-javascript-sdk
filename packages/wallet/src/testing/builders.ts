@@ -49,17 +49,17 @@ export class WalletConfigBuilder {
     return this;
   }
 
-  logLevel(level: string): this {
+  logLevel(level: number): this {
     this.config.logLevel = level;
     return this;
   }
 
   debug(): this {
-    return this.logLevel('debug');
+    return this.logLevel(1); // Debug level
   }
 
   quiet(): this {
-    return this.logLevel('error');
+    return this.logLevel(4); // Error level
   }
 
   withPassphrase(passphrase: string): this {
@@ -85,7 +85,7 @@ export class WalletConfigBuilder {
     const defaults: WalletConfig = {
       network: NetworkType.Testnet,
       storagePath: `/tmp/test-wallet-${randomBytes(8).toString('hex')}`,
-      logLevel: 'info',
+      logLevel: 2, // Info level
     };
 
     return { ...defaults, ...this.config };

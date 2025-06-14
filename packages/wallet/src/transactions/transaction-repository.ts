@@ -642,17 +642,18 @@ export class TransactionRepository extends TypedEventEmitter {
       return;
     }
 
-    this.isDisposed = true;
-
-    // Stop cleanup timer
+    // Stop cleanup timer first
     if (this.cacheCleanupTimer) {
       clearInterval(this.cacheCleanupTimer);
       this.cacheCleanupTimer = undefined;
     }
 
-    // Clear all data
+    // Clear all data BEFORE setting disposed flag
     await this.clear();
     this.removeAllListeners();
+
+    // Set disposed flag LAST to avoid ensureNotDisposed() errors
+    this.isDisposed = true;
   }
 
   /**

@@ -325,7 +325,7 @@ export class TransactionAPI extends EventEmitter {
       return await this.transactionService.sendTransaction({
         recipient: addressString as TariAddressString,
         amount,
-        feePerGram: options.fee || (amount / 100n) as MicroTari, // Default fee if not provided
+        feePerGram: options.fee || (BigInt(amount) / 100n) as MicroTari, // Default fee if not provided
         message: options.message
       });
     }
