@@ -266,6 +266,7 @@ export class AmountValidator {
                         available: BigInt(balanceData.available),
                         pendingIncoming: BigInt(balanceData.pendingIncoming),
                         pendingOutgoing: BigInt(balanceData.pendingOutgoing),
+                        timelocked: BigInt(balanceData.timelocked || 0),
                         total: BigInt(balanceData.available) + BigInt(balanceData.pendingIncoming),
                         lastUpdated: new Date()
                     }),

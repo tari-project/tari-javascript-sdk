@@ -38,10 +38,9 @@ import { UtxoService } from './utxos/utxo-service.js';
 import { CoinService } from './coins/coin-service.js';
 import { 
   type PerformanceConfig, 
-  getPerformanceManager,
   configurePerformance
 } from './performance/index.js';
-import type { PerformanceManager } from './performance/performance-manager.js';
+import { PerformanceManager } from './performance/performance-manager.js';
 import type { 
   CreateContactParams,
   UpdateContactParams,
@@ -259,7 +258,7 @@ export class TariWallet implements AsyncDisposable {
     this.coinService = new CoinService(handle, this.utxoService);
 
     // Initialize performance management
-    this.performanceManager = getPerformanceManager();
+    this.performanceManager = PerformanceManager.getInstance();
 
     // Initialize lifecycle
     this.initializeLifecycle();
@@ -284,7 +283,7 @@ export class TariWallet implements AsyncDisposable {
    * Get global performance manager instance
    */
   static getGlobalPerformanceManager(): PerformanceManager {
-    return getPerformanceManager();
+    return PerformanceManager.getInstance();
   }
 
   // Core wallet operations

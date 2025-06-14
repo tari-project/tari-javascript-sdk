@@ -136,7 +136,7 @@ class WorkerThread extends DisposableResource {
       this.worker.postMessage({
         type: 'execute',
         task
-      }, task.transferList);
+      }, task.transferList as any);
     });
   }
 
