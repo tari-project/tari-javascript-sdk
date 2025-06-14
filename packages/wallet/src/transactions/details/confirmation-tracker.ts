@@ -532,14 +532,15 @@ export class ConfirmationTracker extends TypedEventEmitter {
       return;
     }
     
-    this.isDisposed = true;
-    
-    // Stop tracking
+    // Stop tracking BEFORE setting disposed flag
     await this.stop();
     
     // Clear all tracked transactions
     this.trackedTransactions.clear();
     
     this.removeAllListeners();
+    
+    // Set disposed flag LAST to avoid ensureNotDisposed() errors
+    this.isDisposed = true;
   }
 }

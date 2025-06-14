@@ -685,9 +685,9 @@ class MockNativeBindings implements NativeBindings {
   private generateMockSeedWords(): string[] {
     // Generate valid BIP39 test seed words (this is a valid 24-word BIP39 mnemonic for testing)
     const words = [
-      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
-      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon',
-      'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'abandon', 'art'
+      'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
+      'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
+      'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual'
     ];
     return words;
   }
