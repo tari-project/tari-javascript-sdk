@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@tari-project/tarijs-core": "*",
-    "commander": "^13.0.0"
+    "commander": "^14.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
