@@ -2,7 +2,7 @@
  * @fileoverview Tests for TariWallet class
  */
 
-import { TariWallet } from './index';
+import { TariWallet } from '../index';
 import { NetworkType } from '@tari-project/tarijs-core';
 
 describe('TariWallet', () => {

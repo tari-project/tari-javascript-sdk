@@ -11,6 +11,7 @@ import {
   WalletError,
   TypedEventEmitter,
   getFFIBindings,
+  transactionIdFromString,
   type WalletHandle
 } from '@tari-project/tarijs-core';
 
@@ -50,7 +51,7 @@ export interface TransactionAPIEvents {
   'api:initialized': () => void;
   'details:enriched': (transactionId: TransactionId) => void;
   'cancellation:completed': (transactionId: TransactionId) => void;
-  [key: string]: (...args: unknown[]) => void; // Index signature for TypedEventEmitter
+  [key: string]: (...args: any[]) => void; // Index signature for TypedEventEmitter
 }
 
 export interface TransactionAPIConfig {
@@ -181,9 +182,9 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     }
 
     // Balance checks using FFI
-    if (this.walletHandle && request.amount > 0n && (this.ffi.wallet_get_balance || this.ffi.walletGetBalance)) {
+    if (this.walletHandle && request.amount > 0n && this.ffi.walletGetBalance) {
       try {
-        const balance = await (this.ffi.wallet_get_balance || this.ffi.walletGetBalance)(this.walletHandle);
+        const balance = await this.ffi.walletGetBalance(this.walletHandle);
         const available = BigInt(balance.available);
         const totalRequired = request.amount + (request.fee || 25n);
         
@@ -288,25 +289,22 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       // Send transaction using FFI
       let txIdString: string;
       
-      if (this.ffi.wallet_send_transaction || this.ffi.walletSendTransaction) {
-        // Extract handle for FFI calls - tests expect just the handle string
-        const handleValue = (this.walletHandle as { handle?: string })?.handle || this.walletHandle;
-        txIdString = await (this.ffi.wallet_send_transaction || this.ffi.walletSendTransaction)(
-          handleValue,
+      if (this.ffi.walletSendTransaction) {
+        txIdString = await this.ffi.walletSendTransaction(
+          this.walletHandle,
           request.recipient,
           request.amount.toString(),
-          {
-            message: request.message || '',
-            feePerGram: feeToUse.toString()
-          }
+          feeToUse.toString(),
+          request.message || '',
+          false // isOneSided
         );
       } else {
         // Mock implementation for testing
         txIdString = 'tx_integration_001';
       }
 
-      // TransactionId can be either string or BigInt depending on context
-      const transactionId = txIdString as TransactionId;
+      // Convert string to TransactionId using conversion utility
+      const transactionId = transactionIdFromString(txIdString);
       
       const result = {
         transactionId,
@@ -378,11 +376,9 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     try {
       let success = false;
       
-      if (this.ffi.wallet_cancel_pending_transaction || this.ffi.walletCancelPendingTransaction) {
-        // Extract handle for FFI calls - tests expect just the handle string
-        const handleValue = (this.walletHandle as { handle?: string })?.handle || this.walletHandle;
-        success = await (this.ffi.wallet_cancel_pending_transaction || this.ffi.walletCancelPendingTransaction)(
-          handleValue,
+      if (this.ffi.walletCancelPendingTransaction) {
+        success = await this.ffi.walletCancelPendingTransaction(
+          this.walletHandle,
           transactionId.toString()
         );
       } else {
@@ -531,24 +527,22 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     try {
       let txIdString: string;
       
-      if (this.ffi.wallet_send_one_sided_transaction) {
-        // Extract handle for FFI calls - tests expect just the handle string
-        const handleValue = (this.walletHandle as { handle?: string })?.handle || this.walletHandle;
-        txIdString = await this.ffi.wallet_send_one_sided_transaction(
-          handleValue,
+      if (this.ffi.walletSendTransaction) {
+        txIdString = await this.ffi.walletSendTransaction(
+          this.walletHandle,
           recipient,
           amount.toString(),
-          {
-            message: options?.message || ''
-          }
+          undefined, // feePerGram
+          options?.message || '',
+          true // isOneSided
         );
       } else {
         // Mock implementation for testing
         txIdString = 'tx_onesided_001';
       }
 
-      // TransactionId can be either string or BigInt depending on context
-      const transactionId = txIdString as TransactionId;
+      // Convert string to TransactionId using conversion utility
+      const transactionId = transactionIdFromString(txIdString);
       
       const result = {
         transactionId,

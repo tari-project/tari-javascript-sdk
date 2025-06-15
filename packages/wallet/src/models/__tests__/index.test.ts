@@ -2,7 +2,7 @@
  * @fileoverview Tests for wallet models
  */
 
-import { TariAddress, Balance, TransactionId } from './index';
+import { TariAddress, Balance, TransactionId } from '../index';
 import { NetworkType } from '@tari-project/tarijs-core';
 
 describe('Wallet Models', () => {
