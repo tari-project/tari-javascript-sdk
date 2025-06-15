@@ -3,6 +3,8 @@
  */
 
 import { platform, arch } from 'process';
+import { NetworkType } from '../types/index.js';
+import { NetworkResolver } from './network-resolver.js';
 
 export interface PlatformInfo {
   platform: NodeJS.Platform;
@@ -15,6 +17,19 @@ export interface BinaryPaths {
   local: string;
   nodeModules: string;
   global: string;
+}
+
+export interface NetworkBinaryPaths {
+  network: NetworkType;
+  local: string;
+  nodeModules: string;
+  global: string;
+  fallbacks: Array<{
+    network: NetworkType;
+    local: string;
+    nodeModules: string;
+    global: string;
+  }>;
 }
 
 /**
@@ -63,6 +78,49 @@ export function getBinaryPaths(platformInfo: PlatformInfo): BinaryPaths {
     nodeModules: `./node_modules/@tari-project/tarijs-core/native/${rustTarget}/${binaryName}`,
     // Global installation
     global: `/usr/local/lib/tari/${binaryName}`,
+  };
+}
+
+/**
+ * Generate network-aware binary paths with fallback chains
+ */
+export function getNetworkBinaryPaths(
+  platformInfo: PlatformInfo, 
+  network: NetworkType,
+  networkResolver?: NetworkResolver
+): NetworkBinaryPaths {
+  const resolver = networkResolver || new NetworkResolver();
+  const { platform, arch, binaryName } = platformInfo;
+  
+  // Map Node.js arch names to Rust target names
+  const rustArch = arch === 'x64' ? 'x86_64' : (arch === 'arm64' ? 'aarch64' : arch);
+  const rustTarget = `${rustArch}-${getPlatformTarget(platform)}`;
+  
+  const networkPaths = resolver.resolveNetworkPaths(network);
+  const networkDir = networkPaths.networkDir;
+  
+  // Generate primary paths for the requested network
+  const primaryPaths = {
+    network,
+    local: `./dist/native/${networkDir}/${rustTarget}/${binaryName}`,
+    nodeModules: `./node_modules/@tari-project/tarijs-core/native/${networkDir}/${rustTarget}/${binaryName}`,
+    global: `/usr/local/lib/tari/${networkDir}/${binaryName}`,
+  };
+  
+  // Generate fallback paths for other networks
+  const fallbacks = networkPaths.fallbackNetworks.map(fallbackNetwork => {
+    const fallbackDir = resolver.getNetworkDir(fallbackNetwork);
+    return {
+      network: fallbackNetwork,
+      local: `./dist/native/${fallbackDir}/${rustTarget}/${binaryName}`,
+      nodeModules: `./node_modules/@tari-project/tarijs-core/native/${fallbackDir}/${rustTarget}/${binaryName}`,
+      global: `/usr/local/lib/tari/${fallbackDir}/${binaryName}`,
+    };
+  });
+  
+  return {
+    ...primaryPaths,
+    fallbacks,
   };
 }
 

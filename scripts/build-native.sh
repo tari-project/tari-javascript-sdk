@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 NATIVE_DIR="native"
 OUTPUT_DIR="dist/native"
 BUILD_TYPE="${BUILD_TYPE:-release}"
+NETWORK="${NETWORK:-mainnet}"
 
 # Supported targets
 TARGETS=(
@@ -93,7 +94,7 @@ build_native() {
         build_flag="--release"
     fi
     
-    log_info "Building for target: $target"
+    log_info "Building for target: $target (network: $NETWORK)"
     
     cd "$NATIVE_DIR"
     
@@ -111,8 +112,11 @@ build_native() {
             ;;
     esac
     
+    # Set network for compile-time configuration
+    export TARI_NETWORK="$NETWORK"
+    
     # Build using NAPI-RS with Cargo for Node.js FFI module
-    if cargo build --target "$target" $build_flag --package tari-wallet-ffi; then
+    if TARI_NETWORK="$NETWORK" cargo build --target "$target" $build_flag --package tari-wallet-ffi; then
         log_info "Successfully built wallet FFI for $target"
         
         # NAPI-RS generates .node files, but we need to rename from .dylib/.so/.dll
@@ -155,7 +159,7 @@ build_native() {
         local target_dir="target/$target"
         local source_dir="$target_dir/$BUILD_TYPE"
         local source_file="$source_dir/$lib_name$lib_ext"
-        local output_subdir="../$OUTPUT_DIR/$target"
+        local output_subdir="../$OUTPUT_DIR/$NETWORK/$target"
         
         mkdir -p "$output_subdir"
         
@@ -250,12 +254,13 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  BUILD_TYPE   Set to 'debug' or 'release' (default: release)"
+    echo "  NETWORK      Set to 'mainnet', 'testnet', or 'nextnet' (default: mainnet)"
     echo ""
     echo "Examples:"
-    echo "  $0 all                    # Build for all targets in release mode"
-    echo "  BUILD_TYPE=debug $0 all   # Build for all targets in debug mode"
-    echo "  $0 current                # Build for current platform only"
-    echo "  $0 clean                  # Clean all build artifacts"
+    echo "  $0 all                              # Build mainnet for all targets"
+    echo "  NETWORK=testnet $0 all              # Build testnet for all targets"
+    echo "  BUILD_TYPE=debug NETWORK=nextnet $0 current  # Build nextnet debug for current platform"
+    echo "  $0 clean                            # Clean all build artifacts"
 }
 
 # Main script

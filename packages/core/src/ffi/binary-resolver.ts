@@ -4,18 +4,23 @@
 
 import { existsSync } from 'fs';
 import { resolve, join } from 'path';
-import { getCurrentPlatform, getBinaryPaths, normalizePath, getUnsupportedPlatformMessage } from './platforms';
+import { getCurrentPlatform, getBinaryPaths, getNetworkBinaryPaths, normalizePath, getUnsupportedPlatformMessage } from './platforms';
+import { NetworkType } from '../types/index.js';
+import { NetworkResolver } from './network-resolver.js';
 
 export interface BinaryResolverOptions {
   searchPaths?: string[];
   enableDevelopmentPath?: boolean;
   customBinaryName?: string;
+  network?: NetworkType;
+  enableNetworkFallback?: boolean;
 }
 
 export interface ResolvedBinary {
   path: string;
   source: 'local' | 'node_modules' | 'global' | 'custom' | 'environment';
   exists: boolean;
+  network?: NetworkType;
 }
 
 /**
@@ -24,14 +29,22 @@ export interface ResolvedBinary {
 export class BinaryResolver {
   private readonly platformInfo = getCurrentPlatform();
   private readonly options: Required<BinaryResolverOptions>;
+  private readonly networkResolver: NetworkResolver;
 
   constructor(options: BinaryResolverOptions = {}) {
     this.options = {
       searchPaths: [],
       enableDevelopmentPath: true,
       customBinaryName: '',
+      network: NetworkType.Mainnet,
+      enableNetworkFallback: true,
       ...options,
     };
+
+    this.networkResolver = new NetworkResolver({
+      defaultNetwork: this.options.network,
+      enableFallback: this.options.enableNetworkFallback,
+    });
 
     if (!this.platformInfo.isSupported) {
       throw new Error(getUnsupportedPlatformMessage(this.platformInfo));
@@ -41,7 +54,9 @@ export class BinaryResolver {
   /**
    * Resolve binary with comprehensive fallback chain
    */
-  public resolveBinary(): ResolvedBinary {
+  public resolveBinary(network?: NetworkType): ResolvedBinary {
+    const targetNetwork = network || this.options.network;
+
     // 1. Check environment variable override
     const envPath = process.env.TARI_WALLET_FFI_BINARY;
     if (envPath) {
@@ -49,6 +64,7 @@ export class BinaryResolver {
         path: normalizePath(resolve(envPath)),
         source: 'environment',
         exists: existsSync(envPath),
+        network: targetNetwork,
       };
     }
 
@@ -60,11 +76,107 @@ export class BinaryResolver {
           path: normalizePath(binaryPath),
           source: 'custom',
           exists: true,
+          network: targetNetwork,
         };
       }
     }
 
-    // 3. Standard fallback chain
+    // 3. Network-aware fallback chain
+    if (this.options.enableNetworkFallback) {
+      return this.resolveNetworkBinary(targetNetwork);
+    } else {
+      return this.resolveLegacyBinary(targetNetwork);
+    }
+  }
+
+  /**
+   * Resolve binary using network-aware paths with fallbacks
+   */
+  private resolveNetworkBinary(network: NetworkType): ResolvedBinary {
+    const networkBinaryPaths = getNetworkBinaryPaths(this.platformInfo, network, this.networkResolver);
+    
+    // Try primary network paths first
+    const primaryCandidates: Array<{ path: string; source: ResolvedBinary['source']; network: NetworkType }> = [
+      // Local development build (if enabled)
+      ...(this.options.enableDevelopmentPath ? [{ 
+        path: networkBinaryPaths.local, 
+        source: 'local' as const,
+        network: networkBinaryPaths.network 
+      }] : []),
+      // NPM package location
+      { 
+        path: networkBinaryPaths.nodeModules, 
+        source: 'node_modules' as const,
+        network: networkBinaryPaths.network 
+      },
+      // Global installation
+      { 
+        path: networkBinaryPaths.global, 
+        source: 'global' as const,
+        network: networkBinaryPaths.network 
+      },
+    ];
+
+    // Check primary network paths
+    for (const { path, source, network: candidateNetwork } of primaryCandidates) {
+      const resolvedPath = normalizePath(resolve(path));
+      if (existsSync(resolvedPath)) {
+        return {
+          path: resolvedPath,
+          source,
+          exists: true,
+          network: candidateNetwork,
+        };
+      }
+    }
+
+    // Try fallback networks
+    for (const fallback of networkBinaryPaths.fallbacks) {
+      const fallbackCandidates = [
+        ...(this.options.enableDevelopmentPath ? [{ 
+          path: fallback.local, 
+          source: 'local' as const,
+          network: fallback.network 
+        }] : []),
+        { 
+          path: fallback.nodeModules, 
+          source: 'node_modules' as const,
+          network: fallback.network 
+        },
+        { 
+          path: fallback.global, 
+          source: 'global' as const,
+          network: fallback.network 
+        },
+      ];
+
+      for (const { path, source, network: candidateNetwork } of fallbackCandidates) {
+        const resolvedPath = normalizePath(resolve(path));
+        if (existsSync(resolvedPath)) {
+          return {
+            path: resolvedPath,
+            source,
+            exists: true,
+            network: candidateNetwork,
+          };
+        }
+      }
+    }
+
+    // Return first candidate with exists: false if nothing found
+    const firstCandidate = primaryCandidates[0];
+    return {
+      path: normalizePath(resolve(firstCandidate?.path || networkBinaryPaths.nodeModules)),
+      source: firstCandidate?.source || 'node_modules',
+      exists: false,
+      network,
+    };
+  }
+
+  /**
+   * Resolve binary using legacy non-network-aware paths (for backward compatibility)
+   */
+  private resolveLegacyBinary(network: NetworkType): ResolvedBinary {
     const binaryPaths = getBinaryPaths(this.platformInfo);
     
     const candidates: Array<{ path: string; source: ResolvedBinary['source'] }> = [
@@ -83,6 +195,7 @@ export class BinaryResolver {
           path: resolvedPath,
           source,
           exists: true,
+          network,
         };
       }
     }
@@ -93,6 +206,7 @@ export class BinaryResolver {
       path: normalizePath(resolve(firstCandidate?.path || binaryPaths.nodeModules)),
       source: firstCandidate?.source || 'node_modules',
       exists: false,
+      network,
     };
   }
 

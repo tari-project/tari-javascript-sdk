@@ -3,6 +3,7 @@
  */
 
 import { BinaryResolver } from './binary-resolver';
+import { NetworkType } from '../types/index.js';
 
 // Native require function for loading native modules
 declare function require(id: string): any;
@@ -16,6 +17,7 @@ export interface LoaderOptions {
   enableLazyLoading?: boolean;
   validateOnLoad?: boolean;
   customResolver?: BinaryResolver;
+  network?: NetworkType;
 }
 
 /**
@@ -33,7 +35,11 @@ export class NativeModuleLoader {
     this.options = {
       enableLazyLoading: true,
       validateOnLoad: true,
-      customResolver: new BinaryResolver(),
+      customResolver: new BinaryResolver({ 
+        network: options.network || NetworkType.Mainnet,
+        enableNetworkFallback: true,
+      }),
+      network: NetworkType.Mainnet,
       ...options,
     };
     
@@ -71,7 +77,7 @@ export class NativeModuleLoader {
         const { getMockNativeBindings } = await import('./__mocks__/native.js');
         this.nativeModule = getMockNativeBindings();
       } else {
-        const resolvedBinary = this.resolver.resolveBinary();
+        const resolvedBinary = this.resolver.resolveBinary(this.options.network);
         
         if (this.options.validateOnLoad) {
           this.resolver.validateBinary(resolvedBinary);
@@ -140,7 +146,7 @@ export class NativeModuleLoader {
     this.nativeModule = null;
     
     // Clear require cache if available
-    const resolvedBinary = this.resolver.resolveBinary();
+    const resolvedBinary = this.resolver.resolveBinary(this.options.network);
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const nodeRequire = require as NodeRequire;
@@ -210,7 +216,7 @@ export class NativeModuleLoader {
    */
   private enrichLoadError(error: unknown): Error {
     if (error instanceof Error) {
-      const resolvedBinary = this.resolver.resolveBinary();
+      const resolvedBinary = this.resolver.resolveBinary(this.options.network);
       const instructions = this.resolver.getInstallationInstructions();
       
       const enrichedMessage = [
@@ -218,6 +224,7 @@ export class NativeModuleLoader {
         `Binary path: ${resolvedBinary.path}`,
         `Binary exists: ${resolvedBinary.exists}`,
         `Source: ${resolvedBinary.source}`,
+        `Network: ${resolvedBinary.network || 'unknown'}`,
         '',
         'Installation instructions:',
         instructions,
@@ -248,4 +255,12 @@ export async function loadNativeModule(options?: LoaderOptions): Promise<any> {
 export function getNativeModule(): any {
   const loader = NativeModuleLoader.getInstance();
   return loader.getModule();
+}
+
+/**
+ * Load native module for specific network
+ */
+export async function loadNativeModuleForNetwork(network: NetworkType, options?: Omit<LoaderOptions, 'network'>): Promise<any> {
+  const loader = NativeModuleLoader.getInstance({ ...options, network });
+  return loader.loadModule();
 }

@@ -223,7 +223,7 @@ export class FFICompiler {
       
       // Tari source configuration
       TARI_SOURCE_PATH: config.sourcePath,
-      NETWORK_TYPE: config.network,
+      TARI_NETWORK: config.network,
       BUILD_TARGET: config.target.rustTarget,
       
       // Build configuration

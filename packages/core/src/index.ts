@@ -116,6 +116,36 @@ export { getFFIBindings, initializeFFI, resetFFI, FFIBindings } from './ffi/bind
 export type { FFIWalletConfig, WalletHandle, FFIBalance } from './ffi/types';
 export { createWalletHandle, unwrapWalletHandle, validateTariAddress } from './ffi/types';
 
+// FFI loading and binary resolution
+export { 
+  NativeModuleLoader, 
+  loadNativeModule, 
+  getNativeModule, 
+  loadNativeModuleForNetwork,
+  type LoaderOptions 
+} from './ffi/loader';
+export { 
+  BinaryResolver, 
+  type BinaryResolverOptions, 
+  type ResolvedBinary 
+} from './ffi/binary-resolver';
+export { 
+  NetworkResolver, 
+  defaultNetworkResolver,
+  type NetworkResolverOptions,
+  type NetworkPaths
+} from './ffi/network-resolver';
+export { 
+  getCurrentPlatform, 
+  getBinaryPaths, 
+  getNetworkBinaryPaths,
+  normalizePath,
+  getUnsupportedPlatformMessage,
+  type PlatformInfo,
+  type BinaryPaths,
+  type NetworkBinaryPaths
+} from './ffi/platforms';
+
 // FFI interface types
 export type { FFIContact, FFIUtxoInfo } from './types/ffi';
 
