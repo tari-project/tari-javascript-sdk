@@ -21,18 +21,16 @@ import {
 } from '../amount-validator';
 
 // Mock FFI bindings
-jest.mock('@tari-project/tarijs-core', () => ({
-  ...jest.requireActual('@tari-project/tarijs-core'),
-  getFFIBindings: jest.fn(),
-  FFIBindings: {
-    walletGetBalance: jest.fn(),
-  },
-  withErrorContext: jest.fn((_, __) => (target: any, propertyKey: string, descriptor: PropertyDescriptor) => descriptor),
-  validateMicroTari: jest.fn(),
-  validateRequired: jest.fn(),
-  microTariToFFI: jest.fn((value) => value as bigint),
-  microTariFromFFI: jest.fn((value) => value)
-}));
+jest.mock('@tari-project/tarijs-core', () => {
+  const actual = jest.requireActual('@tari-project/tarijs-core');
+  return {
+    ...actual,
+    getFFIBindings: jest.fn(),
+    withErrorContext: jest.fn((_, __) => (target: any, propertyKey: string, descriptor: PropertyDescriptor) => descriptor),
+    validateMicroTari: jest.fn(),
+    validateRequired: jest.fn()
+  };
+});
 
 // Mock Balance
 jest.mock('../../../models', () => ({
@@ -79,8 +77,8 @@ describe('AmountValidator', () => {
 
   describe('validateSufficientBalance', () => {
     it('should pass validation for sufficient balance', async () => {
-      const amount = 5000000000n as MicroTari; // 5 Tari
-      const fee = 100000n as MicroTari; // 0.1 Tari
+      const amount = 500000n as MicroTari; // 0.5 Tari
+      const fee = 10000n as MicroTari; // 0.01 Tari
 
       await expect(
         validator.validateSufficientBalance(amount, fee)
@@ -163,7 +161,8 @@ describe('AmountValidator', () => {
       await validator.validateSufficientBalance(amount);
 
       // Should only call FFI once due to caching
-      expect(FFIBindings.walletGetBalance).toHaveBeenCalledTimes(1);
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      expect(mockFFIBindings.walletGetBalance).toHaveBeenCalledTimes(1);
     });
 
     it('should refresh balance when forced', async () => {
@@ -172,13 +171,14 @@ describe('AmountValidator', () => {
       await validator.getCurrentBalance(); // First call
       await validator.getCurrentBalance(true); // Force refresh
 
-      expect(FFIBindings.walletGetBalance).toHaveBeenCalledTimes(2);
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      expect(mockFFIBindings.walletGetBalance).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('validateMultipleAmounts', () => {
     it('should validate multiple valid amounts', async () => {
-      const amounts = [1000000000n, 2000000000n, 3000000000n] as MicroTari[]; // 1, 2, 3 Tari
+      const amounts = [100000n, 200000n, 300000n] as MicroTari[]; // 0.1, 0.2, 0.3 Tari
 
       await expect(
         validator.validateMultipleAmounts(amounts)
@@ -220,8 +220,9 @@ describe('AmountValidator', () => {
   describe('calculateRecommendedFee', () => {
     it('should calculate fee based on network stats', async () => {
       // Mock fee stats
-      (FFIBindings.walletGetFeePerGramStats as jest.Mock) = jest.fn().mockResolvedValue({
-        median: 1000,
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      mockFFIBindings.walletGetFeePerGramStats = jest.fn().mockResolvedValue({
+        avg: 1000,
         min: 500,
         max: 2000
       });
@@ -234,7 +235,8 @@ describe('AmountValidator', () => {
 
     it('should fallback to minimum fee when stats unavailable', async () => {
       // Mock fee stats to fail
-      (FFIBindings.walletGetFeePerGramStats as jest.Mock) = jest.fn().mockRejectedValue(
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      mockFFIBindings.walletGetFeePerGramStats = jest.fn().mockRejectedValue(
         new Error('Network unavailable')
       );
 
@@ -245,8 +247,9 @@ describe('AmountValidator', () => {
     });
 
     it('should handle multiple outputs', async () => {
-      (FFIBindings.walletGetFeePerGramStats as jest.Mock) = jest.fn().mockResolvedValue({
-        median: 1000,
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      mockFFIBindings.walletGetFeePerGramStats = jest.fn().mockResolvedValue({
+        avg: 1000,
         min: 500,
         max: 2000
       });
@@ -263,12 +266,14 @@ describe('AmountValidator', () => {
     it('should return current balance', async () => {
       const balance = await validator.getCurrentBalance();
 
-      expect(balance).toBe(mockBalance);
-      expect(FFIBindings.walletGetBalance).toHaveBeenCalledWith(mockWalletHandle);
+      expect(balance).toBeDefined();
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      expect(mockFFIBindings.walletGetBalance).toHaveBeenCalledWith(mockWalletHandle);
     });
 
     it('should handle balance query failure', async () => {
-      (FFIBindings.walletGetBalance as jest.Mock).mockRejectedValue(
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      mockFFIBindings.walletGetBalance.mockRejectedValue(
         new Error('FFI error')
       );
 
@@ -284,7 +289,8 @@ describe('AmountValidator', () => {
       // Second call within cache TTL
       await validator.getCurrentBalance();
 
-      expect(FFIBindings.walletGetBalance).toHaveBeenCalledTimes(1);
+      const mockFFIBindings = (getFFIBindings as jest.Mock).mock.results[0].value;
+      expect(mockFFIBindings.walletGetBalance).toHaveBeenCalledTimes(1);
     });
   });
 

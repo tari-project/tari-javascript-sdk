@@ -30,7 +30,7 @@ export interface AmountValidationConfig {
  * Default amount validation configuration
  */
 export const DEFAULT_AMOUNT_CONFIG: AmountValidationConfig = {
-    minimumAmount: microTariFromFFI(1n), // 1 MicroTari dust limit
+    minimumAmount: (1n as MicroTari), // 1 MicroTari dust limit
     maximumAmount: undefined, // No maximum by default
     safetyMarginPercent: 0.05, // 5% safety margin
     strictUtxoValidation: true
