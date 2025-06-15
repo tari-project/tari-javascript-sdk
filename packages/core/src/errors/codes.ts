@@ -15,9 +15,9 @@
 
 /**
  * Comprehensive error codes for all wallet operations
- * Using const enum for better performance and smaller bundle size
+ * Using regular enum for compatibility with isolatedModules
  */
-export const enum WalletErrorCode {
+export enum WalletErrorCode {
   // Initialization errors (1000-1099)
   InvalidConfig = 1000,
   WalletExists = 1001,
