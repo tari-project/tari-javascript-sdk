@@ -238,7 +238,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
           networkCongestion = 'medium';
           estimatedConfirmationTime = 120; // 2 minutes
         }
-      } catch (error) {
+      } catch {
         // Fall back to default fee if estimation fails
         // Note: Error is already logged by FFI layer
       }
@@ -290,7 +290,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       
       if (this.ffi.wallet_send_transaction || this.ffi.walletSendTransaction) {
         // Extract handle for FFI calls - tests expect just the handle string
-        const handleValue = (this.walletHandle as any)?.handle || this.walletHandle;
+        const handleValue = (this.walletHandle as { handle?: string })?.handle || this.walletHandle;
         txIdString = await (this.ffi.wallet_send_transaction || this.ffi.walletSendTransaction)(
           handleValue,
           request.recipient,
@@ -380,7 +380,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       
       if (this.ffi.wallet_cancel_pending_transaction || this.ffi.walletCancelPendingTransaction) {
         // Extract handle for FFI calls - tests expect just the handle string
-        const handleValue = (this.walletHandle as any)?.handle || this.walletHandle;
+        const handleValue = (this.walletHandle as { handle?: string })?.handle || this.walletHandle;
         success = await (this.ffi.wallet_cancel_pending_transaction || this.ffi.walletCancelPendingTransaction)(
           handleValue,
           transactionId.toString()
@@ -405,13 +405,13 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
 
   // Additional methods required by integration test
 
-  async getPendingTransactions(): Promise<{ outbound: any[]; inbound: any[] }> {
+  async getPendingTransactions(): Promise<{ outbound: unknown[]; inbound: unknown[] }> {
     this.checkDisposed();
     // Mock implementation
     return { outbound: [{ id: 'tx_integration_001' }], inbound: [] };
   }
 
-  async getTransactionDetails(txId: TransactionId): Promise<{ transaction: any; confirmations: number; feeBreakdown: any }> {
+  async getTransactionDetails(txId: TransactionId): Promise<{ transaction: unknown; confirmations: number; feeBreakdown: unknown }> {
     this.checkDisposed();
     
     // Try to get transaction via FFI if available
@@ -445,32 +445,32 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     };
   }
 
-  async updateTransactionMemo(txId: TransactionId, memo: string): Promise<void> {
+  async updateTransactionMemo(_txId: TransactionId, _memo: string): Promise<void> {
     this.checkDisposed();
     // Mock implementation - use memo service if available
   }
 
-  async getTransactionMemo(txId: TransactionId): Promise<string> {
+  async getTransactionMemo(_txId: TransactionId): Promise<string> {
     this.checkDisposed();
     return 'Updated memo for integration test';
   }
 
-  async startConfirmationTracking(txId: TransactionId): Promise<void> {
+  async startConfirmationTracking(_txId: TransactionId): Promise<void> {
     this.checkDisposed();
     // Mock implementation
   }
 
-  async getTransactionHistory(): Promise<any[]> {
+  async getTransactionHistory(): Promise<unknown[]> {
     this.checkDisposed();
     return [{ transaction: { id: 'tx_integration_001' }, enrichedAt: Date.now(), cached: false }];
   }
 
-  async exportTransactionHistory(format: string): Promise<string> {
+  async exportTransactionHistory(_format: string): Promise<string> {
     this.checkDisposed();
     return 'tx_integration_001,1000000,pending';
   }
 
-  async getStatistics(): Promise<any> {
+  async getStatistics(): Promise<unknown> {
     this.checkDisposed();
     return {
       totalSent: this.stats.totalSent,
@@ -485,12 +485,12 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     };
   }
 
-  async canCancelTransaction(txId: TransactionId): Promise<{ canCancel: boolean }> {
+  async canCancelTransaction(_txId: TransactionId): Promise<{ canCancel: boolean }> {
     this.checkDisposed();
     return { canCancel: true };
   }
 
-  async getCancellableTransactions(): Promise<any[]> {
+  async getCancellableTransactions(): Promise<unknown[]> {
     this.checkDisposed();
     return [{ id: 'tx_integration_001' }];
   }
@@ -518,7 +518,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     };
   }
 
-  async sendOneSidedTransaction(recipient: TariAddressString, amount: MicroTari, options?: any): Promise<TransactionId> {
+  async sendOneSidedTransaction(recipient: TariAddressString, amount: MicroTari, options?: { message?: string }): Promise<TransactionId> {
     this.checkDisposed();
     
     if (!this.walletHandle) {
@@ -533,7 +533,7 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
       
       if (this.ffi.wallet_send_one_sided_transaction) {
         // Extract handle for FFI calls - tests expect just the handle string
-        const handleValue = (this.walletHandle as any)?.handle || this.walletHandle;
+        const handleValue = (this.walletHandle as { handle?: string })?.handle || this.walletHandle;
         txIdString = await this.ffi.wallet_send_one_sided_transaction(
           handleValue,
           recipient,
@@ -569,10 +569,13 @@ export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
     }
   }
 
-  async searchTransactionHistory(query: string): Promise<any[]> {
+  async searchTransactionHistory(query: string): Promise<unknown[]> {
     this.checkDisposed();
     const history = await this.getTransactionHistory();
-    return history.filter(h => h.transaction.message && h.transaction.message.includes(query));
+    return history.filter((h: unknown) => {
+      const item = h as { transaction?: { message?: string } };
+      return item.transaction?.message && item.transaction.message.includes(query);
+    });
   }
 
   async refreshAllData(): Promise<void> {
