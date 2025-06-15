@@ -14,6 +14,7 @@ import {
 import { TariAddress } from '../../../models';
 import { FeeEstimator } from '../../fees';
 import { StandardSender, type StandardSendOptions } from '../standard-sender';
+import { AddressFactory } from '../../../testing/factories';
 
 // Mock FFI bindings
 jest.mock('@tari-project/tarijs-core', () => ({
@@ -91,7 +92,7 @@ describe('StandardSender', () => {
   });
 
   describe('sendTransaction', () => {
-    const validRecipient = 'valid-recipient-address';
+    const validRecipient = AddressFactory.base58();
     const validAmount = 50000n as MicroTari;
     const validOptions: StandardSendOptions = {
       message: 'Test transaction',
@@ -131,7 +132,7 @@ describe('StandardSender', () => {
     });
 
     it('should validate recipient address', async () => {
-      const invalidRecipient = '';
+      const invalidRecipient = AddressFactory.invalid();
 
       await expect(
         standardSender.sendTransaction(invalidRecipient, validAmount, validOptions)

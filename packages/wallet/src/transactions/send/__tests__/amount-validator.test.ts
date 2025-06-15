@@ -8,7 +8,10 @@ import {
   MicroTari, 
   WalletError, 
   WalletErrorCode,
-  FFIBindings 
+  FFIBindings,
+  getFFIBindings,
+  microTariToFFI,
+  microTariFromFFI
 } from '@tari-project/tarijs-core';
 import { Balance } from '../../../models';
 import { 
@@ -20,19 +23,25 @@ import {
 // Mock FFI bindings
 jest.mock('@tari-project/tarijs-core', () => ({
   ...jest.requireActual('@tari-project/tarijs-core'),
+  getFFIBindings: jest.fn(),
   FFIBindings: {
     walletGetBalance: jest.fn(),
   },
   withErrorContext: jest.fn((_, __) => (target: any, propertyKey: string, descriptor: PropertyDescriptor) => descriptor),
   validateMicroTari: jest.fn(),
-  validateRequired: jest.fn()
+  validateRequired: jest.fn(),
+  microTariToFFI: jest.fn((value) => value as bigint),
+  microTariFromFFI: jest.fn((value) => value)
 }));
 
 // Mock Balance
 jest.mock('../../../models', () => ({
-  Balance: {
-    from: jest.fn(),
-  }
+  BalanceModel: jest.fn().mockImplementation((data) => ({
+    available: data.available,
+    pending: data.pendingIncoming + data.pendingOutgoing,
+    total: data.available + data.pendingIncoming,
+    ...data
+  }))
 }));
 
 describe('AmountValidator', () => {
@@ -50,12 +59,16 @@ describe('AmountValidator', () => {
       total: 1000000n,
     } as any;
 
-    (Balance.from as jest.Mock).mockReturnValue(mockBalance);
-    (FFIBindings.walletGetBalance as jest.Mock).mockResolvedValue({
-      available: 1000000n,
-      pending_incoming: 0n,
-      pending_outgoing: 0n
-    });
+    const mockFFIBindings = {
+      walletGetBalance: jest.fn().mockResolvedValue({
+        available: 1000000n,
+        pendingIncoming: 0n,
+        pendingOutgoing: 0n,
+        timelocked: 0n
+      })
+    };
+
+    (getFFIBindings as jest.Mock).mockReturnValue(mockFFIBindings);
 
     validator = new AmountValidator(mockWalletHandle);
   });
@@ -66,8 +79,8 @@ describe('AmountValidator', () => {
 
   describe('validateSufficientBalance', () => {
     it('should pass validation for sufficient balance', async () => {
-      const amount = 50000n as MicroTari;
-      const fee = 1000n as MicroTari;
+      const amount = 5000000000n as MicroTari; // 5 Tari
+      const fee = 100000n as MicroTari; // 0.1 Tari
 
       await expect(
         validator.validateSufficientBalance(amount, fee)
@@ -165,7 +178,7 @@ describe('AmountValidator', () => {
 
   describe('validateMultipleAmounts', () => {
     it('should validate multiple valid amounts', async () => {
-      const amounts = [10000n, 20000n, 30000n] as MicroTari[];
+      const amounts = [1000000000n, 2000000000n, 3000000000n] as MicroTari[]; // 1, 2, 3 Tari
 
       await expect(
         validator.validateMultipleAmounts(amounts)
