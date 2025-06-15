@@ -1,20 +1,47 @@
 # Quick Start
 
-Get up and running with the Tari JavaScript SDK in just 5 minutes! This guide will walk you through creating your first wallet, checking balances, and sending transactions.
+Get up and running with the Tari JavaScript SDK in just 5 minutes! This guide will walk you through building network-specific FFI binaries, creating your first wallet, checking balances, and sending transactions using **real Tari blockchain functionality**.
 
 ## Prerequisites
 
 Before starting, ensure you have:
 - ✅ [Node.js 18+](https://nodejs.org/) installed
+- ✅ [Rust 1.70+](https://rustup.rs/) for FFI compilation
 - ✅ [Installed the Tari SDK](./installation.md)
 - ✅ Basic knowledge of JavaScript/TypeScript
 
+## Important: Real FFI Usage
+
+**This SDK uses real Tari blockchain FFI bindings, not mock implementations.** All examples and documentation assume you have compiled network-specific native binaries.
+
 ## Your First Wallet (2 minutes)
 
-### Step 1: Create a New Project
+### Step 1: Set Up Tari Source and Build FFI Binaries
 
 ```bash
-# Create a new directory
+# Clone the SDK (if not already done)
+git clone https://github.com/tari-project/tari-javascript-sdk.git
+cd tari-javascript-sdk
+
+# Install dependencies
+npm install
+
+# Set up Tari source code (required for FFI compilation)
+npm run setup:tari-source
+
+# Build network-specific FFI binaries (this takes 5-10 minutes)
+npm run build:networks
+
+# Verify binaries were created
+ls -la dist/native/*/
+# Should show: mainnet/ testnet/ nextnet/ directories with platform binaries
+```
+
+### Step 2: Create a New Project
+
+```bash
+# Create a new directory outside the SDK
+cd ..
 mkdir my-tari-wallet
 cd my-tari-wallet
 
@@ -28,16 +55,27 @@ npm install @tari-project/tarijs-wallet
 npm install --save-dev typescript @types/node ts-node
 ```
 
-### Step 2: Create Your First Wallet
+### Step 3: Create Your First Wallet
 
 Create a file called `my-wallet.ts` (or `my-wallet.js` for JavaScript):
 
 ```typescript
-import { TariWallet, NetworkType, createSecureStorage } from '@tari-project/tarijs-wallet';
+import { 
+  TariWallet, 
+  NetworkType, 
+  createSecureStorage,
+  loadNativeModuleForNetwork 
+} from '@tari-project/tarijs-wallet';
 
 async function createWallet() {
   try {
-    console.log('🚀 Creating your first Tari wallet...\n');
+    console.log('🚀 Creating your first Tari wallet with real FFI...\n');
+    
+    // Load network-specific FFI binary (testnet for development)
+    const network = NetworkType.Testnet;
+    console.log('📦 Loading testnet FFI binary...');
+    await loadNativeModuleForNetwork(network);
+    console.log('✅ Real FFI binary loaded successfully');
     
     // Create secure storage with automatic platform detection
     const storage = await createSecureStorage({
@@ -48,9 +86,9 @@ async function createWallet() {
     
     console.log(`✅ Storage backend: ${storage.backend}`);
     
-    // Create a new wallet
+    // Create a new wallet using real Tari blockchain functionality
     const wallet = await TariWallet.create({
-      network: NetworkType.Testnet,     // Use testnet for development
+      network: network,                 // Network must match loaded FFI binary
       storagePath: './wallet-data',     // Local storage path
       logLevel: 'info',                 // Enable logging
       storage: storage                  // Use secure storage
@@ -99,7 +137,7 @@ async function createWallet() {
 createWallet();
 ```
 
-### Step 3: Run Your Wallet
+### Step 4: Run Your Wallet
 
 ```bash
 # TypeScript
@@ -112,8 +150,10 @@ node my-wallet.js
 
 You should see output like:
 ```
-🚀 Creating your first Tari wallet...
+🚀 Creating your first Tari wallet with real FFI...
 
+📦 Loading testnet FFI binary...
+✅ Real FFI binary loaded successfully
 ✅ Storage backend: TauriSecureStorage
 ✅ Wallet created successfully!
 
@@ -128,6 +168,48 @@ You should see output like:
 
 👂 Listening for transactions and balance updates...
 💡 Send some testnet Tari to your address to see live updates!
+```
+
+## Network-Specific Development
+
+### Building for Different Networks
+
+```bash
+# Build all networks (mainnet, testnet, nextnet)
+npm run build:networks
+
+# Build specific network only
+npm run build:networks:testnet
+npm run build:networks:mainnet  
+npm run build:networks:nextnet
+
+# Clean all network builds
+npm run build:networks:clean
+```
+
+### Using Different Networks in Code
+
+```typescript
+// For production (mainnet)
+await loadNativeModuleForNetwork(NetworkType.Mainnet);
+const wallet = await TariWallet.create({
+  network: NetworkType.Mainnet,
+  // ... other config
+});
+
+// For development (testnet)
+await loadNativeModuleForNetwork(NetworkType.Testnet);
+const wallet = await TariWallet.create({
+  network: NetworkType.Testnet,
+  // ... other config
+});
+
+// For cutting-edge features (nextnet)
+await loadNativeModuleForNetwork(NetworkType.Nextnet);
+const wallet = await TariWallet.create({
+  network: NetworkType.Nextnet,
+  // ... other config
+});
 ```
 
 ## Getting Test Funds (1 minute)

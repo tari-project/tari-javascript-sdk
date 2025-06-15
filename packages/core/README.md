@@ -1,18 +1,19 @@
 # @tari-project/tarijs-core
 
-Core FFI bindings and utilities for the Tari JavaScript SDK.
+Core FFI bindings and utilities for the Tari JavaScript SDK using **real minotari_wallet_ffi**.
 
 ## Overview
 
-This package provides the fundamental building blocks for interacting with Tari wallet functionality through Rust FFI via NAPI-RS. It contains shared types, error handling infrastructure, memory management utilities, and the low-level bindings that other packages build upon.
+This package provides the fundamental building blocks for interacting with Tari wallet functionality through **real Rust FFI via NAPI-RS**. It contains shared types, error handling infrastructure, memory management utilities, and the low-level bindings that other packages build upon. **No mock implementations** - all FFI calls connect to actual Tari blockchain functionality.
 
 ## Features
 
+- **Real FFI Integration**: Direct NAPI-RS bindings to minotari_wallet_ffi (no mocks)
+- **Network-Aware Binary Loading**: Automatic resolution of network-specific FFI binaries
 - **Type Safety**: Comprehensive TypeScript definitions for all Tari data structures
 - **Memory Management**: Automatic resource tracking and cleanup utilities
 - **Error Handling**: Structured error system with contextual information
-- **FFI Integration**: NAPI-RS bindings for optimal performance
-- **Network Support**: Multi-network configuration (mainnet, testnet, nextnet)
+- **Multi-Network Support**: Mainnet, testnet, and nextnet with fallback chains
 
 ## Installation
 
@@ -23,9 +24,26 @@ npm install @tari-project/tarijs-core
 ## Usage
 
 ```typescript
-import { NetworkType, LogLevel, TariError } from '@tari-project/tarijs-core';
+import { 
+  NetworkType, 
+  LogLevel, 
+  TariError,
+  loadNativeModuleForNetwork,
+  BinaryResolver 
+} from '@tari-project/tarijs-core';
 
-// Configure for testnet
+// Load real FFI binary for testnet
+await loadNativeModuleForNetwork(NetworkType.Testnet);
+
+// Validate network binary availability
+const resolver = new BinaryResolver({ 
+  network: NetworkType.Testnet,
+  enableNetworkFallback: true 
+});
+const resolved = resolver.resolveBinary(NetworkType.Testnet);
+console.log(`Binary found: ${resolved.exists} at ${resolved.path}`);
+
+// Configure for testnet with real FFI
 const config = {
   network: NetworkType.Testnet,
   logLevel: LogLevel.Info

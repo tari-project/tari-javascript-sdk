@@ -1,10 +1,18 @@
 # @tari-project/tarijs-wallet
 
-High-level Tari wallet API for JavaScript applications.
+High-level Tari wallet API for JavaScript applications using **real Tari blockchain FFI bindings**.
 
 ## Overview
 
-This package provides a comprehensive, type-safe interface for interacting with Tari wallets from JavaScript and TypeScript applications. Built on top of `@tari-project/tarijs-core`, it offers wallet creation, transaction management, balance queries, and network synchronization capabilities.
+This package provides a comprehensive, type-safe interface for interacting with Tari wallets from JavaScript and TypeScript applications. Built on top of `@tari-project/tarijs-core`, it offers wallet creation, transaction management, balance queries, and network synchronization capabilities through **real minotari_wallet_ffi bindings** - no mock implementations.
+
+## ⚠️ Important: Real FFI Usage
+
+**This package uses actual Tari blockchain functionality, not mock data or placeholder implementations.** All operations connect to real Tari network infrastructure. Ensure you have:
+
+1. **Compiled FFI binaries** for your target network
+2. **Network connectivity** for blockchain operations  
+3. **Test funds** when using testnet (not required for wallet creation)
 
 ## Features
 
@@ -22,39 +30,66 @@ This package provides a comprehensive, type-safe interface for interacting with 
 npm install @tari-project/tarijs-wallet
 ```
 
-## Quick Start
+## Prerequisites: Build Network-Specific FFI Binaries
+
+**Before using the wallet**, you must compile network-specific FFI binaries:
+
+```bash
+# Clone the SDK repository
+git clone https://github.com/tari-project/tari-javascript-sdk.git
+cd tari-javascript-sdk
+
+# Set up Tari source code
+npm run setup:tari-source
+
+# Build all network binaries (5-10 minutes)
+npm run build:networks
+
+# Or build specific networks
+npm run build:networks:testnet  # For development
+npm run build:networks:mainnet  # For production
+```
+
+## Quick Start with Real FFI
 
 ```typescript
-import { TariWallet, NetworkType } from '@tari-project/tarijs-wallet';
+import { 
+  TariWallet, 
+  NetworkType, 
+  loadNativeModuleForNetwork 
+} from '@tari-project/tarijs-wallet';
 
-// Create a new wallet
+// STEP 1: Load network-specific FFI binary
+await loadNativeModuleForNetwork(NetworkType.Testnet);
+
+// STEP 2: Create a wallet using real blockchain functionality
 const wallet = await TariWallet.create({
-  network: NetworkType.Testnet,
+  network: NetworkType.Testnet,  // Must match loaded FFI binary
   storagePath: './my-wallet',
   logPath: './wallet.log'
 });
 
-// Get wallet address
+// STEP 3: Real blockchain operations
 const address = await wallet.getAddress();
-console.log(`Wallet address: ${address.toString()}`);
+console.log(`Real Tari address: ${address.toString()}`);
 
-// Check balance
+// Real balance from blockchain
 const balance = await wallet.getBalance();
-console.log(`Available balance: ${balance.available} µT`);
+console.log(`Actual balance: ${balance.available} µT`);
 
-// Send a transaction
+// Real transaction on testnet
 const txId = await wallet.sendTransaction(
   'recipient_address_here',
   1000000n, // 1 Tari in microTari
-  { message: 'Payment for services' }
+  { message: 'Real blockchain transaction' }
 );
 
-// Listen for events
+// Real-time blockchain events
 wallet.on('onTransactionReceived', (tx) => {
-  console.log(`Received ${tx.amount} µT`);
+  console.log(`Received real transaction: ${tx.amount} µT`);
 });
 
-// Clean up when done
+// Proper cleanup
 await wallet.destroy();
 ```
 

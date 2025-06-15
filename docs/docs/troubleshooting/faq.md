@@ -31,17 +31,31 @@ The SDK is currently in active development. While the core infrastructure is com
 
 ### How do I install the SDK?
 
-For most applications:
-```bash
-npm install @tari-project/tarijs-wallet
-```
+**⚠️ Important: The SDK requires compiled FFI binaries before use.**
 
-For low-level integrations:
-```bash
-npm install @tari-project/tarijs-core
-```
+1. **Install the package:**
+   ```bash
+   npm install @tari-project/tarijs-wallet
+   ```
 
-See the [Installation Guide](../getting-started/installation.md) for detailed instructions.
+2. **Build network-specific FFI binaries:**
+   ```bash
+   # Clone SDK repository  
+   git clone https://github.com/tari-project/tari-javascript-sdk.git
+   cd tari-javascript-sdk
+   
+   # Set up Tari source and build binaries
+   npm install
+   npm run setup:tari-source
+   npm run build:networks:testnet  # For development
+   ```
+
+3. **Verify installation:**
+   ```bash
+   npm run test:integration
+   ```
+
+See the [Network Build Guide](../development/network-builds.md) for detailed instructions.
 
 ### Why do I get "engine incompatible" errors?
 
@@ -62,16 +76,98 @@ The SDK includes comprehensive TypeScript definitions. Simply install TypeScript
 npm install --save-dev typescript @types/node
 ```
 
+## FFI Binary Issues
+
+### Why do I get "FFI binary not found" errors?
+
+This means you haven't compiled the network-specific FFI binaries yet:
+
+```bash
+# Build all networks (5-10 minutes)
+npm run build:networks
+
+# Or build specific network only
+npm run build:networks:testnet
+```
+
+### How do I verify FFI binaries are available?
+
+```bash
+# Check binary files exist
+ls -la dist/native/testnet/*/
+# Should show .node files for your platform
+
+# Test binary loading
+node -e "
+const { loadNativeModuleForNetwork, NetworkType } = require('@tari-project/tarijs-core');
+loadNativeModuleForNetwork(NetworkType.Testnet)
+  .then(() => console.log('✅ FFI binary works'))
+  .catch(err => console.error('❌ FFI load failed:', err));
+"
+```
+
+### What if FFI compilation fails?
+
+Common solutions:
+
+1. **Check Rust installation:**
+   ```bash
+   rustc --version  # Should be 1.70.0+
+   ```
+
+2. **Set up Tari source:**
+   ```bash
+   npm run setup:tari-source
+   ```
+
+3. **Install platform dependencies:**
+   - **macOS**: `xcode-select --install`
+   - **Linux**: `sudo apt-get install build-essential libssl-dev`
+   - **Windows**: Install Visual Studio Build Tools
+
+4. **Clean and rebuild:**
+   ```bash
+   npm run build:networks:clean
+   npm run build:networks
+   ```
+
+### How do I use different networks?
+
+Each network requires its own FFI binary and must be loaded explicitly:
+
+```typescript
+// For testnet development
+await loadNativeModuleForNetwork(NetworkType.Testnet);
+const wallet = await TariWallet.create({ network: NetworkType.Testnet, ... });
+
+// For mainnet production  
+await loadNativeModuleForNetwork(NetworkType.Mainnet);
+const wallet = await TariWallet.create({ network: NetworkType.Mainnet, ... });
+```
+
+**Never mix networks** - always match the loaded FFI binary with the wallet network.
+
 ## Wallet Operations
 
 ### How do I create a new wallet?
 
-```typescript
-import { TariWallet, NetworkType, createSecureStorage } from '@tari-project/tarijs-wallet';
+**Always load the network-specific FFI binary first:**
 
+```typescript
+import { 
+  TariWallet, 
+  NetworkType, 
+  createSecureStorage,
+  loadNativeModuleForNetwork 
+} from '@tari-project/tarijs-wallet';
+
+// STEP 1: Load real FFI binary for your network
+await loadNativeModuleForNetwork(NetworkType.Testnet);
+
+// STEP 2: Create wallet with real blockchain functionality
 const storage = await createSecureStorage();
 const wallet = await TariWallet.create({
-  network: NetworkType.Testnet,
+  network: NetworkType.Testnet,  // Must match loaded FFI binary
   storagePath: './wallet-data',
   storage: storage
 });
