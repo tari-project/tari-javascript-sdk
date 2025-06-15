@@ -49,7 +49,15 @@ describe('RecipientValidator', () => {
       toDisplayString: jest.fn().mockReturnValue('mock-address-display'),
     } as any;
 
-    (TariAddress.fromString as jest.Mock).mockResolvedValue(mockTariAddress);
+    // Make fromString return unique mock addresses to avoid duplicate detection
+    let callCount = 0;
+    (TariAddress.fromString as jest.Mock).mockImplementation(() => {
+      callCount++;
+      return {
+        handle: `mock-address-handle-${callCount}`,
+        toDisplayString: jest.fn().mockReturnValue(`mock-address-display-${callCount}`),
+      };
+    });
     (TariAddress.fromPublicKey as jest.Mock).mockResolvedValue(mockTariAddress);
     (TariAddress.fromBase58 as jest.Mock).mockResolvedValue(mockTariAddress);
     (TariAddress.fromHex as jest.Mock).mockResolvedValue(mockTariAddress);
@@ -165,12 +173,12 @@ describe('RecipientValidator', () => {
 
   describe('validateMultipleRecipients', () => {
     it('should validate multiple valid recipients', async () => {
-      const recipients = [AddressFactory.base58(), AddressFactory.base58(), AddressFactory.base58()];
+      const recipients = ['valid-addr1', 'valid-addr2', 'valid-addr3'];
       
       const results = await validator.validateMultipleRecipients(recipients);
       
       expect(results).toHaveLength(3);
-      expect(results.every(addr => addr === mockTariAddress)).toBe(true);
+      expect(results.every(addr => addr && typeof addr.handle === 'string')).toBe(true);
     });
 
     it('should throw error for empty recipients array', async () => {

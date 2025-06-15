@@ -49,8 +49,8 @@ export class RecipientValidator {
       return recipient;
     }
 
-    // Check cache first for string addresses
-    const cacheKey = this.getCacheKey(recipient);
+    // Check cache first for string addresses only
+    const cacheKey = this.getCacheKey(recipient as string);
     if (this.addressCache.has(cacheKey)) {
       const cachedAddress = this.addressCache.get(cacheKey)!;
       await this.validateTariAddress(cachedAddress, allowSelfSend);

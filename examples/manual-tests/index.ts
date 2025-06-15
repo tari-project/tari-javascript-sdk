@@ -791,7 +791,7 @@ async function main(): Promise<void> {
             console.log('Network-specific FFI binaries are required but not found.');
             console.log('Build them with:');
             console.log('  npm run setup:tari-source');
-            console.log('  npm run build:networks:' + (config?.network?.toLowerCase() || 'testnet'));
+            console.log('  npm run build:networks:testnet');
         }
         
         process.exitCode = 1;
