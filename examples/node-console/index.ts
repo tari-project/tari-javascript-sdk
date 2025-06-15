@@ -31,6 +31,7 @@ import {
   type TransactionInfo,
   type WalletConfig
 } from '@tari-project/tarijs-wallet';
+import { loadNativeModuleForNetwork } from '@tari-project/tarijs-core';
 
 // Console wallet configuration
 interface ConsoleWalletConfig {
@@ -91,7 +92,13 @@ class ConsoleWallet {
     const spinner = ora('Initializing wallet...').start();
     
     try {
-      // Create secure storage
+      // STEP 1: Load network-specific FFI binary
+      spinner.text = 'Loading network-specific FFI binary...';
+      await loadNativeModuleForNetwork(this.config.network);
+      spinner.text = `FFI binary loaded for ${this.config.network}`;
+      
+      // STEP 2: Create secure storage
+      spinner.text = 'Setting up secure storage...';
       const storage = await createSecureStorage({
         enableCaching: true,
         enableBatching: true,
@@ -131,6 +138,16 @@ class ConsoleWallet {
     } catch (error) {
       spinner.fail('Failed to initialize wallet');
       console.error(chalk.red('Error:'), error instanceof Error ? error.message : error);
+      
+      // Enhanced error message for FFI issues
+      if (error instanceof Error) {
+        if (error.message.includes('FFI binary not found') || error.message.includes('native module')) {
+          console.error(chalk.yellow('\n💡 Tip: Ensure network-specific FFI binaries are built:'));
+          console.error(chalk.dim(`   npm run build:networks:${this.config.network.toLowerCase()}`));
+          console.error(chalk.dim('   npm run setup:tari-source'));
+        }
+      }
+      
       process.exit(1);
     }
   }

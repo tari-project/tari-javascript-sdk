@@ -10,7 +10,8 @@ import {
     transactionIdToString,
     transactionIdFromString,
     unixTimestampToISOString,
-    TransactionDirection
+    TransactionDirection,
+    loadNativeModuleForNetwork
 } from '@tari-project/tarijs-core';
 
 // Import LogLevel directly with explicit type
@@ -54,33 +55,49 @@ export class ManualTestSuite {
     }
 
     /**
-     * Initialize the test suite
-     */
+    * Initialize the test suite
+    */
     async setup(): Promise<void> {
-        console.log('🚀 Setting up manual test wallets...');
-        console.log(`Network: ${this.config.network}`);
-        console.log(`Test amount: ${this.config.testAmount} µT`);
-        console.log('');
+    console.log('🚀 Setting up manual test wallets...');
+    console.log(`Network: ${this.config.network}`);
+    console.log(`Test amount: ${this.config.testAmount} µT`);
+    console.log('');
 
-        try {
-            // Setup sender wallet
-            await this.setupSenderWallet();
+    try {
+    // STEP 1: Load network-specific FFI binary
+    console.log('📦 Loading network-specific FFI binary...');
+      await loadNativeModuleForNetwork(this.config.network);
+    console.log(`✅ FFI binary loaded for ${this.config.network} network`);
+    console.log('');
 
-            // Setup receiver wallet  
-            await this.setupReceiverWallet();
+    // STEP 2: Setup sender wallet
+    await this.setupSenderWallet();
 
-            // Connect to base node if specified
-            if (this.config.baseNodePublicKey && this.config.baseNodeAddress) {
-                await this.connectToBaseNode();
-            }
+    // STEP 3: Setup receiver wallet  
+      await this.setupReceiverWallet();
 
-            console.log('✅ Manual test setup complete!');
-            console.log('');
-        } catch (error) {
-            console.error('❌ Setup failed:', error);
-            throw error;
-        }
+    // STEP 4: Connect to base node if specified
+      if (this.config.baseNodePublicKey && this.config.baseNodeAddress) {
+      await this.connectToBaseNode();
     }
+
+        console.log('✅ Manual test setup complete!');
+      console.log('');
+    } catch (error) {
+      console.error('❌ Setup failed:', error);
+      
+      // Enhanced error message for FFI issues
+      if (error instanceof Error) {
+        if (error.message.includes('FFI binary not found') || error.message.includes('native module')) {
+          console.error('💡 Tip: Ensure network-specific FFI binaries are built:');
+          console.error(`   npm run build:networks:${this.config.network.toLowerCase()}`);
+          console.error('   npm run setup:tari-source');
+        }
+      }
+      
+      throw error;
+    }
+  }
 
     /**
      * Run interactive test menu
@@ -735,10 +752,14 @@ async function main(): Promise<void> {
         console.log('Creating test configuration...');
         const config = createManualTestConfig();
         
+        console.log(`Network: ${config.network}`);
+        console.log(`Test amount: ${config.testAmount} µT`);
+        console.log('');
+        
         // Create test suite
         testSuite = new ManualTestSuite(config);
         
-        // Setup wallets
+        // Setup wallets (includes network-specific FFI binary loading)
         await testSuite.setup();
         
         // Run interactive tests
@@ -751,13 +772,26 @@ async function main(): Promise<void> {
             console.log('\n📋 Setup Instructions:');
             console.log('1. Set SENDER_SEED_WORDS environment variable (24 space-separated words)');
             console.log('2. Set RECEIVER_SEED_WORDS environment variable (24 space-separated words)');
-            console.log('3. Optional: Set TARI_NETWORK (testnet|mainnet, default: testnet)');
+            console.log('3. Optional: Set TARI_NETWORK (testnet|mainnet|nextnet, default: testnet)');
             console.log('4. Optional: Set TEST_AMOUNT (default: 1000000 µT)');
             console.log('5. Optional: Set TARI_BASE_NODE_PUBLIC_KEY and TARI_BASE_NODE_ADDRESS');
+            console.log('\n🔧 Build Requirements:');
+            console.log('Ensure network-specific FFI binaries are built before running tests:');
+            console.log('  npm run setup:tari-source  # Fetch Tari source code');
+            console.log('  npm run build:networks     # Build all network binaries');
+            console.log('  # OR build specific network:');
+            console.log('  npm run build:networks:testnet');
             console.log('\nExample:');
             console.log('export SENDER_SEED_WORDS="word1 word2 word3 ... word24"');
             console.log('export RECEIVER_SEED_WORDS="word1 word2 word3 ... word24"');
+            console.log('export TARI_NETWORK=testnet');
             console.log('npm run test:manual');
+        } else if (error instanceof Error && (error.message.includes('FFI binary') || error.message.includes('native module'))) {
+            console.log('\n🔧 FFI Binary Missing:');
+            console.log('Network-specific FFI binaries are required but not found.');
+            console.log('Build them with:');
+            console.log('  npm run setup:tari-source');
+            console.log('  npm run build:networks:' + (config?.network?.toLowerCase() || 'testnet'));
         }
         
         process.exitCode = 1;
