@@ -1,21 +1,201 @@
 {
-  "timestamp": "2025-06-13T13:40:12.262Z",
+  "timestamp": "2025-06-15T09:10:22.135Z",
+  "summary": {
+    "totalTests": 9,
+    "totalDuration": 176158,
+    "passed": 9,
+    "failed": 0
+  },
+  "tests": [
+    {
+      "testName": "Network Performance Benchmarks FFI Performance should benchmark FFI binding initialization",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 41,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77713592,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks FFI Performance should benchmark basic FFI function calls",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 0,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77716464,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks Transaction API Performance should benchmark transaction creation performance",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 41392,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77718320,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks Transaction API Performance should benchmark bulk transaction processing",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 126102,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77720200,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks Memory Performance should benchmark memory usage under load",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 24,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77722072,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks Memory Performance should benchmark garbage collection impact",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 0,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77723928,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks Network Simulation should benchmark network request simulation",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 1243,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77725784,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks Network Simulation should benchmark concurrent network operations",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 2150,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77727648,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    },
+    {
+      "testName": "Network Performance Benchmarks Stress Tests should handle sustained load",
+      "testFile": "/Users/ric/Desktop/working/tari-javascript-sdk-work/tests/performance/network-benchmark.test.ts",
+      "status": "passed",
+      "duration": 5050,
+      "timestamp": 1749978622134,
+      "memory": {
+        "rss": 221642752,
+        "heapTotal": 87949312,
+        "heapUsed": 77729520,
+        "external": 6889837,
+        "arrayBuffers": 3244474
+      }
+    }
+  ],
   "environment": {
     "nodeVersion": "v24.1.0",
     "platform": "darwin",
-    "arch": "arm64"
-  },
-  "results": [
-    {
-      "name": "JSON Serialization",
-      "time": 11,
-      "iterations": 100
+    "arch": "arm64",
+    "memory": {
+      "rss": 221675520,
+      "heapTotal": 87949312,
+      "heapUsed": 78561024,
+      "external": 6889837,
+      "arrayBuffers": 3244474
     },
-    {
-      "name": "Array Operations",
-      "time": 18,
-      "iterations": 1000
+    "cpus": 16
+  },
+  "trends": {
+    "Network Performance Benchmarks FFI Performance should benchmark FFI binding initialization": {
+      "previous": 45,
+      "current": 41,
+      "change": -4,
+      "percentChange": -8.89,
+      "trend": "faster"
+    },
+    "Network Performance Benchmarks Transaction API Performance should benchmark transaction creation performance": {
+      "previous": 41430,
+      "current": 41392,
+      "change": -38,
+      "percentChange": -0.09,
+      "trend": "faster"
+    },
+    "Network Performance Benchmarks Transaction API Performance should benchmark bulk transaction processing": {
+      "previous": 126323,
+      "current": 126102,
+      "change": -221,
+      "percentChange": -0.17,
+      "trend": "faster"
+    },
+    "Network Performance Benchmarks Memory Performance should benchmark memory usage under load": {
+      "previous": 22,
+      "current": 24,
+      "change": 2,
+      "percentChange": 9.09,
+      "trend": "slower"
+    },
+    "Network Performance Benchmarks Network Simulation should benchmark network request simulation": {
+      "previous": 1412,
+      "current": 1243,
+      "change": -169,
+      "percentChange": -11.97,
+      "trend": "faster"
+    },
+    "Network Performance Benchmarks Network Simulation should benchmark concurrent network operations": {
+      "previous": 2086,
+      "current": 2150,
+      "change": 64,
+      "percentChange": 3.07,
+      "trend": "slower"
+    },
+    "Network Performance Benchmarks Stress Tests should handle sustained load": {
+      "previous": 5032,
+      "current": 5050,
+      "change": 18,
+      "percentChange": 0.36,
+      "trend": "slower"
     }
-  ],
-  "status": "fallback_completed"
+  }
 }

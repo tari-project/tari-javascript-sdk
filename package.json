@@ -55,6 +55,7 @@
     "test:unit": "jest --config jest.config.unit.js",
     "test:integration": "jest --config jest.config.integration.js",
     "test:e2e": "jest --config jest.config.e2e.js",
+    "test:performance": "jest --config jest.config.performance.js",
     "test:all": "./scripts/test-all.sh",
     "test:coverage": "jest --config jest.config.unit.js --coverage",
     "test:build": "node -e \"console.log('Build verification passed')\"",

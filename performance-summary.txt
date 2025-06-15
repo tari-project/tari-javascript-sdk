@@ -1,0 +1,21 @@
+PERFORMANCE TEST SUMMARY
+========================
+
+Test Duration: 176.72s
+Tests Run: 9
+Average Test Duration: 22043.88ms
+
+MEMORY USAGE:
+  Heap Delta: -0.10MB
+  RSS Delta: -0.02MB
+
+PERFORMANCE:
+  Slowest Test: Network Performance Benchmarks Transaction API Performance should benchmark bulk transaction processing
+  Fastest Test: Network Performance Benchmarks FFI Performance should benchmark basic FFI function calls
+
+RECOMMENDATIONS:
+  • Consider optimizing test performance - average duration is high (>5s)
+  • Some tests are very slow (>30s) - consider breaking them down or optimizing
+  • 2 performance tests failed - investigate test environment or implementation
+
+Generated: 2025-06-15T09:10:22.137Z

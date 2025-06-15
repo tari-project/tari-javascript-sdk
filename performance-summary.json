@@ -1,0 +1,60 @@
+{
+  "generated": "2025-06-15T09:10:22.138Z",
+  "summary": {
+    "startTime": "2025-06-15T09:07:25.419Z",
+    "endTime": "2025-06-15T09:10:22.137Z",
+    "duration": 176719,
+    "testsRun": 9,
+    "systemInfo": {
+      "initialMemory": {
+        "rss": 221806592,
+        "heapTotal": 87949312,
+        "heapUsed": 78937528,
+        "external": 6912220,
+        "arrayBuffers": 3266857
+      },
+      "finalMemory": {
+        "rss": 221790208,
+        "heapTotal": 87949312,
+        "heapUsed": 78836160,
+        "external": 6890037,
+        "arrayBuffers": 3244674
+      },
+      "memoryDelta": {
+        "rss": -16384,
+        "heapTotal": 0,
+        "heapUsed": -101368,
+        "external": -22183,
+        "arrayBuffers": -22183
+      },
+      "initialLoad": [
+        6.0771484375,
+        7.3740234375,
+        7.47509765625
+      ],
+      "finalLoad": [
+        6.32080078125,
+        7.09716796875,
+        7.33984375
+      ]
+    },
+    "performance": {
+      "averageTestDuration": 22043.875,
+      "slowestTest": "Network Performance Benchmarks Transaction API Performance should benchmark bulk transaction processing",
+      "fastestTest": "Network Performance Benchmarks FFI Performance should benchmark basic FFI function calls",
+      "totalMemoryUsed": -101368,
+      "gcCollections": 0
+    },
+    "recommendations": [
+      "Consider optimizing test performance - average duration is high (>5s)",
+      "Some tests are very slow (>30s) - consider breaking them down or optimizing",
+      "2 performance tests failed - investigate test environment or implementation"
+    ]
+  },
+  "metadata": {
+    "nodeVersion": "v24.1.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpus": 16
+  }
+}
