@@ -719,3 +719,42 @@ export const DEFAULT_PENDING_MANAGER_CONFIG: Partial<PendingManagerConfig> = {
     backoffMultiplier: 2
   }
 };
+
+/**
+ * Factory for creating PendingManager instances with appropriate dependencies
+ */
+export class PendingManagerFactory {
+  /**
+   * Create a PendingManager with automatic TransactionRepository setup
+   */
+  static create(
+    walletHandle: WalletHandle,
+    config: Partial<PendingManagerConfig> = {}
+  ): PendingManager {
+    const fullConfig: PendingManagerConfig = {
+      walletHandle,
+      ...DEFAULT_PENDING_MANAGER_CONFIG,
+      ...config
+    } as PendingManagerConfig;
+
+    const repository = new TransactionRepository({
+      walletHandle,
+      maxHistorySize: 1000,
+      persistToDisk: false,
+      cacheTtlMs: 24 * 60 * 60 * 1000 // 24 hours
+    });
+
+    return new PendingManager(fullConfig, repository);
+  }
+
+  /**
+   * Create a PendingManager with a custom TransactionRepository
+   * Useful for testing or when you need specific repository configuration
+   */
+  static createWithRepository(
+    config: PendingManagerConfig,
+    repository: TransactionRepository
+  ): PendingManager {
+    return new PendingManager(config, repository);
+  }
+}

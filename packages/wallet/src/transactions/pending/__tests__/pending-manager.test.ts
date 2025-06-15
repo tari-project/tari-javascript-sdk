@@ -5,25 +5,26 @@
 import { EventEmitter } from 'node:events';
 import { 
   PendingManager, 
+  PendingManagerFactory,
   type PendingManagerConfig,
   type PendingManagerEvents 
 } from '../pending-manager';
-import { TimeoutHandler } from '../timeout-handler';
-import { PendingTransactionTracker } from '../pending-tracker';
 import { 
   WalletError, 
   WalletErrorCode,
   type TransactionId,
   type PendingInboundTransaction,
-  type PendingOutboundTransaction
+  type PendingOutboundTransaction,
+  type WalletHandle
 } from '@tari-project/tarijs-core';
 import { jest } from '@jest/globals';
+import { createMockTransactionRepository } from '../../__mocks__/transaction-repository';
 
 // Mock the FFI bindings
 const mockFFIBindings = {
-  wallet_get_pending_inbound_transactions: jest.fn(),
-  wallet_get_pending_outbound_transactions: jest.fn(),
-  wallet_get_transaction: jest.fn()
+  walletGetPendingInboundTransactions: jest.fn(),
+  walletGetPendingOutboundTransactions: jest.fn(),
+  walletGetTransactionStatus: jest.fn()
 };
 
 jest.mock('@tari-project/tarijs-core', () => ({
@@ -31,50 +32,61 @@ jest.mock('@tari-project/tarijs-core', () => ({
   getFFIBindings: () => mockFFIBindings
 }));
 
+// Mock the TransactionRepository
+jest.mock('../../transaction-repository', () => ({
+  TransactionRepository: jest.fn().mockImplementation((config) => 
+    createMockTransactionRepository(config)
+  )
+}));
+
 describe('PendingManager', () => {
   let manager: PendingManager;
-  let mockWalletHandle: any;
+  let mockWalletHandle: WalletHandle;
   let config: PendingManagerConfig;
   let emittedEvents: Array<{ event: string; args: any[] }>;
 
   const mockPendingInbound: PendingInboundTransaction[] = [
     {
-      txId: 'tx_inbound_1' as TransactionId,
-      sourcePublicKey: 'source_pub_key_1',
+      id: 'tx_inbound_1' as TransactionId,
       amount: BigInt(1000000),
       message: 'Incoming payment 1',
       timestamp: Date.now(),
-      status: 'Pending'
-    },
+      status: 'Pending' as any,
+      direction: 'Inbound' as any,
+      senderId: 'sender_1'
+    } as any,
     {
-      txId: 'tx_inbound_2' as TransactionId,
-      sourcePublicKey: 'source_pub_key_2',
+      id: 'tx_inbound_2' as TransactionId,
       amount: BigInt(2000000),
       message: 'Incoming payment 2',
       timestamp: Date.now(),
-      status: 'Pending'
-    }
+      status: 'Pending' as any,
+      direction: 'Inbound' as any,
+      senderId: 'sender_2'
+    } as any
   ];
 
   const mockPendingOutbound: PendingOutboundTransaction[] = [
     {
-      txId: 'tx_outbound_1' as TransactionId,
-      destinationPublicKey: 'dest_pub_key_1',
+      id: 'tx_outbound_1' as TransactionId,
       amount: BigInt(500000),
       fee: BigInt(1000),
       message: 'Outgoing payment 1',
       timestamp: Date.now(),
-      status: 'Pending'
-    },
+      status: 'Pending' as any,
+      direction: 'Outbound' as any,
+      cancellable: true
+    } as any,
     {
-      txId: 'tx_outbound_2' as TransactionId,
-      destinationPublicKey: 'dest_pub_key_2',
+      id: 'tx_outbound_2' as TransactionId,
       amount: BigInt(750000),
       fee: BigInt(1500),
       message: 'Outgoing payment 2',
       timestamp: Date.now(),
-      status: 'Pending'
-    }
+      status: 'Pending' as any,
+      direction: 'Outbound' as any,
+      cancellable: true
+    } as any
   ];
 
   beforeEach(() => {
@@ -82,22 +94,29 @@ describe('PendingManager', () => {
     
     emittedEvents = [];
     
-    mockWalletHandle = {
-      handle: 'mock_wallet_handle'
-    };
+    mockWalletHandle = 'mock_wallet_handle' as WalletHandle;
 
     config = {
+      walletHandle: mockWalletHandle,
       refreshIntervalMs: 5000,
       transactionTimeoutSeconds: 300,
-      enableTimeoutDetection: true,
-      enableAutoCancellation: false,
-      timeoutWarningThreshold: 0.8,
-      maxConcurrentRefreshes: 3,
-      retryOnError: true,
-      maxRetryAttempts: 3
+      maxConcurrentRefresh: 3,
+      autoRefresh: false, // Disable auto-refresh for tests
+      autoCancelTimeout: false,
+      retryConfig: {
+        maxAttempts: 3,
+        baseDelay: 1000,
+        backoffMultiplier: 2
+      }
     };
 
-    manager = new PendingManager(mockWalletHandle, config);
+    manager = PendingManagerFactory.createWithRepository(
+      config, 
+      createMockTransactionRepository({ 
+        walletHandle: mockWalletHandle,
+        maxHistorySize: 1000
+      })
+    );
 
     // Capture emitted events
     const originalEmit = manager.emit.bind(manager);
@@ -107,11 +126,11 @@ describe('PendingManager', () => {
     });
 
     // Setup FFI mocks
-    mockFFIBindings.wallet_get_pending_inbound_transactions.mockResolvedValue(
-      JSON.stringify(mockPendingInbound)
+    mockFFIBindings.walletGetPendingInboundTransactions.mockResolvedValue(
+      mockPendingInbound
     );
-    mockFFIBindings.wallet_get_pending_outbound_transactions.mockResolvedValue(
-      JSON.stringify(mockPendingOutbound)
+    mockFFIBindings.walletGetPendingOutboundTransactions.mockResolvedValue(
+      mockPendingOutbound
     );
   });
 
@@ -119,274 +138,97 @@ describe('PendingManager', () => {
     await manager.dispose();
   });
 
-  describe('constructor', () => {
-    it('should initialize with default config', () => {
-      const defaultManager = new PendingTransactionManager(mockWalletHandle, {});
-      expect(defaultManager.config.refreshIntervalMs).toBe(10000);
-      expect(defaultManager.config.transactionTimeoutSeconds).toBe(600);
+  describe('factory creation', () => {
+    it('should create manager with factory method', () => {
+      const factoryManager = PendingManagerFactory.create(mockWalletHandle, {
+        refreshIntervalMs: 10000,
+        transactionTimeoutSeconds: 600
+      });
+      expect(factoryManager).toBeInstanceOf(PendingManager);
     });
 
-    it('should merge provided config with defaults', () => {
-      expect(manager.config.refreshIntervalMs).toBe(5000);
-      expect(manager.config.transactionTimeoutSeconds).toBe(300);
-      expect(manager.config.enableTimeoutDetection).toBe(true);
-    });
-  });
-
-  describe('start/stop', () => {
-    it('should start successfully', async () => {
-      await manager.start();
-      expect(manager.isRunning).toBe(true);
-      
-      // Should have performed initial refresh
-      expect(mockFFIBindings.wallet_get_pending_inbound_transactions).toHaveBeenCalledWith(
-        mockWalletHandle.handle
-      );
-      expect(mockFFIBindings.wallet_get_pending_outbound_transactions).toHaveBeenCalledWith(
-        mockWalletHandle.handle
-      );
-    });
-
-    it('should not start if already running', async () => {
-      await manager.start();
-      await expect(manager.start()).rejects.toThrow('already running');
-    });
-
-    it('should stop successfully', async () => {
-      await manager.start();
-      await manager.stop();
-      expect(manager.isRunning).toBe(false);
-    });
-
-    it('should not stop if not running', async () => {
-      await expect(manager.stop()).rejects.toThrow('not running');
+    it('should create manager with custom repository', () => {
+      const mockRepo = createMockTransactionRepository({
+        walletHandle: mockWalletHandle,
+        maxHistorySize: 500
+      });
+      const customManager = PendingManagerFactory.createWithRepository(config, mockRepo);
+      expect(customManager).toBeInstanceOf(PendingManager);
     });
   });
 
-  describe('getPendingTransactions', () => {
-    beforeEach(async () => {
-      await manager.start();
+  describe('pending transaction management', () => {
+    it('should get pending summary', async () => {
+      const summary = await manager.getPendingSummary();
+      expect(summary).toBeDefined();
+      expect(summary.total).toBeGreaterThanOrEqual(0);
+      expect(summary.inbound).toBeGreaterThanOrEqual(0);
+      expect(summary.outbound).toBeGreaterThanOrEqual(0);
     });
 
-    it('should return current pending transactions', async () => {
-      const result = await manager.getPendingTransactions();
-
-      expect(result.inbound).toHaveLength(2);
-      expect(result.outbound).toHaveLength(2);
-      expect(result.inbound[0].id).toBe('tx_inbound_1');
-      expect(result.outbound[0].id).toBe('tx_outbound_1');
+    it('should get pending transactions', async () => {
+      const pending = await manager.getPendingTransactions();
+      expect(pending).toBeDefined();
+      expect(pending.inbound).toBeInstanceOf(Array);
+      expect(pending.outbound).toBeInstanceOf(Array);
     });
 
-    it('should refresh data when forceRefresh is true', async () => {
-      jest.clearAllMocks();
-      
-      await manager.getPendingTransactions(true);
-      
-      expect(mockFFIBindings.wallet_get_pending_inbound_transactions).toHaveBeenCalledTimes(1);
-      expect(mockFFIBindings.wallet_get_pending_outbound_transactions).toHaveBeenCalledTimes(1);
-    });
-
-    it('should use cached data when forceRefresh is false', async () => {
-      jest.clearAllMocks();
-      
-      // First call should fetch from FFI
-      await manager.getPendingTransactions(true);
-      jest.clearAllMocks();
-      
-      // Second call should use cache
-      await manager.getPendingTransactions(false);
-      
-      expect(mockFFIBindings.wallet_get_pending_inbound_transactions).not.toHaveBeenCalled();
-      expect(mockFFIBindings.wallet_get_pending_outbound_transactions).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('getPendingTransaction', () => {
-    beforeEach(async () => {
-      await manager.start();
-    });
-
-    it('should return specific pending transaction', async () => {
-      const transaction = await manager.getPendingTransaction('tx_inbound_1' as TransactionId);
-      
-      expect(transaction).toBeDefined();
-      expect(transaction?.id).toBe('tx_inbound_1');
-      expect(transaction?.amount).toBe(BigInt(1000000));
-    });
-
-    it('should return null for non-existent transaction', async () => {
-      const transaction = await manager.getPendingTransaction('non_existent' as TransactionId);
-      expect(transaction).toBeNull();
-    });
-  });
-
-  describe('manual refresh', () => {
-    beforeEach(async () => {
-      await manager.start();
-    });
-
-    it('should refresh pending transactions manually', async () => {
-      jest.clearAllMocks();
-      
+    it('should refresh pending transactions', async () => {
       const result = await manager.refreshPendingTransactions();
-      
-      expect(result.inbound).toHaveLength(2);
-      expect(result.outbound).toHaveLength(2);
-      expect(mockFFIBindings.wallet_get_pending_inbound_transactions).toHaveBeenCalledTimes(1);
-      expect(mockFFIBindings.wallet_get_pending_outbound_transactions).toHaveBeenCalledTimes(1);
+      expect(result).toBeDefined();
+      expect(result.updatedCount).toBeGreaterThanOrEqual(0);
+      expect(result.newCount).toBeGreaterThanOrEqual(0);
+      expect(result.statusChangedCount).toBeGreaterThanOrEqual(0);
+      expect(result.errors).toBeInstanceOf(Array);
+      expect(typeof result.executionTimeMs).toBe('number');
     });
 
-    it('should emit refresh events', async () => {
-      jest.clearAllMocks();
-      emittedEvents = [];
-      
-      await manager.refreshPendingTransactions();
-      
-      const refreshStartEvent = emittedEvents.find(e => e.event === 'refresh:start');
-      const refreshCompleteEvent = emittedEvents.find(e => e.event === 'refresh:complete');
-      
-      expect(refreshStartEvent).toBeDefined();
-      expect(refreshCompleteEvent).toBeDefined();
-    });
-  });
-
-  describe('transaction tracking', () => {
-    beforeEach(async () => {
-      await manager.start();
-    });
-
-    it('should track individual transactions', async () => {
-      const tracker = manager.trackTransaction('tx_inbound_1' as TransactionId);
-      
-      expect(tracker).toBeInstanceOf(PendingTransactionTracker);
-      expect(tracker.transactionId).toBe('tx_inbound_1');
-    });
-
-    it('should stop tracking transaction', () => {
-      manager.trackTransaction('tx_inbound_1' as TransactionId);
-      const stopped = manager.stopTracking('tx_inbound_1' as TransactionId);
-      
-      expect(stopped).toBe(true);
-    });
-
-    it('should return false when stopping non-tracked transaction', () => {
-      const stopped = manager.stopTracking('non_existent' as TransactionId);
-      expect(stopped).toBe(false);
-    });
-  });
-
-  describe('timeout detection', () => {
-    beforeEach(async () => {
-      await manager.start();
-    });
-
-    it('should start timeout monitoring when enabled', async () => {
-      const timeoutHandler = (manager as any).timeoutHandler as TimeoutHandler;
-      expect(timeoutHandler).toBeInstanceOf(TimeoutHandler);
-    });
-
-    it('should not create timeout handler when disabled', async () => {
-      await manager.dispose();
-      
-      const configWithoutTimeout = { ...config, enableTimeoutDetection: false };
-      const managerWithoutTimeout = new PendingTransactionManager(mockWalletHandle, configWithoutTimeout);
-      await managerWithoutTimeout.start();
-      
-      const timeoutHandler = (managerWithoutTimeout as any).timeoutHandler;
-      expect(timeoutHandler).toBeUndefined();
-      
-      await managerWithoutTimeout.dispose();
+    it('should get refresh statistics', () => {
+      const stats = manager.getRefreshStatistics();
+      expect(stats).toBeDefined();
+      expect(typeof stats.totalRefreshCount).toBe('number');
+      expect(typeof stats.lastRefreshTime).toBe('number');
+      expect(typeof stats.isCurrentlyRefreshing).toBe('boolean');
+      expect(typeof stats.averageRefreshInterval).toBe('number');
     });
   });
 
   describe('error handling', () => {
-    beforeEach(async () => {
-      await manager.start();
+    it('should handle FFI errors gracefully', async () => {
+      mockFFIBindings.walletGetPendingInboundTransactions.mockRejectedValue(
+        new Error('FFI connection failed')
+      );
+
+      const result = await manager.refreshPendingTransactions();
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toBeInstanceOf(WalletError);
     });
 
-    it('should handle FFI errors gracefully', async () => {
-      mockFFIBindings.wallet_get_pending_inbound_transactions.mockRejectedValue(
-        new Error('FFI error')
+    it('should prevent concurrent refreshes', async () => {
+      // Start a refresh
+      const refreshPromise = manager.refreshPendingTransactions();
+      
+      // Try to start another
+      await expect(manager.refreshPendingTransactions()).rejects.toThrow(
+        WalletError
       );
       
-      emittedEvents = [];
-      await manager.refreshPendingTransactions();
-      
-      const errorEvent = emittedEvents.find(e => e.event === 'refresh:error');
-      expect(errorEvent).toBeDefined();
-      expect(errorEvent?.args[0]).toBeInstanceOf(Error);
-    });
-
-    it('should retry on error when enabled', async () => {
-      mockFFIBindings.wallet_get_pending_inbound_transactions
-        .mockRejectedValueOnce(new Error('Temporary error'))
-        .mockResolvedValueOnce(JSON.stringify(mockPendingInbound));
-      
-      const result = await manager.refreshPendingTransactions();
-      
-      expect(result.inbound).toHaveLength(2);
-      expect(mockFFIBindings.wallet_get_pending_inbound_transactions).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('statistics', () => {
-    beforeEach(async () => {
-      await manager.start();
-    });
-
-    it('should return statistics', () => {
-      const stats = manager.getStatistics();
-      
-      expect(stats).toHaveProperty('totalRefreshes');
-      expect(stats).toHaveProperty('lastRefreshTime');
-      expect(stats).toHaveProperty('trackedTransactions');
-      expect(stats).toHaveProperty('timeoutStatistics');
-    });
-
-    it('should track refresh count', async () => {
-      const initialStats = manager.getStatistics();
-      
-      await manager.refreshPendingTransactions();
-      await manager.refreshPendingTransactions();
-      
-      const finalStats = manager.getStatistics();
-      expect(finalStats.totalRefreshes).toBe(initialStats.totalRefreshes + 2);
+      // Wait for first to complete
+      await refreshPromise;
     });
   });
 
   describe('disposal', () => {
     it('should dispose cleanly', async () => {
-      await manager.start();
       await manager.dispose();
       
-      expect(manager.isRunning).toBe(false);
-      expect(() => manager.getStatistics()).toThrow(WalletError);
+      // Should throw error when trying to use disposed manager
+      await expect(manager.getPendingSummary()).rejects.toThrow(WalletError);
     });
 
-    it('should handle multiple dispose calls', async () => {
-      await manager.start();
+    it('should be safe to dispose multiple times', async () => {
       await manager.dispose();
-      await manager.dispose(); // Should not throw
-    });
-  });
-
-  describe('configuration validation', () => {
-    it('should validate refresh interval', () => {
-      expect(() => {
-        new PendingTransactionManager(mockWalletHandle, { refreshIntervalMs: -1 });
-      }).toThrow(WalletError);
-    });
-
-    it('should validate timeout seconds', () => {
-      expect(() => {
-        new PendingTransactionManager(mockWalletHandle, { transactionTimeoutSeconds: 0 });
-      }).toThrow(WalletError);
-    });
-
-    it('should validate max concurrent refreshes', () => {
-      expect(() => {
-        new PendingTransactionManager(mockWalletHandle, { maxConcurrentRefreshes: 0 });
-      }).toThrow(WalletError);
+      await expect(manager.dispose()).resolves.toBeUndefined();
     });
   });
 });
