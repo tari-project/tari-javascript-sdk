@@ -298,14 +298,7 @@ export type EventNames<T> = keyof T;
  */
 export type HandlerType<T, K extends keyof T> = T[K];
 
-/**
- * Create a typed event emitter interface
- */
-export type TypedEventEmitter<T> = {
-  on<K extends keyof T>(event: K, handler: T[K]): void;
-  off<K extends keyof T>(event: K, handler: T[K]): void;
-  emit<K extends keyof T>(event: K, ...args: Parameters<T[K] extends (...args: any[]) => any ? T[K] : never>): void;
-};
+// TypedEventEmitter type removed - use the class from utils/typed-event-emitter.ts instead
 
 // Error handling utilities
 
