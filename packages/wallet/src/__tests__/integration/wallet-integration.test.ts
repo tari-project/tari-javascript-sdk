@@ -11,15 +11,18 @@ import {
   ErrorFactory 
 } from '../../testing/factories';
 import { WalletConfigBuilder } from '../../testing/builders';
+import { NetworkType } from '@tari-project/tarijs-core';
 
 // Skip these tests if FFI is not available
 const describeIfFFIAvailable = process.env.JEST_INTEGRATION_MODE === 'true' ? describe : describe.skip;
 
 describeIfFFIAvailable('TariWallet Integration Tests', () => {
   let testContext: any;
+  let testNetwork: NetworkType;
 
   beforeEach(() => {
     testContext = global.testUtils.getTestContext();
+    testNetwork = global.testUtils.getCurrentNetwork();
   });
 
   afterEach(async () => {
@@ -203,7 +206,10 @@ describeIfFFIAvailable('TariWallet Integration Tests', () => {
       const address = await wallet.getAddress();
       
       expect(address).toBeValidTariAddress();
-      expect(address).toContain('testnet'); // Should be testnet address
+      // Verify address matches the test network
+      const networkName = testNetwork === NetworkType.Mainnet ? 'mainnet' : 
+                          testNetwork === NetworkType.Testnet ? 'testnet' : 'nextnet';
+      expect(address).toContain(networkName);
     });
 
     test('should validate Tari addresses correctly', async () => {

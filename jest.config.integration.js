@@ -98,6 +98,7 @@ module.exports = {
     env: {
       JEST_INTEGRATION_MODE: 'true',
       NODE_ENV: 'test',
+      TARI_NETWORK: process.env.TARI_NETWORK || 'testnet',
     },
   },
 };

@@ -6,22 +6,56 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
+import { NetworkType } from '@tari-project/tarijs-core';
 
 // Integration test context for resource management
 interface IntegrationTestContext {
   walletPath: string;
   logPath: string;
   wallets: any[];
+  network: NetworkType;
   cleanup: () => Promise<void>;
 }
 
 let currentContext: IntegrationTestContext | null = null;
 
+// Helper functions for network configuration
+function getTestNetwork(): NetworkType {
+  const networkEnv = process.env.TARI_NETWORK?.toLowerCase() || 'testnet';
+  
+  switch (networkEnv) {
+    case 'mainnet':
+      return NetworkType.Mainnet;
+    case 'testnet':
+      return NetworkType.Testnet;
+    case 'nextnet':
+      return NetworkType.Nextnet;
+    default:
+      console.warn(`Unknown network ${networkEnv}, defaulting to testnet`);
+      return NetworkType.Testnet;
+  }
+}
+
+function getNetworkName(network: NetworkType): string {
+  switch (network) {
+    case NetworkType.Mainnet:
+      return 'mainnet';
+    case NetworkType.Testnet:
+      return 'testnet';
+    case NetworkType.Nextnet:
+      return 'nextnet';
+    default:
+      return 'testnet';
+  }
+}
+
 // Create isolated test environment for each test
 beforeEach(async () => {
   const testId = randomUUID();
-  const walletPath = join(tmpdir(), `tari-test-wallet-${testId}`);
-  const logPath = join(tmpdir(), `tari-test-logs-${testId}`);
+  const network = getTestNetwork();
+  const networkName = getNetworkName(network);
+  const walletPath = join(tmpdir(), `tari-test-wallet-${networkName}-${testId}`);
+  const logPath = join(tmpdir(), `tari-test-logs-${networkName}-${testId}`);
   
   // Ensure directories exist
   await fs.mkdir(walletPath, { recursive: true });
@@ -31,6 +65,7 @@ beforeEach(async () => {
     walletPath,
     logPath,
     wallets: [],
+    network,
     cleanup: async () => {
       // Destroy all wallets created in this test
       for (const wallet of currentContext?.wallets || []) {
@@ -87,7 +122,7 @@ global.testUtils = {
     }
     
     return {
-      network: 'testnet',
+      network: context.network,
       storagePath: context.walletPath,
       logPath: context.logPath,
       logLevel: 'info',
@@ -120,10 +155,55 @@ global.testUtils = {
   // Helper to check if real FFI is available
   isRealFFIAvailable: async (): Promise<boolean> => {
     try {
-      // Try to load the real FFI module
-      // This would need to be implemented based on actual FFI loading
-      return true; // Placeholder
-    } catch {
+      // Try to load the real FFI module for the current network
+      const { loadNativeModuleForNetwork } = await import('@tari-project/tarijs-core');
+      const context = currentContext;
+      if (!context) {
+        return false;
+      }
+      
+      // Attempt to load the network-specific FFI module
+      await loadNativeModuleForNetwork(context.network);
+      return true;
+    } catch (error) {
+      console.warn(`FFI not available for network ${currentContext?.network}:`, error);
+      return false;
+    }
+  },
+
+  // Helper to get current test network
+  getCurrentNetwork: (): NetworkType => {
+    const context = currentContext;
+    if (!context) {
+      throw new Error('Integration test context not available');
+    }
+    return context.network;
+  },
+
+  // Helper to validate network binary is available
+  validateNetworkBinary: async (): Promise<boolean> => {
+    try {
+      const { BinaryResolver } = await import('@tari-project/tarijs-core');
+      const context = currentContext;
+      if (!context) {
+        return false;
+      }
+      
+      const resolver = new BinaryResolver({ 
+        network: context.network,
+        enableNetworkFallback: true 
+      });
+      
+      const resolved = resolver.resolveBinary(context.network);
+      const isAvailable = resolved.exists;
+      
+      if (!isAvailable) {
+        console.warn(`Network binary not available for ${getNetworkName(context.network)}: ${resolved.path}`);
+      }
+      
+      return isAvailable;
+    } catch (error) {
+      console.warn('Binary validation failed:', error);
       return false;
     }
   },
@@ -140,11 +220,26 @@ expect.extend({
 
 // Skip integration tests if FFI not available
 beforeAll(async () => {
+  const context = currentContext || { network: getTestNetwork() } as any;
+  const networkName = getNetworkName(context.network);
+  
+  console.log(`Initializing integration tests for ${networkName} network`);
+  
   const isFFIAvailable = await global.testUtils.isRealFFIAvailable();
+  const isBinaryAvailable = await global.testUtils.validateNetworkBinary();
+  
   if (!isFFIAvailable) {
-    console.warn('Skipping integration tests: Real FFI not available');
-    // This would skip the entire test suite
+    console.warn(`Skipping integration tests: Real FFI not available for ${networkName}`);
+    return;
   }
+  
+  if (!isBinaryAvailable) {
+    console.warn(`Skipping integration tests: Network binary not found for ${networkName}`);
+    console.warn('Run build:networks to compile network-specific binaries');
+    return;
+  }
+  
+  console.log(`✅ Integration tests ready for ${networkName} network`);
 });
 
 // TypeScript declaration for custom matchers

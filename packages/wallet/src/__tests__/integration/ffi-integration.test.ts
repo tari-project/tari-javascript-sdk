@@ -3,10 +3,11 @@
  * Tests the actual FFI layer with real native code
  */
 
-import { loadNativeBindings } from '../../../../core/src/ffi/loader';
+import { loadNativeModuleForNetwork } from '../../../../core/src/ffi/loader';
 import { FFICallManager } from '../../../../core/src/ffi/call-manager';
 import { ResourceTracker } from '../../../../core/src/ffi/tracker';
 import { WalletConfigFactory } from '../../testing/factories';
+import { NetworkType } from '@tari-project/tarijs-core';
 
 // Skip these tests if FFI is not available
 const describeIfFFIAvailable = process.env.JEST_INTEGRATION_MODE === 'true' ? describe : describe.skip;
@@ -16,10 +17,13 @@ describeIfFFIAvailable('FFI Integration Tests', () => {
   let callManager: FFICallManager;
   let resourceTracker: ResourceTracker;
   let testContext: any;
+  let testNetwork: NetworkType;
 
   beforeAll(async () => {
     try {
-      nativeBindings = await loadNativeBindings();
+      // Get the current test network
+      const network = global.testUtils.getCurrentNetwork();
+      nativeBindings = await loadNativeModuleForNetwork(network);
       callManager = FFICallManager.getInstance();
       resourceTracker = ResourceTracker.getInstance();
     } catch (error) {
@@ -29,6 +33,7 @@ describeIfFFIAvailable('FFI Integration Tests', () => {
 
   beforeEach(() => {
     testContext = global.testUtils.getTestContext();
+    testNetwork = global.testUtils.getCurrentNetwork();
     callManager.clearMetrics();
     resourceTracker.clearTracking();
   });
@@ -45,6 +50,17 @@ describeIfFFIAvailable('FFI Integration Tests', () => {
       expect(typeof nativeBindings.walletDestroy).toBe('function');
       expect(typeof nativeBindings.walletGetBalance).toBe('function');
       expect(typeof nativeBindings.walletSendTransaction).toBe('function');
+    });
+
+    test('should load correct network-specific binary', async () => {
+      // Validate that the binary resolver found the correct network binary
+      const isValidBinary = await global.testUtils.validateNetworkBinary();
+      expect(isValidBinary).toBe(true);
+      
+      // Log the current test network for debugging
+      const networkName = testNetwork === NetworkType.Mainnet ? 'mainnet' : 
+                          testNetwork === NetworkType.Testnet ? 'testnet' : 'nextnet';
+      console.log(`Integration tests running with ${networkName} network binary`);
     });
 
     test('should initialize logging system', async () => {
