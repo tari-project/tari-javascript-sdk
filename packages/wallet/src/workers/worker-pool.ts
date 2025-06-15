@@ -1,5 +1,6 @@
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
+// Import directly from source to avoid import resolution issues
+import { DisposableResource } from '../../../core/src/memory/disposable.js';
 import { performance } from 'perf_hooks';
 
 /**

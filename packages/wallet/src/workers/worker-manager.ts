@@ -1,4 +1,5 @@
-import { MemoryDisposableResource as DisposableResource } from '@tari-project/tarijs-core';
+// Import directly from source to avoid import resolution issues
+import { DisposableResource } from '../../../core/src/memory/disposable.js';
 import { WorkerPool, TaskType, TaskPriority, TaskResult, PoolStats } from './worker-pool';
 import { GlobalWorkerPools } from './worker-pool';
 import path from 'path';

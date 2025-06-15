@@ -8,9 +8,11 @@
 import {
   Contact,
   WalletError,
-  WalletErrorCode,
-  TypedEventEmitter
+  WalletErrorCode
 } from '@tari-project/tarijs-core';
+
+// Try to import TypedEventEmitter directly from the source
+import { TypedEventEmitter } from '../../../core/src/utils/typed-event-emitter.js';
 
 /**
  * Contact-specific event types

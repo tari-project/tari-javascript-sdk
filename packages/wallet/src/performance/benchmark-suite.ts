@@ -1,4 +1,6 @@
-import { MemoryDisposableResource as DisposableResource, MemoryUtils } from '@tari-project/tarijs-core';
+import { MemoryUtils } from '@tari-project/tarijs-core';
+// Import directly from source to avoid import resolution issues
+import { DisposableResource } from '../../../core/src/memory/disposable.js';
 import { PerformanceManager } from './performance-manager';
 
 /**

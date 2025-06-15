@@ -1,10 +1,12 @@
-import { 
-  MemoryDisposableResource as DisposableResource,
+import {
   MemoryPressureMonitor,
   GCCoordinator,
   HeapStatsCollector,
   CallBatcher
 } from '@tari-project/tarijs-core';
+
+// Import directly from source to avoid import resolution issues
+import { DisposableResource } from '../../../core/src/memory/disposable.js';
 import { QueryCache, GlobalCaches } from '../cache/query-cache';
 import { TTLManager } from '../cache/ttl-manager';
 import { WorkerManager, getGlobalWorkerManager } from '../workers/worker-manager';
