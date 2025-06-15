@@ -12,7 +12,6 @@ import {
   TariAddressString, 
   createTransactionId, 
   TransactionId,
-  UnixTimestamp,
   WalletPath
 } from '@tari-project/tarijs-core';
 
@@ -268,7 +267,7 @@ export class AddressFactory {
     '🐠'
   ];
 
-  static create(network: NetworkType = NetworkType.Testnet): string {
+  static create(_network: NetworkType = NetworkType.Testnet): string {
     return this.base58();
   }
 

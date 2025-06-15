@@ -76,6 +76,21 @@ module.exports = [
     }
   },
 
+  // Configuration for benchmark, performance, and debug files
+  {
+    files: [
+      '**/benchmark*.ts',
+      '**/performance*.ts', 
+      '**/debug*.ts',
+      '**/examples/**/*.ts',
+      '**/scripts/**/*.ts'
+    ],
+    rules: {
+      'no-console': 'off', // Allow console output in performance/debug code
+      '@typescript-eslint/no-explicit-any': 'warn' // More lenient for debug code
+    }
+  },
+
   // Configuration for build scripts and tooling
   {
     files: ['scripts/**/*.ts', 'packages/build/**/*.ts', 'tools/**/*.ts'],
