@@ -74,6 +74,8 @@ module.exports = {
     '^\\./loader$': '<rootDir>/tests/mocks/ffi-loader-mock.ts',
     // Package mappings
     '^@tari-project/tarijs-core$': '<rootDir>/packages/core/src/index.ts',
+    '^@tari-project/tarijs-core/utils/typed-event-emitter$': '<rootDir>/packages/core/src/utils/typed-event-emitter.ts',
+    '^@tari-project/tarijs-core/memory/(.*)$': '<rootDir>/packages/core/src/memory/$1.ts',
     '^@tari-project/tarijs-wallet$': '<rootDir>/packages/wallet/src/index.ts',
     '^@tari-project/tarijs-build$': '<rootDir>/packages/build/src/index.ts',
     // Mock missing polyfill modules  

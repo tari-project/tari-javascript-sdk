@@ -75,8 +75,8 @@ export class ResourceTracker {
 
 // Cross-platform utilities
 export * from './environment-detection';
-export * from './typed-event-emitter';
 export * from './process-detection';
+// TypedEventEmitter is explicitly exported in main index.ts to avoid circular dependencies
 
 // Utility types
 export type Awaitable<T> = T | Promise<T>;
