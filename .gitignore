@@ -18,6 +18,7 @@ build/
 *.node
 target/
 native/tari/
+.tari-cache/
 
 # Test coverage
 coverage/
