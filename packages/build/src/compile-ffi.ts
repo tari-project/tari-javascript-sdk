@@ -436,6 +436,9 @@ export class FFICompiler {
         binaryName
       );
 
+      // Copy to network-specific output directory
+      await this.copyToNetworkOutput(config, binaryPath);
+
       return binaryPath;
     } catch (error) {
       throw new BuildError(
@@ -445,6 +448,53 @@ export class FFICompiler {
         true,
         error instanceof Error ? error : undefined
       );
+    }
+  }
+
+  /**
+   * Copy binary to network-specific output directory
+   */
+  private async copyToNetworkOutput(config: BuildConfig, sourcePath: string): Promise<void> {
+    try {
+      const { mkdir, copyFile } = await import('fs/promises');
+      
+      // Create network-specific output directory structure
+      const networkName = config.network.toLowerCase();
+      const outputDir = join(config.outputPath, networkName, config.target.rustTarget);
+      await mkdir(outputDir, { recursive: true });
+
+      // Generate NAPI-compatible filename
+      const napiFileName = this.generateNapiFileName(config.target);
+      const targetPath = join(outputDir, napiFileName);
+
+      // Copy the binary
+      await copyFile(sourcePath, targetPath);
+      
+      logger.info(`Copied FFI binary to: ${targetPath}`);
+    } catch (error) {
+      logger.warn(`Failed to copy to network output: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Generate NAPI-compatible filename for the target platform
+   */
+  private generateNapiFileName(target: any): string {
+    const platformKey = `${target.platform}-${target.arch}`;
+    
+    switch (platformKey) {
+      case 'darwin-x64':
+        return 'tari-wallet-ffi.darwin-x64.node';
+      case 'darwin-arm64':
+        return 'tari-wallet-ffi.darwin-arm64.node';
+      case 'linux-x64':
+        return 'tari-wallet-ffi.linux-x64.node';
+      case 'linux-arm64':
+        return 'tari-wallet-ffi.linux-arm64.node';
+      case 'win32-x64':
+        return 'tari-wallet-ffi.win32-x64.node';
+      default:
+        return `tari-wallet-ffi.${target.platform}-${target.arch}.node`;
     }
   }
 

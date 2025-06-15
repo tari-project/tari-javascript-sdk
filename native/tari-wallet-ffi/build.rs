@@ -52,7 +52,9 @@ fn main() {
     println!("cargo:DEP_WALLET_FFI={}", wallet_ffi_path);
 
     // Set up features based on network type
-    let network_type = env::var("NETWORK_TYPE").unwrap_or_else(|_| "mainnet".to_string());
+    let network_type = env::var("TARI_NETWORK")
+        .or_else(|_| env::var("NETWORK_TYPE"))
+        .unwrap_or_else(|_| "mainnet".to_string());
     
     match network_type.as_str() {
         "testnet" => {
