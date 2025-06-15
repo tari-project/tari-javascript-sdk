@@ -501,6 +501,7 @@ export class ResourceManager {
 }
 
 /**
- * Global resource manager instance
+ * Get the global resource manager instance
+ * Use ResourceManager.getInstance() instead of a pre-instantiated export
+ * to avoid creating intervals during module loading
  */
-export const globalResourceManager = ResourceManager.getInstance();

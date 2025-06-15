@@ -117,7 +117,7 @@ export class CacheKeyBuilder {
    * Build the final cache key
    */
   build(): string {
-    let keyParts: string[] = [];
+    const keyParts: string[] = [];
 
     // Add prefix if specified
     if (this.options.prefix) {

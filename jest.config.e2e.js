@@ -10,6 +10,7 @@ module.exports = {
   // Test files - only E2E tests
   testMatch: [
     '<rootDir>/packages/*/src/**/*e2e*.test.ts',
+    '<rootDir>/packages/*/src/__tests__/e2e/**/*.test.ts',
     '<rootDir>/tests/e2e/**/*.test.ts',
   ],
   
@@ -84,8 +85,7 @@ module.exports = {
     },
   },
   
-  // Retry flaky network tests
-  retryTimes: 2,
+  // Retry flaky network tests (Jest 30+ no longer supports this config)
   
   // Skip if no network access
   setupFiles: ['<rootDir>/tests/setup/network-check.ts'],

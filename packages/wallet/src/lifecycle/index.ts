@@ -26,7 +26,6 @@ export {
 export {
   ResourceManager,
   ResourceType,
-  globalResourceManager,
   type ResourceMetadata,
   type ResourceCleanupFunction,
   type ResourceManagerStats,

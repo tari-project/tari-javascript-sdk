@@ -19,7 +19,8 @@ export {
 // Recovery state management
 export {
   RecoveryStateManager,
-  defaultRecoveryStateManager,
+  getDefaultRecoveryStateManager,
+  resetDefaultRecoveryStateManager,
   createRestorationStateFromSession,
   validateRestorationProgress,
   type RecoverySession,

@@ -1,6 +1,6 @@
 {
   "key": "tari-mainnet-v4.3.1",
-  "createdAt": 1749968611951,
+  "createdAt": 1749969630511,
   "tariCommit": "3fc236d913eb0432f3aa1cb9ce8235d17182ac20",
   "buildConfig": {
     "network": "mainnet",

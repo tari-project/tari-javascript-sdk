@@ -424,9 +424,25 @@ export class RecoveryStateManager {
 }
 
 /**
- * Default recovery state manager instance
+ * Get default recovery state manager instance
+ * Use this function instead of a pre-instantiated export
+ * to avoid creating intervals during module loading
  */
-export const defaultRecoveryStateManager = new RecoveryStateManager();
+let defaultInstance: RecoveryStateManager | null = null;
+
+export function getDefaultRecoveryStateManager(): RecoveryStateManager {
+  if (!defaultInstance) {
+    defaultInstance = new RecoveryStateManager();
+  }
+  return defaultInstance;
+}
+
+export function resetDefaultRecoveryStateManager(): void {
+  if (defaultInstance) {
+    defaultInstance.destroy();
+    defaultInstance = null;
+  }
+}
 
 /**
  * Utility function to create restoration state from recovery session

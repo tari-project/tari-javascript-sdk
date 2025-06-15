@@ -159,7 +159,7 @@ export class RestorationSeedValidator {
     const issues: SeedIssue[] = [];
     const suggestions: string[] = [];
     let canAutoFix = true;
-    let fixedWords: string[] = [...seedWords];
+    const fixedWords: string[] = [...seedWords];
 
     // Check word count
     if (seedWords.length !== 12 && seedWords.length !== 15 && 

@@ -111,15 +111,19 @@ afterEach(() => {
   // Clean up resource manager instances to prevent test interference
   try {
     const { ResourceManager } = require('./packages/wallet/src/lifecycle/resource-manager');
-    ResourceManager.resetInstance();
+    if (ResourceManager && typeof ResourceManager.resetInstance === 'function') {
+      ResourceManager.resetInstance();
+    }
   } catch (error) {
     // Ignore if resource manager not available
   }
   
   // Clean up recovery state manager instances
   try {
-    const { defaultRecoveryStateManager } = require('./packages/wallet/src/restore/recovery-state');
-    defaultRecoveryStateManager.destroy();
+    const { resetDefaultRecoveryStateManager } = require('./packages/wallet/src/restore/recovery-state');
+    if (typeof resetDefaultRecoveryStateManager === 'function') {
+      resetDefaultRecoveryStateManager();
+    }
   } catch (error) {
     // Ignore if recovery state manager not available
   }

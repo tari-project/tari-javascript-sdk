@@ -197,8 +197,8 @@ export class AdvancedFinalizer {
     averageAge: number;
   } {
     const now = Date.now();
-    let oldestRegistration: Date | null = null;
-    let totalAge = 0;
+    const oldestRegistration: Date | null = null;
+    const totalAge = 0;
     let suspiciousCount = 0;
 
     // We can't directly access registered objects from FinalizationRegistry,

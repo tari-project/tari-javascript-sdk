@@ -400,7 +400,7 @@ export class TauriSecureStorageCache implements SecureStorage {
     // Optimize serialization format
     let cacheValue: Uint8Array;
     let serializationFormat: 'buffer' | 'array' | 'compressed' = 'buffer';
-    let originalSize = value.length;
+    const originalSize = value.length;
     
     if (this.config.optimizeSerialization) {
       // For larger values, use compression

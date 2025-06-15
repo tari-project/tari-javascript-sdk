@@ -148,7 +148,7 @@ export class NativeModuleLoader {
     // Clear require cache if available
     const resolvedBinary = this.resolver.resolveBinary(this.options.network);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const nodeRequire = require as NodeRequire;
       if (nodeRequire.cache && nodeRequire.cache[resolvedBinary.path]) {
         delete nodeRequire.cache[resolvedBinary.path];
