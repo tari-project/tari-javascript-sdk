@@ -8,7 +8,10 @@ import {
   TransactionId, 
   TariAddressString,
   WalletErrorCode,
-  WalletError 
+  WalletError,
+  TypedEventEmitter,
+  getFFIBindings,
+  type WalletHandle
 } from '@tari-project/tarijs-core';
 
 export interface TransactionRequest {
@@ -38,12 +41,28 @@ export interface ValidationResult {
   readonly warnings: string[];
 }
 
+export interface TransactionAPIEvents {
+  'transaction:validated': (request: TransactionRequest, result: ValidationResult) => void;
+  'transaction:estimated': (request: TransactionRequest, estimate: TransactionEstimate) => void;
+  'transaction:sent': (result: TransactionResult) => void;
+  'transaction:status': (transactionId: TransactionId, status: string) => void;
+  'transaction:cancelled': (transactionId: TransactionId, success: boolean) => void;
+  [key: string]: (...args: unknown[]) => void; // Index signature for TypedEventEmitter
+}
+
 /**
- * Transaction API implementation stub
- * TODO: Implement full transaction functionality
+ * Transaction API implementation with real FFI integration
+ * Provides validation, estimation, and sending capabilities with event emission
  */
-export class TransactionAPI {
-  
+export class TransactionAPI extends TypedEventEmitter<TransactionAPIEvents> {
+  private readonly walletHandle?: WalletHandle;
+  private readonly ffi = getFFIBindings();
+
+  constructor(walletHandle?: WalletHandle) {
+    super();
+    this.walletHandle = walletHandle;
+  }
+
   /**
    * Validate a transaction request
    */
@@ -64,32 +83,91 @@ export class TransactionAPI {
       errors.push('Fee cannot be negative');
     }
 
-    // TODO: Add more comprehensive validation
-    // - Address format validation
-    // - Balance checks
-    // - Network fee validation
+    // Address format validation using FFI
+    if (request.recipient) {
+      try {
+        await this.ffi.validateAddress(request.recipient, 'mainnet');
+      } catch (error) {
+        errors.push(`Invalid recipient address: ${error}`);
+      }
+    }
 
-    return {
+    // Balance checks using FFI
+    if (this.walletHandle && request.amount > 0n) {
+      try {
+        const balance = await this.ffi.walletGetBalance(this.walletHandle);
+        const available = BigInt(balance.available);
+        const totalRequired = request.amount + (request.fee || 25n);
+        
+        if (available < totalRequired) {
+          errors.push(`Insufficient balance: ${available} < ${totalRequired}`);
+        } else if (available < totalRequired * 2n) {
+          warnings.push('Balance is low after this transaction');
+        }
+      } catch (error) {
+        warnings.push(`Could not verify balance: ${error}`);
+      }
+    }
+
+    const result = {
       isValid: errors.length === 0,
       errors,
       warnings,
     };
+
+    // Emit validation event
+    this.emit('transaction:validated', request, result);
+
+    return result;
   }
 
   /**
    * Estimate transaction fee and confirmation time
    */
   async estimate(request: TransactionRequest): Promise<TransactionEstimate> {
-    // TODO: Implement actual fee estimation using FFI
-    const estimatedFee = request.fee ?? 25n as MicroTari; // Default fee
-    const totalAmount = (request.amount + estimatedFee) as MicroTari;
+    let estimatedFee = request.fee ?? 25n as MicroTari;
+    let networkCongestion: 'low' | 'medium' | 'high' = 'low';
+    let estimatedConfirmationTime = 60;
 
-    return {
+    // Get network fee estimates using FFI
+    if (this.walletHandle) {
+      try {
+        const feeStats = await this.ffi.walletGetFeePerGramStats(this.walletHandle);
+        
+        // Use average fee per gram for estimation (typical transaction is ~1000 bytes)
+        const avgFeePerGram = BigInt(feeStats.avg);
+        estimatedFee = (avgFeePerGram * 1000n) as MicroTari;
+        
+        // Determine network congestion based on fee stats
+        const maxFeePerGram = BigInt(feeStats.max);
+        const minFeePerGram = BigInt(feeStats.min);
+        
+        if (avgFeePerGram > (minFeePerGram + maxFeePerGram) / 2n) {
+          networkCongestion = 'high';
+          estimatedConfirmationTime = 300; // 5 minutes
+        } else if (avgFeePerGram > minFeePerGram + (maxFeePerGram - minFeePerGram) / 3n) {
+          networkCongestion = 'medium';
+          estimatedConfirmationTime = 120; // 2 minutes
+        }
+      } catch (error) {
+        // Fall back to default fee if estimation fails
+        // Note: Error is already logged by FFI layer
+      }
+    }
+
+    const totalAmount = (request.amount + estimatedFee) as MicroTari;
+    
+    const estimate = {
       estimatedFee,
       totalAmount,
-      estimatedConfirmationTime: 60, // 1 minute estimate
-      networkCongestion: 'low',
+      estimatedConfirmationTime,
+      networkCongestion,
     };
+
+    // Emit estimation event
+    this.emit('transaction:estimated', request, estimate);
+
+    return estimate;
   }
 
   /**
@@ -105,30 +183,107 @@ export class TransactionAPI {
       );
     }
 
-    // TODO: Implement actual transaction sending using FFI
-    // For now, return a mock result
-    const transactionId = BigInt(Date.now()) as TransactionId;
-    
-    return {
-      transactionId,
-      status: 'pending',
-      timestamp: Date.now(),
-    };
+    if (!this.walletHandle) {
+      throw new WalletError(
+        WalletErrorCode.WalletNotFound,
+        'Wallet handle is required for sending transactions'
+      );
+    }
+
+    // Get fee estimate if not provided
+    const estimate = await this.estimate(request);
+    const feeToUse = request.fee ?? estimate.estimatedFee;
+
+    try {
+      // Send transaction using FFI
+      const txIdString = await this.ffi.walletSendTransaction(
+        this.walletHandle,
+        request.recipient,
+        request.amount.toString(),
+        feeToUse.toString(),
+        request.message || ''
+      );
+
+      const transactionId = BigInt(txIdString) as TransactionId;
+      
+      const result = {
+        transactionId,
+        status: 'pending' as const,
+        timestamp: Date.now(),
+      };
+
+      // Emit transaction sent event
+      this.emit('transaction:sent', result);
+
+      return result;
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionSendFailed,
+        `Failed to send transaction: ${error}`,
+        { cause: error as Error }
+      );
+    }
   }
 
   /**
    * Get transaction status
    */
   async getStatus(transactionId: TransactionId): Promise<string> {
-    // TODO: Implement actual status checking using FFI
-    return 'pending';
+    if (!this.walletHandle) {
+      throw new WalletError(
+        WalletErrorCode.WalletNotFound,
+        'Wallet handle is required for checking transaction status'
+      );
+    }
+
+    try {
+      const transaction = await this.ffi.walletGetTransaction(
+        this.walletHandle,
+        transactionId.toString()
+      );
+
+      const status = JSON.parse(transaction).status || 'unknown';
+      
+      // Emit status event
+      this.emit('transaction:status', transactionId, status);
+      
+      return status;
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionNotFound,
+        `Failed to get transaction status: ${error}`,
+        { cause: error as Error }
+      );
+    }
   }
 
   /**
    * Cancel a pending transaction
    */
   async cancel(transactionId: TransactionId): Promise<boolean> {
-    // TODO: Implement actual transaction cancellation using FFI
-    return true;
+    if (!this.walletHandle) {
+      throw new WalletError(
+        WalletErrorCode.WalletNotFound,
+        'Wallet handle is required for cancelling transactions'
+      );
+    }
+
+    try {
+      const success = await this.ffi.walletCancelPendingTransaction(
+        this.walletHandle,
+        transactionId.toString()
+      );
+
+      // Emit cancellation event
+      this.emit('transaction:cancelled', transactionId, success);
+
+      return success;
+    } catch (error: unknown) {
+      throw new WalletError(
+        WalletErrorCode.TransactionNotCancellable,
+        `Failed to cancel transaction: ${error}`,
+        { cause: error as Error }
+      );
+    }
   }
 }
