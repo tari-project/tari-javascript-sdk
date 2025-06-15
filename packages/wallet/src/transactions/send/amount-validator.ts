@@ -373,7 +373,7 @@ export class AmountValidator {
 
         const balanceFFI = microTariToFFI(availableBalance);
         const marginPercent = BigInt(Math.floor(this.config.safetyMarginPercent * 10000));
-        const margin = (balanceFFI * marginPercent) / 10000n;
+        const margin = (balanceFFI * marginPercent) / BigInt(10000);
         return microTariFromFFI(margin);
     }
 
