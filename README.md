@@ -32,12 +32,22 @@ npm install @tari-project/tarijs-core
 
 ### Basic Wallet Operations
 
-```typescript
-import { TariWallet, NetworkType, createSecureStorage } from '@tari-project/tarijs-wallet';
+**⚠️ Important**: The SDK requires compiled FFI binaries for your target network. See [Developer Setup](#developer-setup) for build instructions.
 
-// Create a new wallet with automatic platform optimization
+```typescript
+import { 
+  TariWallet, 
+  NetworkType, 
+  createSecureStorage 
+} from '@tari-project/tarijs-wallet';
+import { loadNativeModuleForNetwork } from '@tari-project/tarijs-core';
+
+// STEP 1: Load network-specific FFI binary (required!)
+await loadNativeModuleForNetwork(NetworkType.Testnet);
+
+// STEP 2: Create wallet with real blockchain functionality
 const wallet = await TariWallet.create({
-  network: NetworkType.Testnet,
+  network: NetworkType.Testnet,  // Must match loaded FFI binary
   storagePath: './my-wallet',
   logLevel: 'info',
   
@@ -72,6 +82,54 @@ wallet.on('onTransactionReceived', (tx) => {
 // Clean up resources
 await wallet.destroy();
 ```
+
+## Developer Setup
+
+**⚠️ Required for Development**: Building from source requires compiling network-specific FFI binaries.
+
+### Quick Development Setup
+
+```bash
+# 1. Clone and install dependencies
+git clone https://github.com/tari-project/tari-javascript-sdk.git
+cd tari-javascript-sdk
+npm install
+
+# 2. Setup Tari source code (required for FFI compilation)
+npm run setup:tari-source
+
+# 3. Build testnet FFI binary (recommended for development)
+npm run build:networks:testnet
+
+# 4. Verify setup
+npm run validate:build
+npm run test:integration
+```
+
+### Network-Specific Builds
+
+The SDK supports three networks, each requiring its own FFI binary:
+
+| Network | Purpose | Build Command | Test Funds |
+|---------|---------|---------------|------------|
+| **testnet** | Development & testing | `npm run build:networks:testnet` | [Discord faucet](https://discord.gg/tari) |
+| **mainnet** | Production applications | `npm run build:networks:mainnet` | Real Tari required |
+| **nextnet** | Pre-release features | `npm run build:networks:nextnet` | Limited availability |
+
+### Build All Networks
+
+```bash
+# Build all networks sequentially (10-15 minutes)
+npm run build:all-networks
+
+# Or build in parallel (faster, more resources)
+npm run build:all-networks:parallel
+
+# Validate all builds
+npm run validate:build
+```
+
+**📖 Complete Setup Guide**: See [DEVELOPER_SETUP.md](DEVELOPER_SETUP.md) for detailed instructions, troubleshooting, and advanced configuration.
 
 ### Tauri Integration
 
