@@ -1,4 +1,4 @@
-import { FFIBindings } from '@tari-project/tarijs-core';
+import { FFIBindings, TariAddress } from '@tari-project/tarijs-core';
 import {
   WalletHandle,
   WalletError,
@@ -6,7 +6,6 @@ import {
   withErrorContext,
   validateTariAddress,
   validateRequired,
-  TariAddress,
 } from '@tari-project/tarijs-core';
 
 /**

@@ -107,6 +107,22 @@ global.console = createConsoleMock();
 // Restore console after each test
 afterEach(() => {
   jest.clearAllMocks();
+  
+  // Clean up resource manager instances to prevent test interference
+  try {
+    const { ResourceManager } = require('./packages/wallet/src/lifecycle/resource-manager');
+    ResourceManager.resetInstance();
+  } catch (error) {
+    // Ignore if resource manager not available
+  }
+  
+  // Clean up recovery state manager instances
+  try {
+    const { defaultRecoveryStateManager } = require('./packages/wallet/src/restore/recovery-state');
+    defaultRecoveryStateManager.destroy();
+  } catch (error) {
+    // Ignore if recovery state manager not available
+  }
 });
 
 // Clean up any test resources

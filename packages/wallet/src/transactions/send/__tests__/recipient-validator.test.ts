@@ -6,31 +6,35 @@ import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals
 import { 
   WalletError, 
   WalletErrorCode,
-  FFIBindings 
+  FFIBindings,
+  TariAddress
 } from '@tari-project/tarijs-core';
-import { TariAddress } from '../../../models';
-import { RecipientValidator } from '../recipient-validator';
 
-// Mock FFI bindings
+import { RecipientValidator } from '../recipient-validator';
+import { AddressFactory } from '../../../testing/factories';
+
+// Mock FFI bindings and TariAddress
 jest.mock('@tari-project/tarijs-core', () => ({
   ...jest.requireActual('@tari-project/tarijs-core'),
+  TariAddress: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      handle: 'mock-address-handle',
+      toDisplayString: jest.fn().mockReturnValue('mock-address-display'),
+    })),
+    {
+      fromString: jest.fn(),
+      fromPublicKey: jest.fn(),
+      fromBase58: jest.fn(),
+      fromHex: jest.fn(),
+      empty: jest.fn(),
+    }
+  ),
   FFIBindings: {
     emojiIdToPublicKey: jest.fn(),
   },
   withErrorContext: jest.fn((_, __) => (target: any, propertyKey: string, descriptor: PropertyDescriptor) => descriptor),
   validateTariAddress: jest.fn(),
   validateRequired: jest.fn()
-}));
-
-// Mock TariAddress
-jest.mock('../../../models', () => ({
-  TariAddress: {
-    fromString: jest.fn(),
-    fromPublicKey: jest.fn(),
-    fromBase58: jest.fn(),
-    fromHex: jest.fn(),
-    empty: jest.fn(),
-  }
 }));
 
 describe('RecipientValidator', () => {
@@ -60,7 +64,7 @@ describe('RecipientValidator', () => {
 
   describe('validateAndResolve', () => {
     it('should validate and resolve a valid string address', async () => {
-      const address = 'valid-address-string';
+      const address = AddressFactory.base58();
       
       const result = await validator.validateAndResolve(address);
       
@@ -76,7 +80,7 @@ describe('RecipientValidator', () => {
     });
 
     it('should cache resolved addresses', async () => {
-      const address = 'valid-address-string';
+      const address = AddressFactory.base58();
       
       // First call
       await validator.validateAndResolve(address);
@@ -103,7 +107,7 @@ describe('RecipientValidator', () => {
     });
 
     it('should handle base58 address resolution', async () => {
-      const base58Address = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
+      const base58Address = AddressFactory.base58();
       
       // Mock direct resolution failure
       (TariAddress.fromString as jest.Mock).mockRejectedValueOnce(new Error('Not direct format'));
@@ -115,7 +119,7 @@ describe('RecipientValidator', () => {
     });
 
     it('should handle hex address resolution', async () => {
-      const hexAddress = '0x1234567890abcdef';
+      const hexAddress = AddressFactory.hex();
       
       // Mock direct resolution failure and other formats
       (TariAddress.fromString as jest.Mock).mockRejectedValueOnce(new Error('Not direct format'));
@@ -128,7 +132,7 @@ describe('RecipientValidator', () => {
     });
 
     it('should throw error for unresolvable address', async () => {
-      const invalidAddress = 'completely-invalid-address';
+      const invalidAddress = AddressFactory.invalid();
       
       // Mock all resolution methods to fail
       (TariAddress.fromString as jest.Mock).mockRejectedValue(new Error('Not direct format'));
@@ -161,7 +165,7 @@ describe('RecipientValidator', () => {
 
   describe('validateMultipleRecipients', () => {
     it('should validate multiple valid recipients', async () => {
-      const recipients = ['address1', 'address2', 'address3'];
+      const recipients = [AddressFactory.base58(), AddressFactory.base58(), AddressFactory.base58()];
       
       const results = await validator.validateMultipleRecipients(recipients);
       
@@ -184,7 +188,7 @@ describe('RecipientValidator', () => {
     });
 
     it('should handle validation error for specific recipient', async () => {
-      const recipients = ['valid-address', 'invalid-address'];
+      const recipients = [AddressFactory.base58(), AddressFactory.invalid()];
       
       // Mock the second address to fail
       (TariAddress.fromString as jest.Mock)
@@ -224,7 +228,7 @@ describe('RecipientValidator', () => {
 
   describe('cache management', () => {
     it('should clear cache correctly', async () => {
-      const address = 'test-address';
+      const address = AddressFactory.base58();
       
       // First resolution
       await validator.validateAndResolve(address);
@@ -256,15 +260,15 @@ describe('RecipientValidator', () => {
     });
 
     it('should detect base58 addresses', () => {
-      const base58Address = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
+      const base58Address = AddressFactory.base58();
       expect(validator.isValidAddressFormat(base58Address)).toBe(true);
     });
 
     it('should detect hex addresses', () => {
-      const hexAddress = '0x1234567890abcdef';
+      const hexAddress = AddressFactory.hex();
       expect(validator.isValidAddressFormat(hexAddress)).toBe(true);
       
-      const hexWithoutPrefix = '1234567890abcdef';
+      const hexWithoutPrefix = AddressFactory.hex();
       expect(validator.isValidAddressFormat(hexWithoutPrefix)).toBe(true);
     });
   });
@@ -286,7 +290,7 @@ describe('RecipientValidator', () => {
       jest.spyOn(validator, 'isSelfSend').mockRejectedValue(new Error('Detection failed'));
       
       // Should not throw but proceed with transaction
-      const result = await validator.validateAndResolve('test-address');
+      const result = await validator.validateAndResolve(AddressFactory.invalid());
       expect(result).toBe(mockTariAddress);
     });
   });

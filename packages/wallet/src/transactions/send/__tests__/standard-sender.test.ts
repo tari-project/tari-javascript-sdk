@@ -58,7 +58,10 @@ describe('StandardSender', () => {
 
     // Create mock instances
     mockWalletHandle = 'mock-wallet-handle' as WalletHandle;
-    mockFeeEstimator = new FeeEstimator(mockWalletHandle, {}) as jest.Mocked<FeeEstimator>;
+    mockFeeEstimator = {
+      estimateFeePerGram: jest.fn(),
+      estimateTransactionSize: jest.fn(),
+    } as jest.Mocked<FeeEstimator>;
     mockTariAddress = {
       handle: 'mock-address-handle',
       toDisplayString: jest.fn().mockReturnValue('mock-address-display'),

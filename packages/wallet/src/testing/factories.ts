@@ -160,7 +160,7 @@ export class TransactionFactory {
       message: `Test transaction ${idStr.slice(0, 8)}`,
       timestamp: new Date(),
       isInbound: false,
-      address: `tari://testnet/mock_address_${randomBytes(8).toString('hex')}` as TariAddressString,
+      address: AddressFactory.base58() as TariAddressString,
       confirmations: 0,
       ...overrides,
     };
@@ -232,7 +232,7 @@ export class PendingTransactionFactory {
       fee: createMicroTari(5000n),
       message: `Test pending transaction ${idStr.slice(0, 8)}`,
       timestamp: new Date(),
-      recipientAddress: `tari://testnet/recipient_${randomBytes(8).toString('hex')}` as TariAddressString,
+      recipientAddress: AddressFactory.base58() as TariAddressString,
       status: TransactionStatus.Pending,
       ...overrides,
     };
@@ -258,28 +258,74 @@ export class PendingTransactionFactory {
  * Factory for creating test addresses
  */
 export class AddressFactory {
+  // Base58 alphabet for Tari addresses
+  private static readonly BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  
+  // Tari emoji set for emoji addresses
+  private static readonly TARI_EMOJIS = [
+    '🐀', '🐁', '🐂', '🐃', '🐄', '🐅', '🐆', '🐇', '🐈', '🐉', '🐊', '🐋', '🐌', '🐍', '🐎', '🐏',
+    '🐐', '🐑', '🐒', '🐓', '🐔', '🐕', '🐖', '🐗', '🐘', '🐙', '🐚', '🐛', '🐜', '🐝', '🐞', '🐟',
+    '🐠'
+  ];
+
   static create(network: NetworkType = NetworkType.Testnet): string {
-    const hash = randomBytes(32).toString('hex');
-    return `tari://${network}/${hash}`;
+    return this.base58();
   }
 
   static testnet(): string {
-    return this.create(NetworkType.Testnet);
+    return this.base58();
   }
 
   static mainnet(): string {
-    return this.create(NetworkType.Mainnet);
+    return this.base58();
+  }
+
+  static base58(): string {
+    // Generate a valid base58 address (32-64 characters based on types/address.ts)
+    const length = 50; // Good middle ground between 32-64
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * this.BASE58_ALPHABET.length);
+      result += this.BASE58_ALPHABET[randomIndex];
+    }
+    return result;
+  }
+
+  static hex(): string {
+    // Generate a valid hex address (64 characters = 32 bytes based on types/address.ts)
+    return randomBytes(32).toString('hex');
+  }
+
+  static hexWithViewKey(): string {
+    // Generate a valid hex address with view key (140 characters = 70 bytes)
+    return randomBytes(70).toString('hex');
+  }
+
+  static emoji(): string {
+    // Generate exactly 33 emojis for a valid emoji address
+    return Array.from({ length: 33 }, () => 
+      this.TARI_EMOJIS[Math.floor(Math.random() * this.TARI_EMOJIS.length)]
+    ).join('');
   }
 
   static invalid(): string {
     return 'invalid_address_format';
   }
 
-  static emoji(): string {
-    const emojis = ['🌟', '🎯', '🚀', '💎', '🔥', '⚡', '🎨', '🌈'];
-    return Array.from({ length: 32 }, () => 
-      emojis[Math.floor(Math.random() * emojis.length)]
-    ).join('');
+  static tooShortBase58(): string {
+    return 'shortaddr'; // Only 9 characters, invalid
+  }
+
+  static tooLongBase58(): string {
+    return this.BASE58_ALPHABET.repeat(3); // Way too long
+  }
+
+  static invalidHex(): string {
+    return randomBytes(16).toString('hex'); // Only 32 chars, should be 76 or 140
+  }
+
+  static invalidEmoji(): string {
+    return '🌟🎯🚀'; // Only 3 emojis, should be 33
   }
 }
 
